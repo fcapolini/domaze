@@ -48,7 +48,7 @@ export interface Attribute extends Node {
 }
 
 export interface Document extends Element {
-  // documentElement: Element | null;
+  documentElement: Element | null;
   createTextNode(text: string): Text;
 }
 
