@@ -34,4 +34,4 @@ jobs:
     #   uses: codecov/codecov-action@v4.0.1
     #   with:
     #     token: ${{ secrets.CODECOV_TOKEN }}
-    #     slug: project3/project3
+    #     slug: domaze/domaze
