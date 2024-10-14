@@ -3,9 +3,9 @@ import { JSDOM } from 'jsdom';
 import { describe } from 'mocha';
 import { ClientPage } from '../../src/client/client-page';
 import * as dom from '../../src/html/dom';
-import { parse, normalizeSpace } from '../../src/html/parser';
-import { Page, PageProps } from '../../src/runtime/page';
+import { normalizeSpace, parse } from '../../src/html/parser';
 import * as k from '../../src/runtime/consts';
+import { Page, PageProps } from '../../src/runtime/page';
 import { ServerPage } from '../../src/server/server-page';
 
 describe('runtime/base', () => {
@@ -53,6 +53,11 @@ describe('runtime/base', () => {
         }
       });
       assert.equal(page.root.children.length, 2);
+      assert.equal(page.root.e.tagName, 'HTML');
+      assert.equal(page.root.children[0].parent, page.root);
+      assert.equal(page.root.children[0].e.tagName, 'HEAD');
+      assert.equal(page.root.children[1].parent, page.root);
+      assert.equal(page.root.children[1].e.tagName, 'BODY');
       const html = page.global.getMarkup();
       assert.equal(
         normalizeSpace(html),
@@ -92,6 +97,16 @@ describe('runtime/base', () => {
           </body>`
           + `</html>`)
       )
+    });
+
+    it('101', () => {
+      const page = load(
+        `<html ${k.DOM_ID_ATTR}="0"></html>`,
+        { root: { id: 0, name: 'page' } }
+      );
+      assert.exists(page.root.obj);
+      const root = page.root.obj;
+      assert.equal(root[k.RT_ID_KEY], 0);
     });
 
   }));

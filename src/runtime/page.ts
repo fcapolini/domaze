@@ -19,6 +19,7 @@ export abstract class Page {
     this.props = props;
     this.global = this.newGlobal();
     this.root = this.load(props.root, this.global, doc.documentElement!);
+    this.refresh(this.root);
   }
 
   load(props: ScopeProps, p: Scope, e: dom.Element): Scope {
@@ -50,5 +51,25 @@ export abstract class Page {
     const ret = new Value(this, scope, props);
     this.global.setValueCB(name, ret, scope);
     return ret;
+  }
+
+  // ===========================================================================
+  // reactivity
+  // ===========================================================================
+  cycle = 0;
+  refreshLevel = 0;
+  pushLevel = 0;
+
+  refresh(scope: Scope, nextCycle = true) {
+    this.refreshLevel++;
+    try {
+      nextCycle && this.cycle++;
+      scope.unlinkValues();
+      scope.linkValues();
+      scope.updateValues();
+    } catch (err) {
+      console.error('Context.refresh()', err);
+    }
+    this.refreshLevel--;
   }
 }

@@ -27,10 +27,6 @@ export class ServerGlobal extends Global {
     return f(root);
   }
 
-  override setValueCB(name: string, value: Value, scope: Scope): void {
-    throw new Error("Method not implemented.");
-  }
-
   override getMarkup(): string {
     return this.page.doc.toString();
   }

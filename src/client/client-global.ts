@@ -15,10 +15,6 @@ export class ClientGlobal extends Global {
     ).singleNodeValue as unknown as dom.Element;
   }
 
-  override setValueCB(name: string, value: Value, scope: Scope): void {
-    throw new Error("Method not implemented.");
-  }
-
   override getMarkup(): string {
     const doc = this.page.doc as unknown as Document;
     return doc.documentElement.outerHTML;
