@@ -8,7 +8,6 @@ export const RT_ISOLATED_KEY = '__isolated__';
 export const RT_PARENT_KEY = '__parent__';
 export const RT_CHILDREN_KEY = '__children__';
 export const RT_VALUE_KEY = '__value__';
-
 export const RT_ATTR_VALUE_PREFIX = 'attr$';
 export const RT_TEXT_VALUE_PREFIX = 't$';
 

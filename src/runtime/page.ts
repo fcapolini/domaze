@@ -42,9 +42,9 @@ export abstract class Page {
 
   newScope(props: ScopeProps, e: dom.Element): Scope {
     if (props.type === 'foreach') {
-      return new ForeachScope(this, props, e);
+      return new ForeachScope(this, props, e, this.global);
     }
-    return new Scope(this, props, e);
+    return new Scope(this, props, e, this.global);
   }
 
   newValue(scope: Scope, name: string, props: ValueProps): Value {

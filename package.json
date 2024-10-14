@@ -2,7 +2,7 @@
   "name": "domaze",
   "version": "0.1.0",
   "author": "Fabrizio Capolini",
-  "license": "ISC",
+  "license": "MIT",
   "scripts": {
     "build": "rm -rf dist/* && tsc",
     "test": "mocha --exit -r ts-node/register test/**/*.test.ts",

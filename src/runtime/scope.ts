@@ -44,6 +44,13 @@ export class Scope {
   }
 
   setValues(values?: { [key: string]: ValueProps }): this {
+    if (values) {
+      Reflect.ownKeys(values).forEach(key => {
+        const name = key as string;
+        const v = this.page.newValue(this, name, values![name]);
+        this.values[name] = v;
+      });
+    }
     return this;
   }
 

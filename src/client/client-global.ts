@@ -1,8 +1,6 @@
 import * as dom from "../html/dom";
-import { Global } from "../runtime/global";
-import { Scope } from "../runtime/scope";
-import { Value } from "../runtime/value";
 import * as k from "../runtime/consts";
+import { Global } from "../runtime/global";
 
 export class ClientGlobal extends Global {
 
