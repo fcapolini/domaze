@@ -34,7 +34,7 @@ describe('runtime/base', () => {
         ).props
       );
       assert.exists(page.root);
-      assert.equal(page.root.e, page.doc.documentElement);
+      assert.equal(page.root.dom, page.doc.documentElement);
       assert.equal(page.root.children.length, 0);
       const html = page.global.getMarkup();
       assert.equal(
@@ -58,11 +58,11 @@ describe('runtime/base', () => {
         ).props
       );
       assert.equal(page.root.children.length, 2);
-      assert.equal(page.root.e.tagName, 'HTML');
+      assert.equal(page.root.dom.tagName, 'HTML');
       assert.equal(page.root.children[0].parent, page.root);
-      assert.equal(page.root.children[0].e.tagName, 'HEAD');
+      assert.equal(page.root.children[0].dom.tagName, 'HEAD');
       assert.equal(page.root.children[1].parent, page.root);
-      assert.equal(page.root.children[1].e.tagName, 'BODY');
+      assert.equal(page.root.children[1].dom.tagName, 'BODY');
       const html = page.global.getMarkup();
       assert.equal(
         normalizeSpace(html),
@@ -573,6 +573,76 @@ describe('runtime/base', () => {
         + `style="background: red; border-width: 1px;">`
         + `<head></head><body></body></html>`
       );
+    });
+
+    // =========================================================================
+    // event values
+    // =========================================================================
+
+    it('event001', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            count: { exp: function() { return 0; } },
+            // @ts-expect-error use of `this` in expression
+            ev$click: { exp: function() { return () => this.count++; } }
+          })
+        ).props
+      );
+      const root = page.root.obj as { count: number };
+      assert.equal(root.count, 0);
+      if (mode !== 'server') {
+        const e = page.doc.documentElement as unknown as HTMLElement;
+        e.click();
+        assert.equal(root.count, 1);
+      }
+    });
+
+    it('event002', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"><head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2"><!---t0--><!---->
+        </body></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            count: { exp: function() { return 0; } },
+            // @ts-expect-error use of `this` in expression
+            ev$click: { exp: function() { return () => this.count++; } }
+          }).add(
+            new props.Scope({ id: 1 })
+          ).add(
+            new props.Scope({ id: 2, name: 'body' }, {
+              text$0: {
+                // @ts-expect-error use of `this` in expression
+                exp: function() { return this.count; },
+                // @ts-expect-error use of `this` in expression
+                deps: [function() { return this[k.RT_VALUE_KEY]('count'); }]
+              }
+            })
+          )
+        ).props
+      );
+      assert.equal(
+        normalizeSpace(page.global.getMarkup()),
+        normalizeSpace(
+          `<html ${k.OUT_ID_ATTR}="0"><head ${k.OUT_ID_ATTR}="1"></head>
+          <body ${k.OUT_ID_ATTR}="2"><!---t0-->0<!---->
+          </body></html>`
+        )
+      )
+      if (mode === 'client') {
+        const e = page.doc.documentElement as unknown as HTMLElement;
+        e.click();
+        assert.equal(
+          normalizeSpace(page.global.getMarkup()),
+          normalizeSpace(
+            `<html ${k.OUT_ID_ATTR}="0"><head ${k.OUT_ID_ATTR}="1"></head>
+            <body ${k.OUT_ID_ATTR}="2"><!---t0-->1<!---->
+            </body></html>`
+          )
+        )
+      }
     });
 
   }));

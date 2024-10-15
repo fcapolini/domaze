@@ -32,7 +32,7 @@ export abstract class Page {
       return s;
     }
     props.children?.forEach(child => {
-      const e = this.global.getElement(child.id, s.e)!;
+      const e = this.global.getElement(child.id, s.dom)!;
       this.load(child, s, e);
     });
     return s;

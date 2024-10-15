@@ -20,7 +20,7 @@ export type ScopeObj = { [key: string]: unknown };
 export class Scope {
   page: Page;
   props: ScopeProps;
-  e: dom.Element;
+  dom: dom.Element;
   global?: Global;
   isolate?: boolean;
   values: ScopeValues;
@@ -32,7 +32,7 @@ export class Scope {
   constructor(page: Page, props: ScopeProps, e: dom.Element, global?: Global) {
     this.page = page;
     this.props = props;
-    this.e = e;
+    this.dom = e;
     this.global = global;
     this.values = {};
     this.children = [];
@@ -59,9 +59,9 @@ export class Scope {
     i = i < 0 ? p.children.length : i;
     p.children.splice(i, 0, this);
     this.parent = p;
-    !this.e.parentElement
-      && this.e.tagName !== 'HTML'
-      && p.e.insertBefore(this.e, ref?.e ?? null);
+    !this.dom.parentElement
+      && this.dom.tagName !== 'HTML'
+      && p.dom.insertBefore(this.dom, ref?.dom ?? null);
     if (this.name) {
       if (!p.values[this.name]) {
         const that = this;
@@ -71,21 +71,19 @@ export class Scope {
         });
       }
     }
-    //tempdebug
-    // this.page.global.addEventListeners(this);
-    // this.linkValues();
+    this.page.global.addEventListeners(this);
+    this.linkValues();
     return this;
   }
 
   unlink(): this {
-    //tempdebug
-    // this.unlinkValues();
-    // this.page.global.removeEventListeners(this);
+    this.unlinkValues();
+    this.page.global.removeEventListeners(this);
     if (this.name && this.parent && this.parent.obj[this.name] === this.obj) {
       // remove name from parent scope
       delete this.parent.values[this.name];
     }
-    this.e.unlink();
+    this.dom.unlink();
     const i = this.parent ? this.parent.children.indexOf(this) : -1;
     i >= 0 && this.parent!.children.splice(i, 1);
     delete this.parent;
@@ -116,7 +114,7 @@ export class Scope {
         }
       }
     };
-    return f(this.e);
+    return f(this.dom);
   }
 
   // ===========================================================================
@@ -134,7 +132,7 @@ export class Scope {
       exp: function() { return that.name; }
     });
     this.values[k.RT_DOM_KEY] = page.newValue(this, k.RT_DOM_KEY, {
-      exp: function() { return that.e; }
+      exp: function() { return that.dom; }
     });
     this.values[k.RT_ISOLATE_KEY] = page.newValue(this, k.RT_ISOLATE_KEY, {
       exp: function() { return !!that.isolate; }
