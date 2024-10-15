@@ -26,8 +26,8 @@ import { assert } from 'chai';
 describe('html/dom', () => {
   for (const mode of ['server', 'client']) {
 
+    // eslint-disable-next-line
     async function load(text: string): Promise<dom.Document> {
-      // const text = await fs.promises.readFile(path.join(docroot, fname));
       text = normalizeText(text)!;
       const ret = mode === 'client'
         ? new JSDOM(text).window.document as unknown as dom.Document
@@ -35,6 +35,7 @@ describe('html/dom', () => {
       return ret;
     }
 
+    // eslint-disable-next-line
     function markup(e: dom.Element): string {
       if (mode === 'client') {
         return normalizeText((e as unknown as Element).outerHTML)!;

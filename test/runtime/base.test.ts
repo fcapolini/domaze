@@ -26,7 +26,7 @@ describe('runtime/base', () => {
     // app nodes
     // =========================================================================
 
-    it('001', () => {
+    it('app001', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
@@ -45,7 +45,7 @@ describe('runtime/base', () => {
       )
     });
 
-    it('002', () => {
+    it('app002', () => {
       const page = load(`<html ${k.OUT_ID_ATTR}="0">`
         + `<head ${k.OUT_ID_ATTR}="1"></head>
         <body ${k.OUT_ID_ATTR}="2">
@@ -74,7 +74,7 @@ describe('runtime/base', () => {
       )
     });
 
-    it('003', () => {
+    it('app003', () => {
       const page = load(`<html ${k.OUT_ID_ATTR}="0">`
         + `<head ${k.OUT_ID_ATTR}="1"></head>
         <body ${k.OUT_ID_ATTR}="2">
@@ -101,7 +101,7 @@ describe('runtime/base', () => {
       )
     });
 
-    it('004', () => {
+    it('app004', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
@@ -113,7 +113,7 @@ describe('runtime/base', () => {
       assert.equal(root[k.RT_ID_KEY], 0);
     });
 
-    it('005', () => {
+    it('app005', () => {
       const page = load(`<html ${k.OUT_ID_ATTR}="0">`
         + `<head ${k.OUT_ID_ATTR}="1"></head>
         <body ${k.OUT_ID_ATTR}="2">
@@ -132,7 +132,7 @@ describe('runtime/base', () => {
       assert.equal((root[k.RT_DOM_KEY] as dom.Element).tagName, 'HTML');
       assert.isFalse(root[k.RT_ISOLATE_KEY]);
       assert.equal((root[k.RT_CHILDREN_KEY] as []).length, 2);
-      assert.exists((root[k.RT_VALUE_KEY] as Function)(k.RT_ID_KEY));
+      assert.exists((root[k.RT_VALUE_KEY] as (k: string) => void)(k.RT_ID_KEY));
       const head = root.head;
       assert.exists(head);
       assert.equal(head[k.RT_ID_KEY], 1);
@@ -141,7 +141,7 @@ describe('runtime/base', () => {
       assert.isFalse(head[k.RT_ISOLATE_KEY]);
       assert.equal(head[k.RT_PARENT_KEY], root);
       assert.equal((head[k.RT_CHILDREN_KEY] as []).length, 0);
-      assert.exists((head[k.RT_VALUE_KEY] as Function)(k.RT_ID_KEY));
+      assert.exists((head[k.RT_VALUE_KEY] as (k: string) => void)(k.RT_ID_KEY));
       const body = root.body;
       assert.exists(body);
       assert.equal(body[k.RT_ID_KEY], 2);
@@ -150,14 +150,14 @@ describe('runtime/base', () => {
       assert.isFalse(body[k.RT_ISOLATE_KEY]);
       assert.equal(body[k.RT_PARENT_KEY], root);
       assert.equal((body[k.RT_CHILDREN_KEY] as []).length, 0);
-      assert.exists((body[k.RT_VALUE_KEY] as Function)(k.RT_ID_KEY));
+      assert.exists((body[k.RT_VALUE_KEY] as (k: string) => void)(k.RT_ID_KEY));
     });
 
     // =========================================================================
     // logic values
     // =========================================================================
 
-    it('103', () => {
+    it('value003', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
@@ -170,7 +170,7 @@ describe('runtime/base', () => {
       assert.equal(root.x, 1);
     });
 
-    it('104', () => {
+    it('value004', () => {
       const page = load(`<html ${k.OUT_ID_ATTR}="0">`
         + `<head ${k.OUT_ID_ATTR}="1"></head>
         <body ${k.OUT_ID_ATTR}="2">
@@ -194,7 +194,7 @@ describe('runtime/base', () => {
       assert.equal(body.y, 2);
     });
 
-    it('105', () => {
+    it('value005', () => {
       const page = load(`<html ${k.OUT_ID_ATTR}="0">`
         + `<head ${k.OUT_ID_ATTR}="1"></head>
         <body ${k.OUT_ID_ATTR}="2">
@@ -224,7 +224,7 @@ describe('runtime/base', () => {
       assert.equal(body.y, 4);
     });
 
-    it('106', () => {
+    it('value006', () => {
       const page = load(`<html ${k.OUT_ID_ATTR}="0">`
         + `<head ${k.OUT_ID_ATTR}="1"></head>
         <body ${k.OUT_ID_ATTR}="2">
@@ -259,7 +259,7 @@ describe('runtime/base', () => {
     // text values
     // =========================================================================
 
-    it('201', () => {
+    it('text001', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"><body>v: <!---t0--><!----></body</html>`,
         new props.Page().add(
@@ -281,7 +281,7 @@ describe('runtime/base', () => {
       );
     });
 
-    it('202', () => {
+    it('text002', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"><body>v: <!---t0--><!----></body</html>`,
         new props.Page().add(
@@ -313,7 +313,7 @@ describe('runtime/base', () => {
     // attribute values
     // =========================================================================
 
-    it('301', () => {
+    it('attr001', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
@@ -333,7 +333,7 @@ describe('runtime/base', () => {
       );
     });
 
-    it('302', () => {
+    it('attr002', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
@@ -356,6 +356,222 @@ describe('runtime/base', () => {
       assert.equal(
         page.global.getMarkup(),
         `<html ${k.OUT_ID_ATTR}="0" lang="en"><head></head><body></body></html>`
+      );
+    });
+
+    // =========================================================================
+    // class values
+    // =========================================================================
+
+    it('class001', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0" class="class1"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" class="class1">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('class002', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$class: { exp: function() { return 'class1 class2'; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" class="class1 class2">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('class003', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            class$class1: { exp: function() { return true; } },
+            class$class2: { exp: function() { return true; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" class="class1 class2">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('class004', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$class: { exp: function() { return ''; } },
+            class$class1: { exp: function() { return true; } },
+            class$class2: { exp: function() { return true; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" class="class1 class2">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('class005', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$class: { exp: function() { return 'page'; } },
+            class$class1: { exp: function() { return true; } },
+            class$class2: { exp: function() { return true; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" class="page class1 class2">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('class006', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$class: { exp: function() { return 'page'; } },
+            class$class1: { exp: function() { return true; } },
+            class$class2: { exp: function() { return true; } }
+          })
+        ).props
+      );
+      page.root.obj.class$class1 = false;
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" class="page class2">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    // =========================================================================
+    // style values
+    // =========================================================================
+
+    it('style001', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0" style="color: blue;"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" style="color: blue;">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('style002', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$style: {
+              exp: function() { return 'color: blue; border-width: 1px'; }
+            }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" style="color: blue; border-width: 1px">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('style003', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            style$color: { exp: function() { return 'blue'; } },
+            style$borderWidth: { exp: function() { return '1px'; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" style="color: blue; border-width: 1px;">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('style004', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$style: { exp: function() { return ''; } },
+            style$color: { exp: function() { return 'blue'; } },
+            style$borderWidth: { exp: function() { return '1px'; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" style="color: blue; border-width: 1px;">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('style005', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$style: { exp: function() { return 'background: red'; } },
+            style$color: { exp: function() { return 'blue'; } },
+            style$borderWidth: { exp: function() { return '1px'; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" `
+        + `style="background: red; color: blue; border-width: 1px;">`
+        + `<head></head><body></body></html>`
+      );
+    });
+
+    it('style006', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$style: { exp: function() { return 'background: red'; } },
+            style$color: { exp: function() { return 'blue'; } },
+            style$borderWidth: { exp: function() { return '1px'; } }
+          })
+        ).props
+      );
+      page.root.obj.style$color = null;
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" `
+        + `style="background: red; border-width: 1px;">`
+        + `<head></head><body></body></html>`
       );
     });
 

@@ -4,6 +4,14 @@ import { Value } from './value';
 import * as dom from '../html/dom';
 import * as k from './consts';
 
+// function dashToCamel(s: string): string {
+//   return s.replace(/-([a-z])/g, (_, up) => up.toUpperCase());
+// }
+
+function camelToDash(s: string): string {
+  return s.replace(/([a-z][A-Z])/g, (g) => g[0] + '-' + g[1].toLowerCase());
+}
+
 export abstract class Global extends Scope {
 
   constructor(page: Page) {
@@ -31,7 +39,15 @@ export abstract class Global extends Scope {
     } else if (name.startsWith(k.RT_CLASS_VALUE_PREFIX)) {
       const key = name.substring(k.RT_CLASS_VALUE_PREFIX.length);
       value.cb = (scope, v) => {
-        scope.e.setAttribute(key, `${v != null ? v : ''}`);
+        v ? scope.e.classList.add(key)
+          : scope.e.classList.remove(key)
+        return v;
+      };
+    } else if (name.startsWith(k.RT_STYLE_VALUE_PREFIX)) {
+      const key = camelToDash(name.substring(k.RT_STYLE_VALUE_PREFIX.length));
+      value.cb = (scope, v) => {
+        v ? scope.e.style.setProperty(key, `${v}`)
+          : scope.e.style.removeProperty(key);
         return v;
       };
     }
