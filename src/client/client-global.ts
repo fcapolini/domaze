@@ -6,7 +6,7 @@ export class ClientGlobal extends Global {
 
   override getElement(id: number, root: dom.Element): dom.Element | null {
     return (root.ownerDocument as unknown as Document).evaluate(
-      `//*[@${k.DOM_ID_ATTR}='${id}']`,
+      `//*[@${k.OUT_ID_ATTR}='${id}']`,
       root as unknown as Element,
       null,
       9 // XPathResult.FIRST_ORDERED_NODE_TYPE

@@ -22,7 +22,7 @@ export class Scope {
   props: ScopeProps;
   e: dom.Element;
   global?: Global;
-  isolated?: boolean;
+  isolate?: boolean;
   values: ScopeValues;
   obj!: ScopeObj;
   name?: string;
@@ -93,7 +93,7 @@ export class Scope {
   }
 
   getText(id: string): dom.Text | undefined {
-    const key = k.HTML_TEXT_MARKER1 + id;
+    const key = k.OUT_TEXT_MARKER1 + id;
     const f = (e: dom.Element): dom.Text | undefined => {
       for (let i = 0; i < e.childNodes.length; i++) {
         const n = e.childNodes[i];
@@ -136,8 +136,8 @@ export class Scope {
     this.values[k.RT_DOM_KEY] = page.newValue(this, k.RT_DOM_KEY, {
       exp: function() { return that.e; }
     });
-    this.values[k.RT_ISOLATED_KEY] = page.newValue(this, k.RT_ISOLATED_KEY, {
-      exp: function() { return !!that.isolated; }
+    this.values[k.RT_ISOLATE_KEY] = page.newValue(this, k.RT_ISOLATE_KEY, {
+      exp: function() { return !!that.isolate; }
     });
     this.values[k.RT_PARENT_KEY] = page.newValue(this, k.RT_PARENT_KEY, {
       exp: function() { return that.parent?.obj; }
@@ -153,7 +153,7 @@ export class Scope {
             if (s.values[key]) {
               return s.values[key];
             }
-            s = !s.isolated && s.parent;
+            s = !s.isolate && s.parent;
           } while (s);
           return undefined;
         };
@@ -167,8 +167,8 @@ export class Scope {
         if (v) {
           return v.get();
         }
-        const isolated = target[k.RT_ISOLATED_KEY].get();
-        const parent = !isolated && target[k.RT_PARENT_KEY].get();
+        const isolate = target[k.RT_ISOLATE_KEY].get();
+        const parent = !isolate && target[k.RT_PARENT_KEY].get();
         if (parent) {
           return (parent as { [key: string]: unknown })[key as string];
         } else if (this.global) {
@@ -192,8 +192,8 @@ export class Scope {
           v.set(val);
           return true;
         }
-        const isolated = target[k.RT_ISOLATED_KEY];
-        const parent = isolated ? null : target[k.RT_PARENT_KEY];
+        const isolate = target[k.RT_ISOLATE_KEY];
+        const parent = isolate ? null : target[k.RT_PARENT_KEY];
         if (parent) {
           try {
             (parent.get() as ScopeObj)[key as string] = val;

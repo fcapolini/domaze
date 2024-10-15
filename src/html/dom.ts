@@ -28,6 +28,8 @@ export interface Comment extends Node {
 export interface Element extends Node {
   tagName: string;
   childNodes: Node[];
+  classList: ClassList;
+  style: Style;
 
   appendChild(n: Node): Node;
   insertBefore(n: Node, ref: Node | null): Node;
@@ -35,6 +37,16 @@ export interface Element extends Node {
   getAttribute(name: string): string | null;
   addEventListener(evname: string, listener: unknown): void;
   removeEventListener(evname: string, listener: unknown): void;
+}
+
+export interface ClassList {
+  add(name: string): void;
+  remove(name: string): void;
+}
+
+export interface Style {
+  setProperty(k: string, v: string): void;
+  removeProperty(k: string): void;
 }
 
 // export interface TemplateElement extends Element {

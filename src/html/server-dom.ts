@@ -142,63 +142,12 @@ export class ServerComment extends ServerNode implements Comment {
   }
 }
 
-export class ServerAttribute extends ServerNode implements Attribute {
-  name: string;
-  value: string | acorn.Expression | null;
-  valueLoc?: SourceLocation;
-  quote?: string;
-
-  constructor(
-    doc: ServerDocument | null,
-    parent: ServerElement | null,
-    name: string,
-    value: string | acorn.Expression | null,
-    loc: SourceLocation
-  ) {
-    super(doc, NodeType.ATTRIBUTE, loc);
-    this.name = name;
-    this.value = value;
-    parent && parent.attributes.push(this);
-  }
-
-  toJSON(): object {
-    return {
-      type: this.nodeType,
-      name: this.name,
-      value: this.value,
-      quote: this.quote,
-      loc: this.ownerDocument?.jsonLoc ? this.loc : null
-    };
-  }
-
-  toMarkup(ret: string[]): void {
-    if (this.value !== null && typeof this.value !== 'string') {
-      return;
-    }
-    const q = this.quote ?? '"';
-    ret.push(' ');
-    ret.push(this.name);
-    if (this.value === null) {
-      return;
-    }
-    ret.push('=');
-    ret.push(q);
-    ret.push(escape(this.value as string, '&<' + q));
-    ret.push(q);
-  }
-
-  override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerAttribute {
-    const ret = new ServerAttribute(doc, parent, this.name, this.value, this.loc);
-    ret.valueLoc = this.valueLoc;
-    ret.quote = this.quote;
-    return ret;
-  }
-}
-
 export class ServerElement extends ServerNode implements Element {
   tagName: string;
   childNodes: Node[];
   attributes: Attribute[];
+  classList: ServerClassList;
+  style: ServerStyle;
 
   constructor(
     doc: ServerDocument | null,
@@ -209,6 +158,8 @@ export class ServerElement extends ServerNode implements Element {
     this.tagName = name.toUpperCase();
     this.childNodes = [];
     this.attributes = [];
+    this.classList = new ServerClassList();
+    this.style = new ServerStyle();
   }
 
   appendChild(n: Node): Node {
@@ -238,8 +189,9 @@ export class ServerElement extends ServerNode implements Element {
 
   getAttribute(name: string): string | null {
     let ret: string | null = null;
+    const loname = name.toLowerCase();
     for (const a of this.attributes) {
-      if (a.name === name) {
+      if (a.name.toLowerCase() === loname) {
         if (typeof a.value === 'string') {
           ret = a.value;
         }
@@ -250,8 +202,9 @@ export class ServerElement extends ServerNode implements Element {
   }
 
   getAttributeNode(name: string): Attribute | null {
+    const loname = name.toLowerCase();
     for (const a of this.attributes) {
-      if (a.name === name) {
+      if (a.name.toLowerCase() === loname) {
         return a;
       }
     }
@@ -264,12 +217,24 @@ export class ServerElement extends ServerNode implements Element {
   }
 
   setAttribute(name: string, value: string | null) {
-    let a = this.getAttributeNode(name);
+    const a = this.getAttributeNode(name);
     if (a) {
       a.value = value;
       return;
     }
-    a = new ServerAttribute(this.ownerDocument, this, name, value, this.loc);
+    this.addAttribute(name, value, this.loc);
+  }
+
+  addAttribute(name: string, value: string | null, loc: SourceLocation) {
+    const doc = this.ownerDocument;
+    const loname = name.toLowerCase();
+    if (loname === 'class') {
+      return new ServerClassAttribute(doc, this, name, value, loc);
+    }
+    if (loname === 'style') {
+      return new ServerStyleAttribute(doc, this, name, value, loc);
+    }
+    return new ServerAttribute(doc, this, name, value, loc);
   }
 
   removeAttribute(name: string) {
@@ -287,27 +252,17 @@ export class ServerElement extends ServerNode implements Element {
     };
   }
 
-  toMarkup(ret: string[]): void {
-    // if (this.tagName.startsWith(DIRECTIVE_TAG_PREFIX)) {
-    //   return;
-    // }
-    // ret.push('<');
-    // ret.push(this.tagName.toLowerCase());
-    // this.attributes.forEach(a => (a as ServerAttribute).toMarkup(ret));
-    // ret.push('>');
-    // if (VOID_ELEMENTS.has(this.tagName)) {
-    //   return;
-    // }
-    // this.childNodes.forEach(n => (n as ServerNode).toMarkup(ret));
-    // ret.push('</');
-    // ret.push(this.tagName.toLowerCase());
-    // ret.push('>');
-    this.toMarkup2(ret);
-  }
-
-  toMarkup2(ret: string[], cb?: (ret: string[]) => void): void {
+  toMarkup(ret: string[], cb?: (ret: string[]) => void): void {
     if (this.tagName.startsWith(DIRECTIVE_TAG_PREFIX)) {
       return;
+    }
+    if (this.classList?.size && !this.getAttributeNode('class')) {
+      // ensure a `class` attribute is generated
+      this.setAttribute('class', '');
+    }
+    if (this.style?.size && !this.getAttributeNode('style')) {
+      // ensure a `style` attribute is generated
+      this.setAttribute('style', '');
     }
     ret.push('<');
     ret.push(this.tagName.toLowerCase());
@@ -326,6 +281,8 @@ export class ServerElement extends ServerNode implements Element {
 
   override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
     const ret = new ServerElement(doc, this.tagName, this.loc);
+    this.classList && (ret.classList = new ServerClassList(this.classList));
+    this.style && (ret.style = new ServerStyle(this.style));
     parent?.appendChild(ret);
     this.attributes.forEach(a => {
       (a as ServerAttribute).clone(doc, ret);
@@ -334,6 +291,21 @@ export class ServerElement extends ServerNode implements Element {
       (n as ServerNode).clone(doc, ret);
     });
     return ret;
+  }
+}
+
+class ServerClassList extends Set<string> {
+  remove(key: string) {
+    this.delete(key);
+  }
+}
+
+class ServerStyle extends Map<string, string> {
+  setProperty(k: string, v: string) {
+    this.set(k, v);
+  }
+  removeProperty(k: string) {
+    this.delete(k);
   }
 }
 
@@ -359,6 +331,94 @@ export class ServerElement extends ServerNode implements Element {
 //     })
 //   }
 // }
+
+export class ServerAttribute extends ServerNode implements Attribute {
+  owner: ServerElement | null;
+  name: string;
+  value: string | acorn.Expression | null;
+  valueLoc?: SourceLocation;
+  quote?: string;
+
+  constructor(
+    doc: ServerDocument | null,
+    owner: ServerElement | null,
+    name: string,
+    value: string | acorn.Expression | null,
+    loc: SourceLocation
+  ) {
+    super(doc, NodeType.ATTRIBUTE, loc);
+    this.owner = owner;
+    this.name = name;
+    this.value = value;
+    owner && owner.attributes.push(this);
+  }
+
+  toJSON(): object {
+    return {
+      type: this.nodeType,
+      name: this.name,
+      value: this.value,
+      quote: this.quote,
+      loc: this.ownerDocument?.jsonLoc ? this.loc : null
+    };
+  }
+
+  toMarkup(ret: string[]): void {
+    if (this.value !== null && typeof this.value !== 'string') {
+      return;
+    }
+    const q = this.quote ?? '"';
+    ret.push(' ');
+    ret.push(this.name);
+    if (this.value === null) {
+      return;
+    }
+    ret.push('=');
+    ret.push(q);
+    ret.push(escape(this.value as string, '&<' + q));
+    ret.push(q);
+  }
+
+  override clone(
+    doc: ServerDocument | null, p: ServerElement | null
+  ): ServerAttribute {
+    const ret = new ServerAttribute(doc, p, this.name, this.value, this.loc);
+    ret.valueLoc = this.valueLoc;
+    ret.quote = this.quote;
+    return ret;
+  }
+}
+
+export class ServerClassAttribute extends ServerAttribute {
+  toMarkup(ret: string[]): void {
+    if (this.owner && typeof this.value !== 'object') {
+      const e = this.owner;
+      const l = this.value ? this.value.trim().split(/\s+/) : [];
+      e.classList?.forEach(v => l.push(v));
+      this.value = l.join(' ');
+    }
+    super.toMarkup(ret);
+  }
+}
+
+export class ServerStyleAttribute extends ServerAttribute {
+  toMarkup(ret: string[]): void {
+    const e = this.owner;
+    if (this.owner && typeof this.value !== 'object' && e?.style?.size) {
+      const l = this.value ? this.value.split(/\s*;\s*/) : [];
+      const m = new Map<string, string>();
+      l.forEach(i => {
+        const p = i.split(/\s*:\s*/);
+        m.set(p[0], p[1]);
+      });
+      e.style.forEach((v, k) => m.set(k, v));
+      const r: string[] = [];
+      m.forEach((v, k) => r.push(`${k}: ${v};`));
+      this.value = r.join(' ');
+    }
+    super.toMarkup(ret);
+  }
+}
 
 export class ServerDocument extends ServerElement implements Document {
   jsonLoc = true;

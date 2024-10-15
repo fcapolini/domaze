@@ -1,14 +1,13 @@
 import { describe } from 'mocha';
+import * as dom from '../../src/html/dom';
+import { JSDOM } from 'jsdom';
+import path from 'path';
+import fs from 'fs';
+import { normalizeText, parse } from '../../src/html/parser';
+import { ServerElement } from '../../src/html/server-dom';
+import { assert } from 'chai';
 
 // const docroot = path.join(__dirname, 'dom');
-
-// async function load(fname: string, client: boolean): Promise<dom.Document> {
-//   const text = await fs.promises.readFile(path.join(docroot, fname));
-//   const ret = client
-//     ? new JSDOM(text.toString()).window.document as unknown as dom.Document
-//     : parse(text.toString(), '').doc;
-//   return ret;
-// }
 
 // function child(e: dom.Element, tagName: string): dom.Element | null {
 //   for (const n of e.childNodes) {
@@ -24,18 +23,216 @@ import { describe } from 'mocha';
 //   return e;
 // }
 
-// function markup(e: dom.Element, client: boolean): string {
-//   if (client) {
-//     return (e as unknown as Element).outerHTML;
-//   }
-//   return (e as ServerElement).toString();
-// }
-
 describe('html/dom', () => {
-  for (let i = 0; i < 2; i++) {
-    const client = i < 1;
+  for (const mode of ['server', 'client']) {
 
-    describe(client ? 'client' : 'server', () => {
+    async function load(text: string): Promise<dom.Document> {
+      // const text = await fs.promises.readFile(path.join(docroot, fname));
+      text = normalizeText(text)!;
+      const ret = mode === 'client'
+        ? new JSDOM(text).window.document as unknown as dom.Document
+        : parse(text, 'test').doc;
+      return ret;
+    }
+
+    function markup(e: dom.Element): string {
+      if (mode === 'client') {
+        return normalizeText((e as unknown as Element).outerHTML)!;
+      }
+      return normalizeText((e as ServerElement).toString())!;
+    }
+
+    describe(mode, () => {
+
+      it('class001', async () => {
+        const doc = await load(`
+          <html class="page"><head></head><body>
+          </body></html>
+        `);
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html class="page"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('class002', async () => {
+        const doc = await load(`
+          <html class="class1 class2"><head></head><body>
+          </body></html>
+        `);
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html class="class1 class2"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('class003', async () => {
+        const doc = await load(`
+          <html><head></head><body>
+          </body></html>
+        `);
+        doc.documentElement?.classList.add('class1');
+        doc.documentElement?.classList.add('class2');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html class="class1 class2"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('class004', async () => {
+        const doc = await load(`
+          <html class=""><head></head><body>
+          </body></html>
+        `);
+        doc.documentElement?.classList.add('class1');
+        doc.documentElement?.classList.add('class2');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html class="class1 class2"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('class005', async () => {
+        const doc = await load(`
+          <html class="page"><head></head><body>
+          </body></html>
+        `);
+        const root = doc.documentElement!
+        root.classList.add('class1');
+        root.classList.add('class2');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html class="page class1 class2"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('class006', async () => {
+        const doc = await load(`
+          <html class="page"><head></head><body>
+          </body></html>
+        `);
+        const root = doc.documentElement!
+        root.classList.add('class1');
+        root.classList.add('class2');
+        root.classList.remove('class1');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html class="page class2"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('style001', async () => {
+        const doc = await load(`
+          <html style="color: blue;"><head></head><body>
+          </body></html>
+        `);
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html style="color: blue;"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('style002', async () => {
+        const doc = await load(`
+          <html style="color: blue; border-width: 1px"><head></head><body>
+          </body></html>
+        `);
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html style="color: blue; border-width: 1px"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('style003', async () => {
+        const doc = await load(`
+          <html><head></head><body>
+          </body></html>
+        `);
+        doc.documentElement?.style.setProperty('color', 'blue');
+        doc.documentElement?.style.setProperty('border-width', '1px');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html style="color: blue; border-width: 1px;"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('style004', async () => {
+        const doc = await load(`
+          <html style=""><head></head><body>
+          </body></html>
+        `);
+        doc.documentElement?.style.setProperty('color', 'blue');
+        doc.documentElement?.style.setProperty('border-width', '1px');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html style="color: blue; border-width: 1px;"><head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('style005', async () => {
+        const doc = await load(`
+          <html style="background: red"><head></head><body>
+          </body></html>
+        `);
+        doc.documentElement?.style.setProperty('color', 'blue');
+        doc.documentElement?.style.setProperty('border-width', '1px');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html style="background: red; color: blue; border-width: 1px;">`
+            + `<head></head><body>
+            </body></html>
+          `)
+        )
+      });
+
+      it('style006', async () => {
+        const doc = await load(`
+          <html style="background: red"><head></head><body>
+          </body></html>
+        `);
+        doc.documentElement?.style.setProperty('color', 'blue');
+        doc.documentElement?.style.setProperty('border-width', '1px');
+        doc.documentElement?.style.removeProperty('color');
+        assert.equal(
+          markup(doc.documentElement!),
+          normalizeText(`
+            <html style="background: red; border-width: 1px;">`
+            + `<head></head><body>
+            </body></html>
+          `)
+        )
+      });
 
       // it('template001', async () => {
       //   const doc = await load('template001.html', client);

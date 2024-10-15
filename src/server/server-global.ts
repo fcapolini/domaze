@@ -9,7 +9,7 @@ export class ServerGlobal extends Global {
     const s = `${id}`;
     let ret;
     function f(e: dom.Element): dom.Element | null {
-      if (e.getAttribute(k.DOM_ID_ATTR) === s) {
+      if (e.getAttribute(k.OUT_ID_ATTR) === s) {
         return e;
       }
       for (const n of e.childNodes) {

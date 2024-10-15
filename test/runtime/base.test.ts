@@ -7,6 +7,7 @@ import { normalizeSpace, parse } from '../../src/html/parser';
 import * as k from '../../src/runtime/consts';
 import { Page, PageProps } from '../../src/runtime/page';
 import { ServerPage } from '../../src/server/server-page';
+import * as props from './props';
 
 describe('runtime/base', () => {
   ['server', 'client'].forEach(mode => describe(mode, () => {
@@ -21,10 +22,16 @@ describe('runtime/base', () => {
       return new ClientPage(doc, props);
     }
 
+    // =========================================================================
+    // app nodes
+    // =========================================================================
+
     it('001', () => {
       const page = load(
-        `<html ${k.DOM_ID_ATTR}="0"></html>`,
-        { root: { id: 0 } }
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 })
+        ).props
       );
       assert.exists(page.root);
       assert.equal(page.root.e, page.doc.documentElement);
@@ -33,26 +40,22 @@ describe('runtime/base', () => {
       assert.equal(
         normalizeSpace(html),
         normalizeSpace(
-          `<html ${k.DOM_ID_ATTR}="0"><head></head><body></body></html>`
+          `<html ${k.OUT_ID_ATTR}="0"><head></head><body></body></html>`
         )
       )
     });
 
     it('002', () => {
-      const page = load(`<html ${k.DOM_ID_ATTR}="0">`
-        + `<head ${k.DOM_ID_ATTR}="1"></head>
-        <body ${k.DOM_ID_ATTR}="2">
+      const page = load(`<html ${k.OUT_ID_ATTR}="0">`
+        + `<head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2">
         </body>`
         + `</html>`,
-        {
-          root: {
-            id: 0,
-            children: [
-              { id: 1 },
-              { id: 2 },
-            ]
-          }
-        }
+        new props.Page().add(
+          new props.Scope({ id: 0 })
+            .add(new props.Scope({ id: 1 }))
+            .add(new props.Scope({ id: 2 }))
+        ).props
       );
       assert.equal(page.root.children.length, 2);
       assert.equal(page.root.e.tagName, 'HTML');
@@ -63,30 +66,25 @@ describe('runtime/base', () => {
       const html = page.global.getMarkup();
       assert.equal(
         normalizeSpace(html),
-        normalizeSpace(`<html ${k.DOM_ID_ATTR}="0">`
-          + `<head ${k.DOM_ID_ATTR}="1"></head>
-          <body ${k.DOM_ID_ATTR}="2">
+        normalizeSpace(`<html ${k.OUT_ID_ATTR}="0">`
+          + `<head ${k.OUT_ID_ATTR}="1"></head>
+          <body ${k.OUT_ID_ATTR}="2">
           </body>`
           + `</html>`)
       )
     });
 
     it('003', () => {
-      const page = load(`<html ${k.DOM_ID_ATTR}="0">`
-        + `<head ${k.DOM_ID_ATTR}="1"></head>
-        <body ${k.DOM_ID_ATTR}="2">
+      const page = load(`<html ${k.OUT_ID_ATTR}="0">`
+        + `<head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2">
         </body>`
         + `</html>`,
-        {
-          root: {
-            id: 0,
-            name: 'page',
-            children: [
-              { id: 1, name: 'head' },
-              { id: 2, name: 'body' },
-            ]
-          }
-        }
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' })
+            .add(new props.Scope({ id: 1, name: 'head' }))
+            .add(new props.Scope({ id: 2, name: 'body' }))
+        ).props
       );
       assert.equal(page.root.children.length, 2);
       assert.equal(page.root.name, 'page');
@@ -95,47 +93,44 @@ describe('runtime/base', () => {
       const html = page.global.getMarkup();
       assert.equal(
         normalizeSpace(html),
-        normalizeSpace(`<html ${k.DOM_ID_ATTR}="0">`
-          + `<head ${k.DOM_ID_ATTR}="1"></head>
-          <body ${k.DOM_ID_ATTR}="2">
+        normalizeSpace(`<html ${k.OUT_ID_ATTR}="0">`
+          + `<head ${k.OUT_ID_ATTR}="1"></head>
+          <body ${k.OUT_ID_ATTR}="2">
           </body>`
           + `</html>`)
       )
     });
 
-    it('101', () => {
+    it('004', () => {
       const page = load(
-        `<html ${k.DOM_ID_ATTR}="0"></html>`,
-        { root: { id: 0, name: 'page' } }
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' })
+        ).props
       );
       assert.exists(page.root.obj);
       const root = page.root.obj;
       assert.equal(root[k.RT_ID_KEY], 0);
     });
 
-    it('102', () => {
-      const page = load(`<html ${k.DOM_ID_ATTR}="0">`
-        + `<head ${k.DOM_ID_ATTR}="1"></head>
-        <body ${k.DOM_ID_ATTR}="2">
+    it('005', () => {
+      const page = load(`<html ${k.OUT_ID_ATTR}="0">`
+        + `<head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2">
         </body>`
         + `</html>`,
-        {
-          root: {
-            id: 0,
-            name: 'page',
-            children: [
-              { id: 1, name: 'head' },
-              { id: 2, name: 'body' },
-            ]
-          }
-        }
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' })
+            .add(new props.Scope({ id: 1, name: 'head' }))
+            .add(new props.Scope({ id: 2, name: 'body' }))
+        ).props
       );
       assert.exists(page.root.obj);
       const root = page.root.obj;
       assert.equal(root[k.RT_ID_KEY], 0);
       assert.equal(root[k.RT_NAME_KEY], 'page');
       assert.equal((root[k.RT_DOM_KEY] as dom.Element).tagName, 'HTML');
-      assert.isFalse(root[k.RT_ISOLATED_KEY]);
+      assert.isFalse(root[k.RT_ISOLATE_KEY]);
       assert.equal((root[k.RT_CHILDREN_KEY] as []).length, 2);
       assert.exists((root[k.RT_VALUE_KEY] as Function)(k.RT_ID_KEY));
       const head = root.head;
@@ -143,7 +138,7 @@ describe('runtime/base', () => {
       assert.equal(head[k.RT_ID_KEY], 1);
       assert.equal(head[k.RT_NAME_KEY], 'head');
       assert.equal((head[k.RT_DOM_KEY] as dom.Element).tagName, 'HEAD');
-      assert.isFalse(head[k.RT_ISOLATED_KEY]);
+      assert.isFalse(head[k.RT_ISOLATE_KEY]);
       assert.equal(head[k.RT_PARENT_KEY], root);
       assert.equal((head[k.RT_CHILDREN_KEY] as []).length, 0);
       assert.exists((head[k.RT_VALUE_KEY] as Function)(k.RT_ID_KEY));
@@ -152,57 +147,47 @@ describe('runtime/base', () => {
       assert.equal(body[k.RT_ID_KEY], 2);
       assert.equal(body[k.RT_NAME_KEY], 'body');
       assert.equal((body[k.RT_DOM_KEY] as dom.Element).tagName, 'BODY');
-      assert.isFalse(body[k.RT_ISOLATED_KEY]);
+      assert.isFalse(body[k.RT_ISOLATE_KEY]);
       assert.equal(body[k.RT_PARENT_KEY], root);
       assert.equal((body[k.RT_CHILDREN_KEY] as []).length, 0);
       assert.exists((body[k.RT_VALUE_KEY] as Function)(k.RT_ID_KEY));
     });
 
+    // =========================================================================
+    // logic values
+    // =========================================================================
+
     it('103', () => {
       const page = load(
-        `<html ${k.DOM_ID_ATTR}="0"></html>`,
-        {
-          root: {
-            id: 0,
-            values: {
-              x: {
-                exp: function() { return 1; }
-              }
-            }
-          }
-        }
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' }, {
+            x: { exp: function() { return 1; } }
+          })
+        ).props
       );
       const root = page.root.obj;
       assert.equal(root.x, 1);
     });
 
     it('104', () => {
-      const page = load(`<html ${k.DOM_ID_ATTR}="0">`
-        + `<head ${k.DOM_ID_ATTR}="1"></head>
-        <body ${k.DOM_ID_ATTR}="2">
+      const page = load(`<html ${k.OUT_ID_ATTR}="0">`
+        + `<head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2">
         </body>`
         + `</html>`,
-        {
-          root: {
-            id: 0,
-            values: {
-              x: { exp: function() { return 1; } }
-            },
-            children: [
-              { id: 1, },
-              {
-                id: 2,
-                name: 'body',
-                values: {
-                  y: {
-                    // @ts-expect-error use of `this` in expression
-                    exp: function() { return this.x + 1; }
-                  }
-                }
-              },
-            ]
-          }
-        }
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' }, {
+            x: { exp: function() { return 1; } }
+          }).add(
+            new props.Scope({ id: 1 })
+          ).add(
+            new props.Scope({ id: 2, name: 'body' }, {
+              // @ts-expect-error use of `this` in expression
+              y: { exp: function() { return this.x + 1; } }
+            })
+          )
+        ).props
       );
       const root = page.root.obj;
       const body = root.body as { y: number };
@@ -210,34 +195,27 @@ describe('runtime/base', () => {
     });
 
     it('105', () => {
-      const page = load(`<html ${k.DOM_ID_ATTR}="0">`
-        + `<head ${k.DOM_ID_ATTR}="1"></head>
-        <body ${k.DOM_ID_ATTR}="2">
+      const page = load(`<html ${k.OUT_ID_ATTR}="0">`
+        + `<head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2">
         </body>`
         + `</html>`,
-        {
-          root: {
-            id: 0,
-            values: {
-              x: { exp: function() { return 1; } }
-            },
-            children: [
-              { id: 1, },
-              {
-                id: 2,
-                name: 'body',
-                values: {
-                  y: {
-                    // @ts-expect-error use of `this` in expression
-                    exp: function() { return this.x + 1; },
-                    // @ts-expect-error use of `this` in expression
-                    deps: [function() { return this[k.RT_VALUE_KEY]('x'); }]
-                  }
-                }
-              },
-            ]
-          }
-        }
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' }, {
+            x: { exp: function() { return 1; } }
+          }).add(
+            new props.Scope({ id: 1 })
+          ).add(
+            new props.Scope({ id: 2, name: 'body' }, {
+              y: {
+                // @ts-expect-error use of `this` in expression
+                exp: function() { return this.x + 1; },
+                // @ts-expect-error use of `this` in expression
+                deps: [function() { return this[k.RT_VALUE_KEY]('x'); }]
+              }
+            })
+          )
+        ).props
       );
       const root = page.root.obj;
       const body = root.body as { y: number };
@@ -247,34 +225,27 @@ describe('runtime/base', () => {
     });
 
     it('106', () => {
-      const page = load(`<html ${k.DOM_ID_ATTR}="0">`
-        + `<head ${k.DOM_ID_ATTR}="1"></head>
-        <body ${k.DOM_ID_ATTR}="2">
+      const page = load(`<html ${k.OUT_ID_ATTR}="0">`
+        + `<head ${k.OUT_ID_ATTR}="1"></head>
+        <body ${k.OUT_ID_ATTR}="2">
         </body>`
         + `</html>`,
-        {
-          root: {
-            id: 0,
-            values: {
-              y: {
-                // @ts-expect-error use of `this` in expression
-                exp: function() { return this.body.x + 1; },
-                // @ts-expect-error use of `this` in expression
-                deps: [function() { return this.body[k.RT_VALUE_KEY]('x'); }]
-              }
-            },
-            children: [
-              { id: 1, },
-              {
-                id: 2,
-                name: 'body',
-                values: {
-                  x: { exp: function() { return 1; } }
-                }
-              },
-            ]
-          }
-        }
+        new props.Page().add(
+          new props.Scope({ id: 0, name: 'page' }, {
+            y: {
+              // @ts-expect-error use of `this` in expression
+              exp: function() { return this.body.x + 1; },
+              // @ts-expect-error use of `this` in expression
+              deps: [function() { return this.body[k.RT_VALUE_KEY]('x'); }]
+            }
+          }).add(
+            new props.Scope({ id: 1 })
+          ).add(
+            new props.Scope({ id: 2, name: 'body' }, {
+              x: { exp: function() { return 1; } }
+            })
+          )
+        ).props
       );
       const root = page.root.obj;
       assert.equal(root.y, 2);
@@ -282,6 +253,110 @@ describe('runtime/base', () => {
       assert.equal(body.x, 1);
       body.x = 3;
       assert.equal(root.y, 4);
+    });
+
+    // =========================================================================
+    // text values
+    // =========================================================================
+
+    it('201', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"><body>v: <!---t0--><!----></body</html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            text$0: { exp: function() { return 'OK'; } }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0"><head></head>`
+        + `<body>v: <!---t0-->OK<!----></body></html>`
+      );
+      page.root.obj.text$0 = 'hi';
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0"><head></head>`
+        + `<body>v: <!---t0-->hi<!----></body></html>`
+      );
+    });
+
+    it('202', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"><body>v: <!---t0--><!----></body</html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            v: { exp: function() { return 'OK'; } },
+            text$0: {
+              // @ts-expect-error use of `this` in expression
+              exp: function() { return this.v; },
+              // @ts-expect-error use of `this` in expression
+              deps: [function() { return this[k.RT_VALUE_KEY]('v'); }]
+            }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0"><head></head>`
+        + `<body>v: <!---t0-->OK<!----></body></html>`
+      );
+      page.root.obj.v = 'hi';
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0"><head></head>`
+        + `<body>v: <!---t0-->hi<!----></body></html>`
+      );
+    });
+
+    // =========================================================================
+    // attribute values
+    // =========================================================================
+
+    it('301', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            attr$lang: { exp: function() { return 'it'; }}
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" lang="it"><head></head><body></body></html>`
+      );
+      page.root.obj.attr$lang = 'en';
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" lang="en"><head></head><body></body></html>`
+      );
+    });
+
+    it('302', () => {
+      const page = load(
+        `<html ${k.OUT_ID_ATTR}="0"></html>`,
+        new props.Page().add(
+          new props.Scope({ id: 0 }, {
+            v: { exp: function() { return 'it'; } },
+            attr$lang: {
+              // @ts-expect-error use of `this` in expression
+              exp: function() { return this.v; },
+              // @ts-expect-error use of `this` in expression
+              deps: [function() { return this[k.RT_VALUE_KEY]('v'); }]
+            }
+          })
+        ).props
+      );
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" lang="it"><head></head><body></body></html>`
+      );
+      page.root.obj.v = 'en';
+      assert.equal(
+        page.global.getMarkup(),
+        `<html ${k.OUT_ID_ATTR}="0" lang="en"><head></head><body></body></html>`
+      );
     });
 
   }));

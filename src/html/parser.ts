@@ -166,10 +166,7 @@ function parseAttributes(e: dom.ServerElement, src: Source, i2: number, errors: 
       ));
       throw Error();
     }
-    const a = new dom.ServerAttribute(
-      e.ownerDocument, e, name, null,
-      src.loc(i1, i2)
-    );
+    const a = e.addAttribute(name, null, src.loc(i1, i2));
     i1 = skipBlanksAndComments(s, i2);
     if (s.charCodeAt(i1) === EQ) {
       i1 = skipBlanksAndComments(s, i1 + 1);
@@ -409,8 +406,9 @@ function parseExpression(p: dom.ServerElement, src: Source, i1: number, errors: 
 // =============================================================================
 
 function hasAttribute(e: dom.ServerElement, name: string): boolean {
+  const loname = name.toLowerCase();
   for (const a of e.attributes) {
-    if (a.name === name) {
+    if (a.name.toLowerCase() === loname) {
       return true;
     }
   }
@@ -515,11 +513,11 @@ function skipComment(p: dom.ServerElement, src: Source, i1: number, errors: Page
 }
 
 export function normalizeText(s?: string): string | undefined {
-  return s?.split(/\n\s+/).join('\n').split(/\s{2,}/).join(' ');
+  return s?.trim().split(/\n\s+/).join('\n').split(/\s{2,}/).join(' ');
 }
 
 export function normalizeSpace(s?: string): string | undefined {
-  return s?.split(/\s+/).join(' ');
+  return s?.trim().split(/\s+/).join(' ');
 }
 
 export class Source {
