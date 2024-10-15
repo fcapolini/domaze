@@ -1,4 +1,3 @@
-import { ELEMENT_NODE } from "trillo/preprocessor/dom";
 import * as dom from "../html/dom";
 import * as k from "../runtime/consts";
 import { Global } from "../runtime/global";
@@ -13,7 +12,7 @@ export class ServerGlobal extends Global {
         return e;
       }
       for (const n of e.childNodes) {
-        if (n.nodeType !== ELEMENT_NODE) {
+        if (n.nodeType !== dom.NodeType.ELEMENT) {
           continue;
         }
         if ((ret = f(n as dom.Element)) !== null) {
