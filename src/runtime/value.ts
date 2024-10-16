@@ -1,6 +1,6 @@
 import { Page } from "./page";
-import { Scope } from "./scope";
-import { BaseScope } from "./scopes/base-scope";
+import { Node } from "./node";
+import { BaseNode } from "./nodes/base-node";
 
 export interface ValueProps {
   exp: ValueExp;
@@ -9,11 +9,11 @@ export interface ValueProps {
 
 export type ValueExp = (this: unknown) => unknown;
 export type ValueDep = (this: unknown) => Value;
-export type ValueCallback = (s: Scope, v: unknown) => unknown;
+export type ValueCallback = (s: Node, v: unknown) => unknown;
 
 export class Value {
   page: Page;
-  scope: Scope;
+  node: Node;
   props: ValueProps;
   src: Set<Value>;
   dst: Set<Value>;
@@ -22,9 +22,9 @@ export class Value {
   cycle = -1;
   val: unknown;
 
-  constructor(page: Page, scope: Scope, props: ValueProps) {
+  constructor(page: Page, node: Node, props: ValueProps) {
     this.page = page;
-    this.scope = scope;
+    this.node = node;
     this.props = props;
     this.src = new Set();
     this.dst = new Set();
@@ -40,7 +40,7 @@ export class Value {
     const old = this.val;
     this.exp = undefined;
     if (old == null ? val != null : val !== old) {
-      this.val = this.cb ? this.cb(this.scope, val) : val;
+      this.val = this.cb ? this.cb(this.node, val) : val;
       this.propagate();
     }
   }
@@ -50,13 +50,13 @@ export class Value {
       this.cycle = this.page.cycle;
       const old = this.val;
       try {
-        this.val = this.exp.apply(this.scope.obj);
+        this.val = this.exp.apply(this.node.obj);
       } catch (err) {
         //TODO runtime logging
         console.error(err);
       }
       if (old == null ? this.val != null : this.val !== old) {
-        this.val = this.cb ? this.cb(this.scope, this.val) : this.val;
+        this.val = this.cb ? this.cb(this.node, this.val) : this.val;
         this.dst.size && this.page.refreshLevel < 1 && this.propagate();
       }
     }

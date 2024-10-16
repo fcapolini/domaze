@@ -1,5 +1,5 @@
 import { PageProps } from "../../src/runtime/page";
-import { ScopeProps } from "../../src/runtime/scope";
+import { NodeProps } from "../../src/runtime/node";
 import { ValueProps } from "../../src/runtime/value";
 
 export class Page {
@@ -9,23 +9,23 @@ export class Page {
     this.props = { root: { id: 0 }};
   }
 
-  add(scope: Scope): this {
-    this.props.root = scope.props;
+  add(node: Node): this {
+    this.props.root = node.props;
     return this;
   }
 }
 
-export class Scope {
-  props: ScopeProps;
+export class Node {
+  props: NodeProps;
 
-  constructor(props: ScopeProps, values?: { [key: string]: ValueProps }) {
+  constructor(props: NodeProps, values?: { [key: string]: ValueProps }) {
     this.props = props;
     this.props.values = values;
   }
 
-  add(scope: Scope): this {
+  add(node: Node): this {
     this.props.children || (this.props.children = []);
-    this.props.children.push(scope.props);
+    this.props.children.push(node.props);
     return this;
   }
 }

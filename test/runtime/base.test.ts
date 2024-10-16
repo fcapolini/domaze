@@ -30,7 +30,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 })
+          new props.Node({ id: 0 })
         ).props
       );
       assert.exists(page.root);
@@ -52,9 +52,9 @@ describe('runtime/base', () => {
         </body>`
         + `</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 })
-            .add(new props.Scope({ id: 1 }))
-            .add(new props.Scope({ id: 2 }))
+          new props.Node({ id: 0 })
+            .add(new props.Node({ id: 1 }))
+            .add(new props.Node({ id: 2 }))
         ).props
       );
       assert.equal(page.root.children.length, 2);
@@ -81,9 +81,9 @@ describe('runtime/base', () => {
         </body>`
         + `</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' })
-            .add(new props.Scope({ id: 1, name: 'head' }))
-            .add(new props.Scope({ id: 2, name: 'body' }))
+          new props.Node({ id: 0, name: 'page' })
+            .add(new props.Node({ id: 1, name: 'head' }))
+            .add(new props.Node({ id: 2, name: 'body' }))
         ).props
       );
       assert.equal(page.root.children.length, 2);
@@ -105,7 +105,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' })
+          new props.Node({ id: 0, name: 'page' })
         ).props
       );
       assert.exists(page.root.obj);
@@ -120,9 +120,9 @@ describe('runtime/base', () => {
         </body>`
         + `</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' })
-            .add(new props.Scope({ id: 1, name: 'head' }))
-            .add(new props.Scope({ id: 2, name: 'body' }))
+          new props.Node({ id: 0, name: 'page' })
+            .add(new props.Node({ id: 1, name: 'head' }))
+            .add(new props.Node({ id: 2, name: 'body' }))
         ).props
       );
       assert.exists(page.root.obj);
@@ -161,7 +161,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' }, {
+          new props.Node({ id: 0, name: 'page' }, {
             x: { exp: function() { return 1; } }
           })
         ).props
@@ -177,12 +177,12 @@ describe('runtime/base', () => {
         </body>`
         + `</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' }, {
+          new props.Node({ id: 0, name: 'page' }, {
             x: { exp: function() { return 1; } }
           }).add(
-            new props.Scope({ id: 1 })
+            new props.Node({ id: 1 })
           ).add(
-            new props.Scope({ id: 2, name: 'body' }, {
+            new props.Node({ id: 2, name: 'body' }, {
               // @ts-expect-error use of `this` in expression
               y: { exp: function() { return this.x + 1; } }
             })
@@ -201,12 +201,12 @@ describe('runtime/base', () => {
         </body>`
         + `</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' }, {
+          new props.Node({ id: 0, name: 'page' }, {
             x: { exp: function() { return 1; } }
           }).add(
-            new props.Scope({ id: 1 })
+            new props.Node({ id: 1 })
           ).add(
-            new props.Scope({ id: 2, name: 'body' }, {
+            new props.Node({ id: 2, name: 'body' }, {
               y: {
                 // @ts-expect-error use of `this` in expression
                 exp: function() { return this.x + 1; },
@@ -231,7 +231,7 @@ describe('runtime/base', () => {
         </body>`
         + `</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0, name: 'page' }, {
+          new props.Node({ id: 0, name: 'page' }, {
             y: {
               // @ts-expect-error use of `this` in expression
               exp: function() { return this.body.x + 1; },
@@ -239,9 +239,9 @@ describe('runtime/base', () => {
               deps: [function() { return this.body[k.RT_VALUE_KEY]('x'); }]
             }
           }).add(
-            new props.Scope({ id: 1 })
+            new props.Node({ id: 1 })
           ).add(
-            new props.Scope({ id: 2, name: 'body' }, {
+            new props.Node({ id: 2, name: 'body' }, {
               x: { exp: function() { return 1; } }
             })
           )
@@ -263,7 +263,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"><body>v: <!---t0--><!----></body</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             text$0: { exp: function() { return 'OK'; } }
           })
         ).props
@@ -285,7 +285,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"><body>v: <!---t0--><!----></body</html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             v: { exp: function() { return 'OK'; } },
             text$0: {
               // @ts-expect-error use of `this` in expression
@@ -317,7 +317,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$lang: { exp: function() { return 'it'; }}
           })
         ).props
@@ -337,7 +337,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             v: { exp: function() { return 'it'; } },
             attr$lang: {
               // @ts-expect-error use of `this` in expression
@@ -367,7 +367,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0" class="class1"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 })
+          new props.Node({ id: 0 })
         ).props
       );
       assert.equal(
@@ -381,7 +381,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$class: { exp: function() { return 'class1 class2'; } }
           })
         ).props
@@ -397,7 +397,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             class$class1: { exp: function() { return true; } },
             class$class2: { exp: function() { return true; } }
           })
@@ -414,7 +414,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$class: { exp: function() { return ''; } },
             class$class1: { exp: function() { return true; } },
             class$class2: { exp: function() { return true; } }
@@ -432,7 +432,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$class: { exp: function() { return 'page'; } },
             class$class1: { exp: function() { return true; } },
             class$class2: { exp: function() { return true; } }
@@ -450,7 +450,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$class: { exp: function() { return 'page'; } },
             class$class1: { exp: function() { return true; } },
             class$class2: { exp: function() { return true; } }
@@ -473,7 +473,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0" style="color: blue;"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 })
+          new props.Node({ id: 0 })
         ).props
       );
       assert.equal(
@@ -487,7 +487,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$style: {
               exp: function() { return 'color: blue; border-width: 1px'; }
             }
@@ -505,7 +505,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             style$color: { exp: function() { return 'blue'; } },
             style$borderWidth: { exp: function() { return '1px'; } }
           })
@@ -522,7 +522,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$style: { exp: function() { return ''; } },
             style$color: { exp: function() { return 'blue'; } },
             style$borderWidth: { exp: function() { return '1px'; } }
@@ -540,7 +540,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$style: { exp: function() { return 'background: red'; } },
             style$color: { exp: function() { return 'blue'; } },
             style$borderWidth: { exp: function() { return '1px'; } }
@@ -559,7 +559,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             attr$style: { exp: function() { return 'background: red'; } },
             style$color: { exp: function() { return 'blue'; } },
             style$borderWidth: { exp: function() { return '1px'; } }
@@ -583,7 +583,7 @@ describe('runtime/base', () => {
       const page = load(
         `<html ${k.OUT_ID_ATTR}="0"></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             count: { exp: function() { return 0; } },
             // @ts-expect-error use of `this` in expression
             ev$click: { exp: function() { return () => this.count++; } }
@@ -605,14 +605,14 @@ describe('runtime/base', () => {
         <body ${k.OUT_ID_ATTR}="2"><!---t0--><!---->
         </body></html>`,
         new props.Page().add(
-          new props.Scope({ id: 0 }, {
+          new props.Node({ id: 0 }, {
             count: { exp: function() { return 0; } },
             // @ts-expect-error use of `this` in expression
             ev$click: { exp: function() { return () => this.count++; } }
           }).add(
-            new props.Scope({ id: 1 })
+            new props.Node({ id: 1 })
           ).add(
-            new props.Scope({ id: 2, name: 'body' }, {
+            new props.Node({ id: 2, name: 'body' }, {
               text$0: {
                 // @ts-expect-error use of `this` in expression
                 exp: function() { return this.count; },

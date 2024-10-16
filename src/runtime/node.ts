@@ -4,35 +4,35 @@ import { Global } from "./global";
 import { Page } from "./page";
 import { Value, ValueProps } from "./value";
 
-export type ScopeType = 'foreach';
+export type NodeType = 'foreach';
 
-export interface ScopeProps {
+export interface NodeProps {
   id: number;
   name?: string;
-  type?: ScopeType;
+  type?: NodeType;
   values?: { [key: string]: ValueProps };
-  children?: ScopeProps[];
+  children?: NodeProps[];
 }
 
-export type ScopeValues = { [key: string]: Value };
-export type ScopeObj = { [key: string]: unknown };
+export type NodeValues = { [key: string]: Value };
+export type NodeObj = { [key: string]: unknown };
 
-export interface Scope {
+export interface Node {
   page: Page;
   id: number;
   dom: dom.Element;
   global?: Global;
   isolate?: boolean;
-  values: ScopeValues;
-  obj: ScopeObj;
+  values: NodeValues;
+  obj: NodeObj;
   name?: string;
-  parent?: Scope;
-  children: Scope[];
+  parent?: Node;
+  children: Node[];
 
   setName(name?: string): this;
   setValues(values?: { [key: string]: ValueProps }): this;
   makeObj(): this;
-  linkTo(p: Scope, ref?: Scope): this;
+  linkTo(p: Node, ref?: Node): this;
   unlinkValues(): void;
   linkValues(): void;
   updateValues(): void;

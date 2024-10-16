@@ -1,6 +1,6 @@
 import * as acorn from 'acorn';
 import { PageProps } from '../runtime/page';
-import { ScopeProps, ScopeType } from '../runtime/scope';
+import { NodeProps, NodeType } from '../runtime/node';
 import { ValueProps } from '../runtime/value';
 
 // =============================================================================
@@ -14,20 +14,20 @@ const _dummyPageProps: PageProps = {
 };
 
 export class Page {
-  global: Scope;
+  global: Node;
 
   constructor() {
-    this.global = new Scope(this, null, -1);
+    this.global = new Node(this, null, -1);
   }
 }
 
 // =============================================================================
-// Scope
+// Node
 // =============================================================================
-// this should always use all available fields in ScopeProps
+// this should always use all available fields in NodeProps
 // as a way to keep in sync with the definition
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _dummyScopeProps: ScopeProps = {
+const _dummyNodeProps: NodeProps = {
   id: 0,
   name: 'dummy',
   type: undefined,
@@ -35,17 +35,17 @@ const _dummyScopeProps: ScopeProps = {
   children: []
 };
 
-export class Scope {
+export class Node {
   page: Page;
-  parent: Scope | null;
+  parent: Node | null;
   // props
   id: number;
   name?: string;
-  type?: ScopeType;
+  type?: NodeType;
   values?: { [key: string]: Value };
-  children?: Scope[];
+  children?: Node[];
 
-  constructor(page: Page, parent: Scope | null, id: number) {
+  constructor(page: Page, parent: Node | null, id: number) {
     this.page = page;
     this.parent = parent;
     this.id = id;
@@ -68,17 +68,17 @@ const _dummyValueProps: ValueProps = {
 }
 
 export class Value {
-  scope: Scope;
+  node: Node;
   name: string;
   // props
   exp?: acorn.Expression;
   deps?: acorn.Expression[];
 
-  constructor(scope: Scope, name: string) {
-    this.scope = scope;
+  constructor(node: Node, name: string) {
+    this.node = node;
     this.name = name;
-    scope.values || (scope.values = {});
-    scope.values[name] = this;
+    node.values || (node.values = {});
+    node.values[name] = this;
   }
 
   setExp(exp: acorn.Expression): this {

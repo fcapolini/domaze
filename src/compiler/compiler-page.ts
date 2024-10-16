@@ -5,18 +5,18 @@ import { ServerAttribute, ServerComment, ServerElement, ServerNode, ServerText, 
 import * as rk from '../runtime/consts';
 import { Global } from "../runtime/global";
 import { Page, PageProps } from "../runtime/page";
-import { Scope, ScopeProps } from '../runtime/scope';
+import { Node, NodeProps } from '../runtime/node';
 import { astLocation, astObjectExpression, astProperty } from './ast/acorn-utils';
 import { CompilerGlobal } from "./compiler-global";
-import { CompilerScope } from "./compiler-scope";
+import { CompilerNode } from "./compiler-node";
 import * as ck from './consts';
-import { PageWrapper, ScopeWrapper } from './props-wrappers';
+import { PageWrapper, NodeWrapper } from './props-wrappers';
 import { dashToCamel, encodeEventName } from './util';
 
 export class CompilerPage extends Page {
   errors: PageError[] = [];
-  scopes: Scope[] = [];
-  scopeCount!: number;
+  nodes: Node[] = [];
+  nodeCount!: number;
   objects!: Array<acorn.ObjectExpression>;
   ast!: acorn.ObjectExpression;
 
@@ -28,27 +28,27 @@ export class CompilerPage extends Page {
     return new CompilerGlobal(this);
   }
 
-  override load(props: ScopeProps, p: Scope, e: dom.Element): Scope {
+  override load(props: NodeProps, p: Node, e: dom.Element): Node {
     const page = new PageWrapper();
     const counter = [0];
     props.id === 0 && this.loadProps(e as ServerElement, page.global, counter);
-    this.scopeCount = counter[0];
+    this.nodeCount = counter[0];
     //TODO: use page
     return super.load(props, p, e);
   }
 
-  override newScope(props: ScopeProps, e: dom.Element): Scope {
-    return new CompilerScope(this, props.id, e);
+  override newNode(props: NodeProps, e: dom.Element): Node {
+    return new CompilerNode(this, props.id, e);
   }
 
   // ===========================================================================
   // logic extraction
   // ===========================================================================
 
-  loadProps(e: ServerElement, p: ScopeWrapper, counter: number[]) {
-    if (this.needsScope(e)) {
+  loadProps(e: ServerElement, p: NodeWrapper, counter: number[]) {
+    if (this.needsNode(e)) {
       const id = counter[0]++;
-      p = this.loadScopeProps(id, e, p);
+      p = this.loadNodeProps(id, e, p);
     }
     e.childNodes.forEach(n => {
       if (n.nodeType === dom.NodeType.ELEMENT) {
@@ -57,7 +57,7 @@ export class CompilerPage extends Page {
     });
   }
 
-  loadScopeProps(id: number, e: ServerElement, p: ScopeWrapper): ScopeWrapper {
+  loadNodeProps(id: number, e: ServerElement, p: NodeWrapper): NodeWrapper {
     e.setAttribute(rk.OUT_ID_ATTR, `${id}`);
 
     const name = this.getName(e);
@@ -67,8 +67,8 @@ export class CompilerPage extends Page {
       ));
     }
 
-    p = new ScopeWrapper(id, p);
-    p.name = name ?? ck.DEF_SCOPE_NAMES[e.tagName];
+    p = new NodeWrapper(id, p);
+    p.name = name ?? ck.DEF_NODE_NAMES[e.tagName];
 
     return p;
   }
@@ -77,13 +77,13 @@ export class CompilerPage extends Page {
   // utils
   // ===========================================================================
 
-  needsScope(e: ServerElement) {
+  needsNode(e: ServerElement) {
     // `:`-prefixed directive tags
     if (e.tagName.startsWith(dom.DIRECTIVE_TAG_PREFIX)) {
       return true;
     }
     // special tagnames
-    if (ck.DEF_SCOPE_NAMES[e.tagName]) {
+    if (ck.DEF_NODE_NAMES[e.tagName]) {
       return true;
     }
     // `:`-prefixed attributes & attribute expressions
@@ -109,10 +109,10 @@ export class CompilerPage extends Page {
         this.errors.push(err);
       }
     }
-    return ck.DEF_SCOPE_NAMES[e.tagName];
+    return ck.DEF_NODE_NAMES[e.tagName];
   }
 
-  collectAttributes(scope: Scope, e: ServerElement, ret: acorn.ObjectExpression) {
+  collectAttributes(node: Node, e: ServerElement, ret: acorn.ObjectExpression) {
     for (let i = 0; i < e.attributes.length;) {
       const a = e.attributes[i] as ServerAttribute;
       if (!ck.SRC_ATTR_NAME_REGEX.test(a.name)) {
@@ -129,7 +129,7 @@ export class CompilerPage extends Page {
         continue;
       }
       if (a.name.startsWith(ck.SRC_SYS_ATTR_PREFIX)) {
-        this.collectSysAttribute(scope, a, ret);
+        this.collectSysAttribute(node, a, ret);
       } else if (a.name.startsWith(ck.SRC_EVENT_ATTR_PREFIX)) {
         this.collectEventAttribute(a, ret);
       } else if (a.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
@@ -141,12 +141,12 @@ export class CompilerPage extends Page {
     }
   }
 
-  collectSysAttribute(scope: Scope, a: ServerAttribute, ret: acorn.ObjectExpression) {
+  collectSysAttribute(node: Node, a: ServerAttribute, ret: acorn.ObjectExpression) {
     const name = rk.RT_SYS_VALUE_PREFIX
       + a.name.substring(ck.SRC_SYS_ATTR_PREFIX.length);
     switch (name) {
     case '$name':
-      this.checkLiteralAttribute(a) && (scope.name = a.value as string);
+      this.checkLiteralAttribute(a) && (node.name = a.value as string);
       break;
     }
     const value = this.makeValue('', name, a.value, a.loc, a.valueLoc!);
@@ -212,7 +212,7 @@ export class CompilerPage extends Page {
         const n = e.childNodes[i] as ServerNode;
         if (
           n.nodeType === dom.NodeType.ELEMENT &&
-          !this.needsScope(n as ServerElement)
+          !this.needsNode(n as ServerElement)
         ) {
           f(n as ServerElement);
         } else if (

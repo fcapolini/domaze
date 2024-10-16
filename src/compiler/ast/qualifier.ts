@@ -6,7 +6,7 @@ import { CompilerPage } from '../compiler-page';
 import { getProperty } from './acorn-utils';
 
 export function qualifyPageIdentifiers(page: CompilerPage) {
-  for (let i = 0; i < page.scopeCount; i++) {
+  for (let i = 0; i < page.nodeCount; i++) {
     const object = page.objects[i];
     const values = getProperty(object, 'values') as acorn.ObjectExpression;
     if (values) {

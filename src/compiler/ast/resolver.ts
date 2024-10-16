@@ -12,7 +12,7 @@ import { ArrowFunctionExpression } from 'acorn';
 
 interface Target {
   obj?: ObjectExpression;
-  type: 'scope' | 'value' | 'global';
+  type: 'node' | 'value' | 'global';
 }
 
 /**
@@ -40,10 +40,10 @@ export function resolveValueDependencies(page: CompilerPage): void {
     return p.length > 1 && p[0].name === 'this' ? p : null;
   }
 
-  function getParentScope(obj: ObjectExpression): ObjectExpression | null {
-    const scopeId = (getProperty(obj, 'dom') as Literal).value as number;
-    const scope = page.scopes[scopeId];
-    const parent = scope.parent;
+  function getParentNode(obj: ObjectExpression): ObjectExpression | null {
+    const nodeId = (getProperty(obj, 'dom') as Literal).value as number;
+    const node = page.nodes[nodeId];
+    const parent = node.parent;
     const parentId = parent?.id;
     const ret = parentId != null && parentId >= 0
       ? page.objects[parentId] as ObjectExpression
@@ -58,9 +58,9 @@ export function resolveValueDependencies(page: CompilerPage): void {
       // 1. system values
       switch (item.name) {
       case k.RT_PARENT_KEY:
-        obj = getParentScope(obj);
+        obj = getParentNode(obj);
         if (obj) {
-          return { obj, type: 'scope' };
+          return { obj, type: 'node' };
         }
         return null;
       }
@@ -73,14 +73,14 @@ export function resolveValueDependencies(page: CompilerPage): void {
           type: 'value'
         };
       }
-      // 3. named sub scopes
+      // 3. named sub nodes
       const children = getProperty(obj, 'children') as ArrayExpression;
       for (const child of children?.elements ?? []) {
         const p = getProperty(child as ObjectExpression, 'name');
         if ((p as Literal)?.value === item.name) {
           return {
             obj: child as ObjectExpression,
-            type: 'scope'
+            type: 'node'
           };
         }
       }
@@ -89,7 +89,7 @@ export function resolveValueDependencies(page: CompilerPage): void {
       if (isolated) {
         return null;
       }
-      obj = getParentScope(obj);
+      obj = getParentNode(obj);
     }
     // 5. global
     if (Reflect.ownKeys(page.global.values).includes(item.name)) {
@@ -107,12 +107,12 @@ export function resolveValueDependencies(page: CompilerPage): void {
   ) {
     let target: Target = {
       obj: stack.peek()!,
-      type: 'scope'
+      type: 'node'
     };
     let i = 1;
     for (; target.obj && i < path.length; i++) {
       const t = resolveName(target.obj, path[i]);
-      if (t?.type === 'scope') {
+      if (t?.type === 'node') {
         target = t;
       } else if (t?.type === 'value') {
         break;
@@ -216,7 +216,7 @@ export function resolveValueDependencies(page: CompilerPage): void {
   }
 
   function makeValueDeps(
-    scopeStack: Stack<ObjectExpression>,
+    nodeStack: Stack<ObjectExpression>,
     name: string,
     exp: FunctionExpression
   ): Property | null {
@@ -252,7 +252,7 @@ export function resolveValueDependencies(page: CompilerPage): void {
     });
     // 2. refine dependencies
     removeSpuriousPaths(paths);
-    paths.forEach(path => refinePath(scopeStack, name, path));
+    paths.forEach(path => refinePath(nodeStack, name, path));
     removeSpuriousPaths(paths);
     // 3. remove duplicates
     const map = new Map<string, Path>();
@@ -279,25 +279,25 @@ export function resolveValueDependencies(page: CompilerPage): void {
     };
   }
 
-  function resolveScope(scopeStack: Stack<ObjectExpression>) {
-    const scope = scopeStack.peek()!;
-    const values = getProperty(scope, 'values') as ObjectExpression;
+  function resolveNode(nodeStack: Stack<ObjectExpression>) {
+    const node = nodeStack.peek()!;
+    const values = getProperty(node, 'values') as ObjectExpression;
     values?.properties.forEach(p => {
       if (p.type === 'Property' && p.key.type === 'Identifier') {
         const value = p.value as ObjectExpression;
         const exp = getProperty(value, 'exp') as FunctionExpression;
-        const deps = makeValueDeps(scopeStack, p.key.name, exp);
+        const deps = makeValueDeps(nodeStack, p.key.name, exp);
         deps && value.properties.push(deps);
       }
     });
-    const children = getProperty(scope, 'children') as ArrayExpression;
+    const children = getProperty(node, 'children') as ArrayExpression;
     children?.elements.forEach(e => {
-      resolveScope(new Stack(...scopeStack, e as ObjectExpression));
+      resolveNode(new Stack(...nodeStack, e as ObjectExpression));
     });
   }
 
   const props = page.ast as ObjectExpression;
-  const rootScopes = getProperty(props, 'root') as ArrayExpression;
-  const rootScope = rootScopes.elements[0] as ObjectExpression;
-  resolveScope(new Stack(rootScope));
+  const rootNodes = getProperty(props, 'root') as ArrayExpression;
+  const rootNode = rootNodes.elements[0] as ObjectExpression;
+  resolveNode(new Stack(rootNode));
 }

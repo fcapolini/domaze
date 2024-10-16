@@ -1,22 +1,22 @@
-import { ScopeType } from "../runtime/scope";
+import { NodeType } from "../runtime/node";
 
 export class PageWrapper {
-  global: ScopeWrapper;
+  global: NodeWrapper;
 
   constructor() {
-    this.global = new ScopeWrapper(-1);
+    this.global = new NodeWrapper(-1);
   }
 }
 
-export class ScopeWrapper {
+export class NodeWrapper {
   id: number;
-  type?: ScopeType;
+  type?: NodeType;
   name?: string;
   isolate?: boolean;
   values?: ValueWrapper[];
-  children?: ScopeWrapper[];
+  children?: NodeWrapper[];
 
-  constructor(id: number, parent?: ScopeWrapper) {
+  constructor(id: number, parent?: NodeWrapper) {
     this.id = id;
     if (parent) {
       parent.children || (parent.children = []);

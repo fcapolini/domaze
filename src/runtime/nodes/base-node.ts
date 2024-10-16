@@ -1,24 +1,24 @@
 import { Page } from "../page";
 import { Global } from "../global";
-import { Scope, ScopeObj, ScopeProps, ScopeValues } from "../scope";
+import { Node, NodeObj, NodeProps, NodeValues } from "../node";
 import * as dom from '../../html/dom';
 import * as k from '../consts';
 import { Value, ValueProps } from "../value";
 
-export class BaseScope implements Scope {
+export class BaseNode implements Node {
   page: Page;
-  props: ScopeProps;
+  props: NodeProps;
   id: number;
   dom: dom.Element;
   global?: Global;
   isolate?: boolean;
-  values: ScopeValues;
-  obj!: ScopeObj;
+  values: NodeValues;
+  obj!: NodeObj;
   name?: string;
-  parent?: BaseScope;
-  children: BaseScope[];
+  parent?: BaseNode;
+  children: BaseNode[];
 
-  constructor(page: Page, props: ScopeProps, e: dom.Element, global?: Global) {
+  constructor(page: Page, props: NodeProps, e: dom.Element, global?: Global) {
     this.page = page;
     this.props = props;
     this.id = props.id;
@@ -44,7 +44,7 @@ export class BaseScope implements Scope {
     return this;
   }
 
-  linkTo(p: BaseScope, ref?: BaseScope): this {
+  linkTo(p: BaseNode, ref?: BaseNode): this {
     let i = ref ? p.children.indexOf(ref) : -1;
     i = i < 0 ? p.children.length : i;
     p.children.splice(i, 0, this);
@@ -55,7 +55,7 @@ export class BaseScope implements Scope {
     if (this.name) {
       if (!p.values[this.name]) {
         const that = this;
-        // add name to parent scope
+        // add name to parent node
         p.values[this.name] = new Value(this.page, p, {
           exp: function() { return that.obj; }
         });
@@ -70,7 +70,7 @@ export class BaseScope implements Scope {
     this.unlinkValues();
     this.page.global.removeEventListeners(this);
     if (this.name && this.parent && this.parent.obj[this.name] === this.obj) {
-      // remove name from parent scope
+      // remove name from parent node
       delete this.parent.values[this.name];
     }
     this.dom.unlink();
@@ -136,7 +136,7 @@ export class BaseScope implements Scope {
     this.values[k.RT_VALUE_KEY] = page.newValue(this, k.RT_VALUE_KEY, {
       exp: function() {
         return (key: string) => {
-          let s: Scope | false | undefined = that;
+          let s: Node | false | undefined = that;
           do {
             if (s.values[key]) {
               return s.values[key];
@@ -184,7 +184,7 @@ export class BaseScope implements Scope {
         const parent = isolate ? null : target[k.RT_PARENT_KEY];
         if (parent) {
           try {
-            (parent.get() as ScopeObj)[key as string] = val;
+            (parent.get() as NodeObj)[key as string] = val;
             return true;
           } catch (err) {
             return false;
