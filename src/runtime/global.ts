@@ -3,12 +3,13 @@ import { Scope } from './scope';
 import { Value } from './value';
 import * as dom from '../html/dom';
 import * as k from './consts';
+import { BaseScope } from './scopes/base-scope';
 
 function camelToDash(s: string): string {
   return s.replace(/([a-z][A-Z])/g, (g) => g[0] + '-' + g[1].toLowerCase());
 }
 
-export abstract class Global extends Scope {
+export abstract class Global extends BaseScope {
 
   constructor(page: Page) {
     super(page, { id: -1 }, page.doc);
@@ -49,13 +50,13 @@ export abstract class Global extends Scope {
     }
   }
 
-  addEventListeners(scope: Scope) {
+  addEventListeners(scope: BaseScope) {
     this.foreachListener(scope, (evname, listener) => {
       scope.dom.addEventListener(evname, listener);
     });
   }
 
-  removeEventListeners(scope: Scope) {
+  removeEventListeners(scope: BaseScope) {
     this.foreachListener(scope, (evname, listener) => {
       scope.dom.removeEventListener(evname, listener);
     });

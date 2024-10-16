@@ -1,0 +1,25 @@
+({
+  root: [
+    {
+      id: 0,
+      name: 'page',
+      values: {
+        title: {
+          exp: function() { return 'Title'; }
+        }
+      },
+      children: [
+        {
+          id: 1,
+          name: 'head',
+          children: []
+        },
+        {
+          id: 2,
+          name: 'body',
+          children: []
+        }
+      ]
+    }
+  ]
+})

@@ -1,5 +1,6 @@
 import { Page } from "./page";
 import { Scope } from "./scope";
+import { BaseScope } from "./scopes/base-scope";
 
 export interface ValueProps {
   exp: ValueExp;

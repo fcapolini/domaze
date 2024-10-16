@@ -1,6 +1,7 @@
 import * as dom from '../html/dom';
 import { Global } from './global';
 import { Scope, ScopeProps } from './scope';
+import { BaseScope } from './scopes/base-scope';
 import { ForeachScope } from './scopes/foreach-scope';
 import { Value, ValueProps } from './value';
 
@@ -44,7 +45,7 @@ export abstract class Page {
     if (props.type === 'foreach') {
       return new ForeachScope(this, props, e, this.global);
     }
-    return new Scope(this, props, e, this.global);
+    return new BaseScope(this, props, e, this.global);
   }
 
   newValue(scope: Scope, name: string, props: ValueProps): Value {
