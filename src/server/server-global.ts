@@ -1,8 +1,16 @@
 import * as dom from "../html/dom";
 import * as k from "../runtime/consts";
 import { Global } from "../runtime/global";
+import { Page, PageProps } from "../runtime/page";
 
 export class ServerGlobal extends Global {
+  pageProps: PageProps;
+  js?: string;
+
+  constructor(page: Page, pageProps: PageProps) {
+    super(page);
+    this.pageProps = pageProps;
+  }
 
   override getElement(id: number, root: dom.Element): dom.Element | null {
     const s = `${id}`;

@@ -1,5 +1,4 @@
 import * as dom from '../html/dom';
-import * as k from './consts';
 import { Global } from "./global";
 import { Page } from "./page";
 import { Value, ValueProps } from "./value";
@@ -20,6 +19,7 @@ export type NodeObj = { [key: string]: unknown };
 export interface Node {
   page: Page;
   id: number;
+  type?: NodeType;
   dom: dom.Element;
   global?: Global;
   isolate?: boolean;

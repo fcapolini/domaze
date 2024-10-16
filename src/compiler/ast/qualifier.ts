@@ -1,12 +1,12 @@
 import * as acorn from 'acorn';
 import estraverse from 'estraverse';
 import * as es from 'estree';
-import * as k from '../../runtime/consts';
+import { RT_PARENT_KEY } from '../../runtime/consts';
 import { CompilerPage } from '../compiler-page';
 import { getProperty } from './acorn-utils';
 
 export function qualifyPageIdentifiers(page: CompilerPage) {
-  for (let i = 0; i < page.nodeCount; i++) {
+  for (const i in page.scopes) {
     const object = page.objects[i];
     const values = getProperty(object, 'values') as acorn.ObjectExpression;
     if (values) {
@@ -42,7 +42,7 @@ function qualifyReferences(key: string | null, exp: es.Node) {
             let object: unknown = { type: 'ThisExpression', ...loc(node) };
             if (node.name === key && !inFunctionBody(stack)) {
               // reference to itself -> $parent.<itself>
-              const id = k.RT_PARENT_KEY;
+              const id = RT_PARENT_KEY;
               object = {
                 type: 'MemberExpression',
                 object:  { type: 'ThisExpression', ...loc(node) },

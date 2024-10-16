@@ -1,6 +1,5 @@
 import { Page } from "./page";
 import { Node } from "./node";
-import { BaseNode } from "./nodes/base-node";
 
 export interface ValueProps {
   exp: ValueExp;

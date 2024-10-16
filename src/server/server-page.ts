@@ -4,6 +4,6 @@ import { ServerGlobal } from "./server-global";
 
 export class ServerPage extends Page {
   newGlobal(): Global {
-    return new ServerGlobal(this);
+    return new ServerGlobal(this, this.props);
   }
 }

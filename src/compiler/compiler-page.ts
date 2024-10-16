@@ -1,95 +1,186 @@
-import * as acorn from 'acorn';
+import {
+  ArrayExpression, BlockStatement, Expression, ObjectExpression
+} from 'acorn';
+import { ELEMENT_NODE } from 'trillo/preprocessor/dom';
 import * as dom from '../html/dom';
-import { PageError } from "../html/parser";
-import { ServerAttribute, ServerComment, ServerElement, ServerNode, ServerText, SourceLocation } from '../html/server-dom';
-import * as rk from '../runtime/consts';
-import { Global } from "../runtime/global";
-import { Page, PageProps } from "../runtime/page";
-import { Node, NodeProps } from '../runtime/node';
-import { astLocation, astObjectExpression, astProperty } from './ast/acorn-utils';
-import { CompilerGlobal } from "./compiler-global";
-import { CompilerNode } from "./compiler-node";
-import * as ck from './consts';
-import { PageWrapper, NodeWrapper } from './props-wrappers';
+import { PageError } from '../html/parser';
+import {
+  ServerAttribute, ServerComment, ServerDocument, ServerElement, ServerNode,
+  ServerText, SourceLocation
+} from '../html/server-dom';
+import * as k from '../runtime/consts';
+import * as pg from '../runtime/page';
+import { NodeProps, Node } from '../runtime/node';
+import { ForeachNode } from '../runtime/nodes/foreach-node';
+import { ValueProps, Value } from '../runtime/value';
+import {
+  astArrayExpression, astLiteral, astLocation, astObjectExpression, astProperty
+} from './ast/acorn-utils';
+import { qualifyPageIdentifiers } from './ast/qualifier';
+import { resolveValueDependencies } from './ast/resolver';
 import { dashToCamel, encodeEventName } from './util';
+import { Global } from '../runtime/global';
+import { BaseNode } from '../runtime/nodes/base-node';
+import { ServerGlobal } from '../server/server-global';
 
-export class CompilerPage extends Page {
-  errors: PageError[] = [];
-  nodes: Node[] = [];
-  nodeCount!: number;
-  objects!: Array<acorn.ObjectExpression>;
-  ast!: acorn.ObjectExpression;
+export const SRC_LOGIC_ATTR_PREFIX = ':';
+export const SRC_SYS_ATTR_PREFIX = '::';
+export const SRC_ATTR_NAME_REGEX = /^:{0,2}[a-zA-Z_][a-zA-Z0-9_$-]*$/;
 
-  constructor(doc: dom.Document, props: PageProps) {
+export const SRC_NAME_ATTR = SRC_SYS_ATTR_PREFIX + 'name';
+export const SRC_EVENT_ATTR_PREFIX = SRC_LOGIC_ATTR_PREFIX + 'on-';
+
+export const SRC_FOREACH_TAG = dom.DIRECTIVE_TAG_PREFIX + 'FOREACH';
+export const SRC_FOREACH_ITEM_ATTR = SRC_LOGIC_ATTR_PREFIX + 'item';
+
+export const DEF_SCOPE_NAMES: { [key: string]: string } = {
+  HTML: 'page',
+  HEAD: 'head',
+  BODY: 'body'
+};
+
+//TODO: prevent classic functions in ${} expressions (error if there are)
+export class CompilerPage extends pg.Page {
+  ast!: ObjectExpression;
+  scopes!: Array<Node>;
+  objects!: Array<ObjectExpression>;
+  errors!: PageError[];
+
+  constructor(doc: dom.Document, props: pg.PageProps) {
     super(doc, props);
   }
 
   override newGlobal(): Global {
-    return new CompilerGlobal(this);
+    return new ServerGlobal(this, this.props);
   }
 
-  override load(props: NodeProps, p: Node, e: dom.Element): Node {
-    const page = new PageWrapper();
-    const counter = [0];
-    props.id === 0 && this.loadProps(e as ServerElement, page.global, counter);
-    this.nodeCount = counter[0];
-    //TODO: use page
-    return super.load(props, p, e);
+  override load(_props: NodeProps, _p: Node, _e: dom.Element): Node {
+
+    const load = (
+      e: ServerElement, s: Node, p: ArrayExpression,
+      v?: ObjectExpression
+    ) => {
+      if (this.needsScope(e)) {
+        const l = e.loc;
+        const id = this.scopes.length;
+        e.setAttribute(k.OUT_ID_ATTR, `${id}`);
+
+        const name = this.getName(e);
+        if (name && s instanceof ForeachNode) {
+          this.errors.push(new PageError(
+            'error', 'foreach content cannot have a name', e.loc
+          ));
+        }
+
+        s = this.newNode({ id }, e).linkTo(s);
+        s.name = DEF_SCOPE_NAMES[e.tagName];
+        this.scopes.push(s);
+        const o = astObjectExpression(l);
+        this.objects.push(o);
+
+        o.properties.push(astProperty('dom', astLiteral(id, l), l));
+        if (s.type) {
+          o.properties.push(astProperty('type', astLiteral(s.type, l), l));
+        }
+        name && o.properties.push(astProperty('name', astLiteral(name, l), l));
+
+        v = astObjectExpression(l);
+        this.collectAttributes(s, e, v);
+        s.type !== 'foreach' && this.collectTexts(e, v);
+        v.properties.length && o.properties.push(astProperty('values', v, l));
+
+        p.elements.push(o);
+        p = astArrayExpression(l);
+        o.properties.push(astProperty('children', p, l));
+      }
+      e.childNodes.forEach((n: dom.Node) => {
+        if (n.nodeType === dom.NodeType.ELEMENT) {
+          load(n as ServerElement, s, p, v);
+        }
+      });
+      return s;
+    };
+
+    const doc = this.doc as ServerDocument;
+    this.ast = astObjectExpression(doc.loc);
+    const pp = astArrayExpression(doc.loc);
+    this.ast.properties.push(astProperty('root', pp, doc.loc));
+    this.scopes = [];
+    this.objects = [];
+    this.errors = [];
+    const ret = load(doc.documentElement! as ServerElement, this.global, pp);
+    !this.hasErrors() && qualifyPageIdentifiers(this);
+    !this.hasErrors() && resolveValueDependencies(this);
+    return ret;
   }
 
   override newNode(props: NodeProps, e: dom.Element): Node {
-    return new CompilerNode(this, props.id, e);
-  }
-
-  // ===========================================================================
-  // logic extraction
-  // ===========================================================================
-
-  loadProps(e: ServerElement, p: NodeWrapper, counter: number[]) {
-    if (this.needsNode(e)) {
-      const id = counter[0]++;
-      p = this.loadNodeProps(id, e, p);
+    if (e.tagName === SRC_FOREACH_TAG) {
+      return this.newForeachNode(props, e);
     }
-    e.childNodes.forEach(n => {
-      if (n.nodeType === dom.NodeType.ELEMENT) {
-        this.loadProps(n as ServerElement, p, counter);
-      }
-    });
-  }
-
-  loadNodeProps(id: number, e: ServerElement, p: NodeWrapper): NodeWrapper {
-    e.setAttribute(rk.OUT_ID_ATTR, `${id}`);
-
-    const name = this.getName(e);
-    if (name && p.type === 'foreach') {
+    if (e.tagName.startsWith(dom.DIRECTIVE_TAG_PREFIX)) {
       this.errors.push(new PageError(
-        'error', p.type + ' content cannot have a name', e.loc
+        'error', 'unknown directive ' + e.tagName, e.loc as SourceLocation
       ));
     }
-
-    p = new NodeWrapper(id, p);
-    p.name = name ?? ck.DEF_NODE_NAMES[e.tagName];
-
-    return p;
+    return new BaseNode(this, props, e, this.global);
   }
 
-  // ===========================================================================
-  // utils
-  // ===========================================================================
+  protected newForeachNode(props: NodeProps, e: dom.Element): Node {
+    const l = e.loc as SourceLocation;
+    e.tagName = 'TEMPLATE';
+    const ret = new ForeachNode(this, props, e, this.global);
+    const ee = [...e.childNodes].filter(n => n.nodeType === ELEMENT_NODE);
+    if (ee.length !== 1) {
+      this.errors.push(new PageError(
+        'error', '<:foreach> should contain a single element', l
+      ));
+    }
+    const nn = [...e.childNodes].filter(n => n.nodeType !== ELEMENT_NODE);
+    while (nn.length) {
+      nn.pop()?.unlink();
+    }
+    const child = ee[0] as ServerElement;
+    // ensure child element has `:item` attribute and its own scope
+    if (child && !child.getAttributeNode(SRC_FOREACH_ITEM_ATTR)) {
+      child.setAttribute(SRC_FOREACH_ITEM_ATTR, '');
+      const a = child.getAttributeNode(SRC_FOREACH_ITEM_ATTR)!;
+      a.loc = a.valueLoc = child.loc;
+    }
+    if (!(e as ServerElement).getAttributeNode(SRC_FOREACH_ITEM_ATTR)) {
+      this.errors.push(new PageError(
+        'error', `missing ${SRC_FOREACH_ITEM_ATTR} attribute in <:foreach>`, l
+      ));
+    }
+    return ret;
+  }
 
-  needsNode(e: ServerElement) {
+  override newValue(scope: Node, name: string, props: ValueProps): Value {
+    return new Value(this, scope, props);
+  }
+
+  hasErrors() {
+    for (const e of this.errors) {
+      if (e.type === 'error') {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  needsScope(e: ServerElement) {
     // `:`-prefixed directive tags
     if (e.tagName.startsWith(dom.DIRECTIVE_TAG_PREFIX)) {
       return true;
     }
     // special tagnames
-    if (ck.DEF_NODE_NAMES[e.tagName]) {
+    if (DEF_SCOPE_NAMES[e.tagName]) {
       return true;
     }
     // `:`-prefixed attributes & attribute expressions
     for (const attr of e.attributes) {
       if (
-        attr.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX) ||
+        attr.name.startsWith(SRC_LOGIC_ATTR_PREFIX) ||
         typeof attr.value !== 'string'
       ) {
         return true;
@@ -99,7 +190,7 @@ export class CompilerPage extends Page {
   }
 
   getName(e: ServerElement) {
-    const attr = e.getAttributeNode(ck.SRC_NAME_ATTR) as ServerAttribute;
+    const attr = e.getAttributeNode(SRC_NAME_ATTR) as ServerAttribute;
     if (attr) {
       const name = typeof attr.value === 'string' ? attr.value : null;
       if (/^[a-zA-z_]\w*$/.test(name ?? '')) {
@@ -109,30 +200,30 @@ export class CompilerPage extends Page {
         this.errors.push(err);
       }
     }
-    return ck.DEF_NODE_NAMES[e.tagName];
+    return DEF_SCOPE_NAMES[e.tagName];
   }
 
-  collectAttributes(node: Node, e: ServerElement, ret: acorn.ObjectExpression) {
+  collectAttributes(scope: Node, e: ServerElement, ret: ObjectExpression) {
     for (let i = 0; i < e.attributes.length;) {
       const a = e.attributes[i] as ServerAttribute;
-      if (!ck.SRC_ATTR_NAME_REGEX.test(a.name)) {
+      if (!SRC_ATTR_NAME_REGEX.test(a.name)) {
         const err = new PageError('error', 'invalid attribute name', a.loc);
         this.errors.push(err);
         i++;
         continue;
       }
       if (
-        !a.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX) &&
+        !a.name.startsWith(SRC_LOGIC_ATTR_PREFIX) &&
         typeof a.value === 'string'
       ) {
         i++;
         continue;
       }
-      if (a.name.startsWith(ck.SRC_SYS_ATTR_PREFIX)) {
-        this.collectSysAttribute(node, a, ret);
-      } else if (a.name.startsWith(ck.SRC_EVENT_ATTR_PREFIX)) {
+      if (a.name.startsWith(SRC_SYS_ATTR_PREFIX)) {
+        this.collectSysAttribute(scope, a, ret);
+      } else if (a.name.startsWith(SRC_EVENT_ATTR_PREFIX)) {
         this.collectEventAttribute(a, ret);
-      } else if (a.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
+      } else if (a.name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
         this.collectValueAttribute(a, ret);
       } else {
         this.collectNativeAttribute(a, ret);
@@ -141,12 +232,12 @@ export class CompilerPage extends Page {
     }
   }
 
-  collectSysAttribute(node: Node, a: ServerAttribute, ret: acorn.ObjectExpression) {
-    const name = rk.RT_SYS_VALUE_PREFIX
-      + a.name.substring(ck.SRC_SYS_ATTR_PREFIX.length);
+  collectSysAttribute(scope: Node, a: ServerAttribute, ret: ObjectExpression) {
+    const name = k.RT_SYS_VALUE_PREFIX
+      + a.name.substring(SRC_SYS_ATTR_PREFIX.length);
     switch (name) {
     case '$name':
-      this.checkLiteralAttribute(a) && (node.name = a.value as string);
+      this.checkLiteralAttribute(a) && (scope.name = a.value as string);
       break;
     }
     const value = this.makeValue('', name, a.value, a.loc, a.valueLoc!);
@@ -165,8 +256,8 @@ export class CompilerPage extends Page {
     return ret;
   }
 
-  collectValueAttribute(a: ServerAttribute, ret: acorn.ObjectExpression) {
-    const name = a.name.substring(ck.SRC_LOGIC_ATTR_PREFIX.length);
+  collectValueAttribute(a: ServerAttribute, ret: ObjectExpression) {
+    const name = a.name.substring(SRC_LOGIC_ATTR_PREFIX.length);
     const loc: SourceLocation = {
       source: a.loc.source,
       start: { ...a.loc.start },
@@ -174,20 +265,20 @@ export class CompilerPage extends Page {
       i1: a.loc.i1,
       i2: a.loc.i2,
     };
-    loc.start.column += ck.SRC_LOGIC_ATTR_PREFIX.length;
+    loc.start.column += SRC_LOGIC_ATTR_PREFIX.length;
     const value = this.makeValue('', name, a.value, loc, a.valueLoc!);
     ret.properties.push(value);
   }
 
-  collectNativeAttribute(a: ServerAttribute, ret: acorn.ObjectExpression) {
+  collectNativeAttribute(a: ServerAttribute, ret: ObjectExpression) {
     const name = dashToCamel(a.name);
     const value = this.makeValue(
-      rk.RT_ATTR_VALUE_PREFIX, name, a.value, a.loc, a.valueLoc!
+      k.RT_ATTR_VALUE_PREFIX, name, a.value, a.loc, a.valueLoc!
     );
     ret.properties.push(value);
   }
 
-  collectEventAttribute(a: ServerAttribute, ret: acorn.ObjectExpression) {
+  collectEventAttribute(a: ServerAttribute, ret: ObjectExpression) {
     // attribute value must be a function expression
     if (
       typeof a.value !== 'object' ||
@@ -198,38 +289,38 @@ export class CompilerPage extends Page {
       ));
     }
     // make value
-    const n = encodeEventName(a.name.substring(ck.SRC_EVENT_ATTR_PREFIX.length));
+    const n = encodeEventName(a.name.substring(SRC_EVENT_ATTR_PREFIX.length));
     const value = this.makeValue(
-      rk.RT_EVENT_VALUE_PREFIX, n, a.value, a.loc, a.valueLoc!
+      k.RT_EVENT_VALUE_PREFIX, n, a.value, a.loc, a.valueLoc!
     );
     ret.properties.push(value);
   }
 
-  collectTexts(e: ServerElement, v: acorn.ObjectExpression) {
+  collectTexts(e: ServerElement, v: ObjectExpression) {
     let count = 0;
     const f = (e: ServerElement) => {
       for (let i = 0; i < e.childNodes.length;) {
         const n = e.childNodes[i] as ServerNode;
         if (
           n.nodeType === dom.NodeType.ELEMENT &&
-          !this.needsNode(n as ServerElement)
+          !this.needsScope(n as ServerElement)
         ) {
           f(n as ServerElement);
         } else if (
           n.nodeType === dom.NodeType.TEXT &&
           typeof (n as ServerText).textContent !== 'string'
         ) {
-          const name = rk.RT_TEXT_VALUE_PREFIX + count;
+          const name = k.RT_TEXT_VALUE_PREFIX + count;
           const value = this.makeValue(
             '', name, (n as ServerText).textContent, n.loc, n.loc
           );
           v.properties.push(value);
           const c1 = new ServerComment(
-            e.ownerDocument, rk.OUT_TEXT_MARKER1 + (count++), n.loc
+            e.ownerDocument, k.OUT_TEXT_MARKER1 + (count++), n.loc
           );
           e.insertBefore(c1, n);
           const c2 = new ServerComment(
-            e.ownerDocument, rk.OUT_TEXT_MARKER2, n.loc
+            e.ownerDocument, k.OUT_TEXT_MARKER2, n.loc
           );
           e.insertBefore(c2, (n.nextSibling as ServerNode) ?? null);
           i += 2;
@@ -243,7 +334,7 @@ export class CompilerPage extends Page {
   makeValue(
     prefix: string,
     name: string,
-    value: string | acorn.Expression | null,
+    value: string | Expression | null,
     loc1: SourceLocation,
     loc2: SourceLocation
   ) {
@@ -255,10 +346,10 @@ export class CompilerPage extends Page {
   }
 
   makeValueFunction(
-    value: string | acorn.Expression | null,
+    value: string | Expression | null,
     l: SourceLocation
-  ): acorn.Expression {
-    const body: acorn.BlockStatement = {
+  ): Expression {
+    const body: BlockStatement = {
       type: 'BlockStatement',
       body: [
         {

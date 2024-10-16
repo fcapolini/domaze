@@ -1,11 +1,13 @@
 
 export class Stack<T> extends Array<T> {
+
   peek(i = -1): T | undefined {
     if (i < 0) {
       i += this.length;
     }
     return i >= 0 && i < this.length ? this[i] : undefined;
   }
+
 }
 
 export type Observer<T> = (msg: T) => void;
@@ -31,6 +33,10 @@ export class Observable<T> {
 
 export function dashToCamel(s: string): string {
   return s.replace(/-([a-z])/g, (_, up) => up.toUpperCase());
+}
+
+export function camelToDash(s: string): string {
+  return s.replace(/([a-z][A-Z])/g, (g) => g[0] + '-' + g[1].toLowerCase());
 }
 
 export function encodeEventName(s: string): string {
