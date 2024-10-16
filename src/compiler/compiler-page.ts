@@ -9,12 +9,14 @@ import { Scope, ScopeProps } from '../runtime/scope';
 import { astLocation, astObjectExpression, astProperty } from './ast/acorn-utils';
 import { CompilerGlobal } from "./compiler-global";
 import { CompilerScope } from "./compiler-scope";
-import * as k from './consts';
+import * as ck from './consts';
+import { PageWrapper, ScopeWrapper } from './props-wrappers';
 import { dashToCamel, encodeEventName } from './util';
 
 export class CompilerPage extends Page {
-  scopes: CompilerScope[] = [];
   errors: PageError[] = [];
+  scopes: Scope[] = [];
+  scopeCount!: number;
   objects!: Array<acorn.ObjectExpression>;
   ast!: acorn.ObjectExpression;
 
@@ -27,7 +29,11 @@ export class CompilerPage extends Page {
   }
 
   override load(props: ScopeProps, p: Scope, e: dom.Element): Scope {
-    props.id === 0 && this.loadProps(e as ServerElement, props);
+    const page = new PageWrapper();
+    const counter = [0];
+    props.id === 0 && this.loadProps(e as ServerElement, page.global, counter);
+    this.scopeCount = counter[0];
+    //TODO: use page
     return super.load(props, p, e);
   }
 
@@ -39,8 +45,32 @@ export class CompilerPage extends Page {
   // logic extraction
   // ===========================================================================
 
-  loadProps(root: ServerElement, ret: ScopeProps) {
+  loadProps(e: ServerElement, p: ScopeWrapper, counter: number[]) {
+    if (this.needsScope(e)) {
+      const id = counter[0]++;
+      p = this.loadScopeProps(id, e, p);
+    }
+    e.childNodes.forEach(n => {
+      if (n.nodeType === dom.NodeType.ELEMENT) {
+        this.loadProps(n as ServerElement, p, counter);
+      }
+    });
+  }
 
+  loadScopeProps(id: number, e: ServerElement, p: ScopeWrapper): ScopeWrapper {
+    e.setAttribute(rk.OUT_ID_ATTR, `${id}`);
+
+    const name = this.getName(e);
+    if (name && p.type === 'foreach') {
+      this.errors.push(new PageError(
+        'error', p.type + ' content cannot have a name', e.loc
+      ));
+    }
+
+    p = new ScopeWrapper(id, p);
+    p.name = name ?? ck.DEF_SCOPE_NAMES[e.tagName];
+
+    return p;
   }
 
   // ===========================================================================
@@ -53,13 +83,13 @@ export class CompilerPage extends Page {
       return true;
     }
     // special tagnames
-    if (k.DEF_SCOPE_NAMES[e.tagName]) {
+    if (ck.DEF_SCOPE_NAMES[e.tagName]) {
       return true;
     }
     // `:`-prefixed attributes & attribute expressions
     for (const attr of e.attributes) {
       if (
-        attr.name.startsWith(k.SRC_LOGIC_ATTR_PREFIX) ||
+        attr.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX) ||
         typeof attr.value !== 'string'
       ) {
         return true;
@@ -69,7 +99,7 @@ export class CompilerPage extends Page {
   }
 
   getName(e: ServerElement) {
-    const attr = e.getAttributeNode(k.SRC_NAME_ATTR) as ServerAttribute;
+    const attr = e.getAttributeNode(ck.SRC_NAME_ATTR) as ServerAttribute;
     if (attr) {
       const name = typeof attr.value === 'string' ? attr.value : null;
       if (/^[a-zA-z_]\w*$/.test(name ?? '')) {
@@ -79,30 +109,30 @@ export class CompilerPage extends Page {
         this.errors.push(err);
       }
     }
-    return k.DEF_SCOPE_NAMES[e.tagName];
+    return ck.DEF_SCOPE_NAMES[e.tagName];
   }
 
   collectAttributes(scope: Scope, e: ServerElement, ret: acorn.ObjectExpression) {
     for (let i = 0; i < e.attributes.length;) {
       const a = e.attributes[i] as ServerAttribute;
-      if (!k.SRC_ATTR_NAME_REGEX.test(a.name)) {
+      if (!ck.SRC_ATTR_NAME_REGEX.test(a.name)) {
         const err = new PageError('error', 'invalid attribute name', a.loc);
         this.errors.push(err);
         i++;
         continue;
       }
       if (
-        !a.name.startsWith(k.SRC_LOGIC_ATTR_PREFIX) &&
+        !a.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX) &&
         typeof a.value === 'string'
       ) {
         i++;
         continue;
       }
-      if (a.name.startsWith(k.SRC_SYS_ATTR_PREFIX)) {
+      if (a.name.startsWith(ck.SRC_SYS_ATTR_PREFIX)) {
         this.collectSysAttribute(scope, a, ret);
-      } else if (a.name.startsWith(k.SRC_EVENT_ATTR_PREFIX)) {
+      } else if (a.name.startsWith(ck.SRC_EVENT_ATTR_PREFIX)) {
         this.collectEventAttribute(a, ret);
-      } else if (a.name.startsWith(k.SRC_LOGIC_ATTR_PREFIX)) {
+      } else if (a.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
         this.collectValueAttribute(a, ret);
       } else {
         this.collectNativeAttribute(a, ret);
@@ -113,7 +143,7 @@ export class CompilerPage extends Page {
 
   collectSysAttribute(scope: Scope, a: ServerAttribute, ret: acorn.ObjectExpression) {
     const name = rk.RT_SYS_VALUE_PREFIX
-      + a.name.substring(k.SRC_SYS_ATTR_PREFIX.length);
+      + a.name.substring(ck.SRC_SYS_ATTR_PREFIX.length);
     switch (name) {
     case '$name':
       this.checkLiteralAttribute(a) && (scope.name = a.value as string);
@@ -136,7 +166,7 @@ export class CompilerPage extends Page {
   }
 
   collectValueAttribute(a: ServerAttribute, ret: acorn.ObjectExpression) {
-    const name = a.name.substring(k.SRC_LOGIC_ATTR_PREFIX.length);
+    const name = a.name.substring(ck.SRC_LOGIC_ATTR_PREFIX.length);
     const loc: SourceLocation = {
       source: a.loc.source,
       start: { ...a.loc.start },
@@ -144,7 +174,7 @@ export class CompilerPage extends Page {
       i1: a.loc.i1,
       i2: a.loc.i2,
     };
-    loc.start.column += k.SRC_LOGIC_ATTR_PREFIX.length;
+    loc.start.column += ck.SRC_LOGIC_ATTR_PREFIX.length;
     const value = this.makeValue('', name, a.value, loc, a.valueLoc!);
     ret.properties.push(value);
   }
@@ -168,7 +198,7 @@ export class CompilerPage extends Page {
       ));
     }
     // make value
-    const n = encodeEventName(a.name.substring(k.SRC_EVENT_ATTR_PREFIX.length));
+    const n = encodeEventName(a.name.substring(ck.SRC_EVENT_ATTR_PREFIX.length));
     const value = this.makeValue(
       rk.RT_EVENT_VALUE_PREFIX, n, a.value, a.loc, a.valueLoc!
     );

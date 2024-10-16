@@ -13,6 +13,6 @@ export const RT_CLASS_VALUE_PREFIX = 'class$';
 export const RT_STYLE_VALUE_PREFIX = 'style$';
 export const RT_EVENT_VALUE_PREFIX = 'ev$';
 
-export const OUT_ID_ATTR = 'data-md';
+export const OUT_ID_ATTR = 'data-dm';
 export const OUT_TEXT_MARKER1 = '-t';
 export const OUT_TEXT_MARKER2 = '';
