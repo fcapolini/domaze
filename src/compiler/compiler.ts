@@ -1,32 +1,25 @@
 import chokidar from 'chokidar';
-import { generate } from 'escodegen';
-import * as dom from '../html/server-dom';
 import { PageError, Source } from '../html/parser';
 import { Preprocessor } from '../html/preprocessor';
-import { PageProps } from '../runtime/page';
-import { ServerGlobal } from '../server/server-global';
+import * as idom from '../html/dom';
+import * as dom from '../html/server-dom';
+import * as node from '../runtime/node';
+import * as page from '../runtime/page';
+import * as value from '../runtime/value';
 import { defaultLogger, PageLogicLogger } from '../utils/logger';
-import { CompilerPage } from './compiler-page';
+import * as ck from './consts';
+import * as rk from '../../src/runtime/consts';
 import { Observable } from './util';
-
-export const CLIENT_CODE_SRC = '../client.js';
-export const CLIENT_CODE_REQ = '/.pagelogic.js';
-
-export const CLIENT_PROPS_SCRIPT_ID = 'pl-props';
-export const CLIENT_PROPS_SCRIPT_GLOBAL = '__pagelogicProps__';
-export const CLIENT_CODE_SCRIPT_ID = 'pl-client';
-export const CLIENT_DEFAULT_GLOBAL = 'logic';
+import { generate } from 'escodegen';
+import { astArrayExpression, astLiteral, astLiteralFunction, astObjectExpression, astProperty } from './ast/acorn-utils';
+import * as ast from 'acorn';
+import { SRC_LOGIC_ATTR_PREFIX } from './compiler-page';
+import acorn from 'acorn';
 
 export interface CompilerProps {
   csr?: boolean;
   logger?: PageLogicLogger;
   watch?: boolean;
-}
-
-export interface CompiledPage {
-  errors: PageError[];
-  doc?: dom.ServerDocument;
-  props?: PageProps;
 }
 
 export class Compiler {
@@ -88,46 +81,222 @@ export class Compiler {
     if (source.errors.length) {
       return { errors: source.errors };
     }
-    const comp = compile(source, this.props.csr);
-    const global = comp.global as ServerGlobal;
+    const comp = compilePage(source, this.props.csr);
     return {
       errors: comp.errors,
-      doc: global.page.doc as dom.ServerDocument,
-      props: global.pageProps
+      doc: comp.doc,
+      props: comp.props
     };
   }
 }
 
-export function compile(src: Source, csr?: boolean): CompilerPage {
-  const page = new CompilerPage(src.doc, { root: { id: 0 }} );
-  const global = page.global as ServerGlobal;
+export interface CompiledPage {
+  errors: PageError[];
+  doc?: dom.ServerDocument;
+  props?: page.PageProps;
+}
+
+// =============================================================================
+// compilePage()
+// =============================================================================
+
+export function compilePage(src: Source, csr?: boolean): CompiledPage {
+  const page = new CompilerPage(src.doc);
+  const ret: CompiledPage = { errors: page.errors };
+  // const global = page.global as ServerGlobal;
   if (page.errors.length) {
-    return page;
+    return ret;
   }
+  let js, props;
   try {
-    global.js = generate(page.ast, {
+    js = generate(page.genAST(), {
       format: { compact: true }
     });
-    global.props = eval(`(${global.js})`);
+    props = eval(`(${js})`);
   } catch (err) {
     page.errors.push(new PageError(
       'error', `compiler internal error: ${err}`, src.doc.loc
     ));
+  }
+  if (page.errors.length) {
+    return ret;
   }
   if (csr) {
     const doc = page.doc as dom.ServerDocument;
 
     const script1 = new dom.ServerElement(doc, 'script', doc.loc);
     doc.body!.appendChild(script1);
-    script1.setAttribute('id', CLIENT_PROPS_SCRIPT_ID);
-    const code = `\n${CLIENT_PROPS_SCRIPT_GLOBAL} = ${global.js}\n`;
+    script1.setAttribute('id', ck.CLIENT_PROPS_SCRIPT_ID);
+    const code = `\n${ck.CLIENT_PROPS_SCRIPT_GLOBAL} = ${js}\n`;
     script1.appendChild(new dom.ServerText(doc, code, doc.loc, false));
 
     const script2 = new dom.ServerElement(doc, 'script', doc.loc);
     doc.body!.appendChild(script2);
-    script2.setAttribute('id', CLIENT_CODE_SCRIPT_ID);
+    script2.setAttribute('id', ck.CLIENT_CODE_SCRIPT_ID);
     script2.setAttribute('async', null);
-    script2.setAttribute('src', CLIENT_CODE_REQ);
+    script2.setAttribute('src', ck.CLIENT_CODE_REQ);
   }
-  return page;
+  return ret;
+}
+
+// =============================================================================
+// CompilerPage
+// =============================================================================
+
+export class CompilerPage {
+  doc: dom.ServerDocument;
+  errors: PageError[];
+  count: number;
+  // as PageProps
+  root: CompilerNode;
+
+  constructor(doc: dom.ServerDocument) {
+    this.doc = doc;
+    this.errors = [];
+    this.count = 0;
+    this.root = new CompilerNode(this, doc.documentElement!);
+  }
+
+  genAST(): ast.ObjectExpression {
+    const ret = astObjectExpression(this.doc.loc);
+    this.errors.length || this.root.genAST(ret, 'root');
+    return ret;
+  }
+}
+
+// =============================================================================
+// CompilerNode
+// =============================================================================
+
+export class CompilerNode {
+  page: CompilerPage;
+  dom: dom.ServerElement;
+  // as NodeProps
+  id: number;
+  name?: string;
+  type?: node.NodeType;
+  values?: { [key: string]: CompilerValue };
+  children: CompilerNode[];
+
+  constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
+    this.page = page;
+    this.dom = e;
+    this.id = page.count++;
+    this.name = this.getName(e);
+    this.children = [];
+    p?.children.push(this);
+    e.setAttribute(rk.OUT_ID_ATTR, `${this.id}`);
+    for (const key of [...e.getAttributeNames()]) {
+      const attr = e.getAttributeNode(key) as dom.ServerAttribute;
+      if (this.needsValue(attr)) {
+        e.delAttributeNode(attr);
+        new CompilerValue(this, attr);
+      }
+    }
+    this.collectChildren(e);
+  }
+
+  collectChildren(e: dom.ServerElement) {
+    e.childNodes.forEach(n => {
+      if (n.nodeType === idom.NodeType.ELEMENT) {
+        if (this.needsScope(n as dom.ServerElement)) {
+          new CompilerNode(this.page, n as dom.ServerElement, this);
+        }
+        return;
+      }
+    });
+  }
+
+  needsScope(e: dom.ServerElement) {
+    if (ck.SRC_DEF_SCOPE_NAMES[e.tagName]) {
+      return true;
+    }
+    return false;
+  }
+
+  needsValue(a: dom.ServerAttribute) {
+    if (a.value == null) {
+      return false;
+    }
+    if (a.name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
+      return true;
+    }
+    return false;
+  }
+
+  getName(dom: dom.ServerElement): string | undefined {
+    //TODO
+    return ck.SRC_DEF_SCOPE_NAMES[dom.tagName];
+  }
+
+  genAST(p: ast.ObjectExpression | ast.ArrayExpression, k?: string) {
+    const ret = astObjectExpression(this.dom.loc);
+    const loc = this.dom.loc;
+    if (p.type === 'ObjectExpression') {
+      p.properties.push(astProperty(k!, ret, loc));
+    } else {
+      p.elements.push(ret);
+    }
+    ret.properties.push(astProperty('id', astLiteral(this.id, loc), loc));
+    this.name && this.addLiteral('name', this.name, ret, loc);
+    if (this.values) {
+      const values = astObjectExpression(loc);
+      ret.properties.push(astProperty('values', values, loc));
+      Reflect.ownKeys(this.values).forEach(key => {
+        typeof key === 'string' && this.values![key].genAST(values, key);
+      });
+    }
+    if (!this.children.length) {
+      return;
+    }
+    const children = astArrayExpression(loc);
+    ret.properties.push(astProperty('children', children, loc));
+    this.children.forEach(node => node.genAST(children));
+  }
+
+  addLiteral(
+    key: string,
+    val: string | number | boolean,
+    obj: ast.ObjectExpression,
+    loc: dom.SourceLocation
+  ) {
+    obj.properties.push(astProperty(key, astLiteral(val, loc), loc));
+  }
+}
+
+// =============================================================================
+// CompilerValue
+// =============================================================================
+
+export class CompilerValue {
+  attr: dom.ServerAttribute;
+  name: string;
+  exp: ast.Expression;
+  // as ValueProps
+  // exp: value.ValueExp;
+  // deps?: value.ValueDep[] | undefined;
+
+  constructor(node: CompilerNode, attr: dom.ServerAttribute) {
+    this.attr = attr;
+    this.name = this.getName(attr.name);
+    this.exp = typeof attr.value === 'string'
+      ? astLiteralFunction(attr.value, attr.valueLoc!)
+      : attr.value!;
+    node.values || (node.values = {});
+    node.values[this.name] = this;
+  }
+
+  getName(name: string): string {
+    if (name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
+      return name.substring(SRC_LOGIC_ATTR_PREFIX.length);
+    }
+    return name;
+  }
+
+  genAST(p: ast.ObjectExpression, k: string) {
+    const loc = this.attr.valueLoc ?? this.attr.loc;
+    const obj = astObjectExpression(loc);
+    obj.properties.push(astProperty('exp', this.exp, loc));
+    p.properties.push(astProperty(k, obj, loc));
+  }
 }

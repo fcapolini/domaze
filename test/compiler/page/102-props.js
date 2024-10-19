@@ -1,28 +1,26 @@
 ({
-  root: [
-    {
-      id: 0,
-      name: 'page',
-      values: {
-        v: {
-          exp: function() { return () => {
+  root: {
+    id: 0,
+    name: 'page',
+    values: {
+      v: {
+        exp: function () {
+          return () => {
             let x = 1;
             return x;
-          } }
-        },
-      },
-      children: [
-        {
-          id: 1,
-          name: 'head',
-          children: []
-        },
-        {
-          id: 2,
-          name: 'body',
-          children: []
+          }
         }
-      ]
-    }
-  ]
+      },
+    },
+    children: [
+      {
+        id: 1,
+        name: 'head'
+      },
+      {
+        id: 2,
+        name: 'body'
+      }
+    ]
+  }
 })

@@ -4,8 +4,8 @@ import escodegen from 'escodegen';
 import fs from 'fs';
 import { describe } from 'mocha';
 import path from 'path';
-import { CompilerPage } from '../../src/compiler/compiler-page';
 import * as parser from '../../src/html/parser';
+import { compilePage, CompilerPage } from '../../src/compiler/compiler';
 
 const docroot = path.join(__dirname, 'page');
 const inSuffix = '-in.html';
@@ -27,7 +27,7 @@ describe.skip('compiler/page', () => {
         const inSource = parser.parse(inText.toString(), file);
         assert.equal(inSource.errors.length, 0);
 
-        const page = new CompilerPage(inSource.doc, { root: { id: 0 } });
+        const page = new CompilerPage(inSource.doc);
 
         const errPath = path.join(docroot, name + errSuffix);
         if (fs.existsSync(errPath)) {
@@ -52,12 +52,12 @@ describe.skip('compiler/page', () => {
 
         const propsPath = path.join(docroot, name + propsSuffix);
         if (fs.existsSync(propsPath)) {
-          const propsText = (await fs.promises.readFile(propsPath)).toString();
-          const propsAst = acorn.parse(propsText, { ecmaVersion: 'latest' });
-          const propsJS = escodegen.generate(propsAst);
+          const text = (await fs.promises.readFile(propsPath)).toString();
+          const expectedAST = acorn.parse(text, { ecmaVersion: 'latest' });
+          const expectedJS = escodegen.generate(expectedAST, { format: { compact: true } });
           assert.equal(
-            `(${escodegen.generate(page.ast)});`,
-            propsJS
+            `(${escodegen.generate(page.genAST(), { format: { compact: true } })});`,
+            expectedJS
           );
         }
       });

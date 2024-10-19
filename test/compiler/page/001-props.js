@@ -1,20 +1,16 @@
 ({
-  root: [
-    {
-      id: 0,
-      name: 'page',
-      children: [
-        {
-          id: 1,
-          name: 'head',
-          children: []
-        },
-        {
-          id: 2,
-          name: 'body',
-          children: []
-        }
-      ]
-    }
-  ]
+  root: {
+    id: 0,
+    name: 'page',
+    children: [
+      {
+        id: 1,
+        name: 'head'
+      },
+      {
+        id: 2,
+        name: 'body'
+      }
+    ]
+  }
 })

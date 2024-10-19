@@ -1,4 +1,4 @@
-import { ArrayExpression, Expression, Identifier, Literal, ObjectExpression, Property } from 'acorn';
+import { ArrayExpression, Expression, FunctionExpression, Identifier, Literal, ObjectExpression, Property } from 'acorn';
 import { SourceLocation } from '../../html/server-dom';
 
 export function astLocation(l: SourceLocation) {
@@ -52,6 +52,30 @@ export function astLiteral(
   return {
     type: 'Literal',
     value,
+    ...astLocation(l)
+  };
+}
+
+export function astLiteralFunction(
+  value: string | number | boolean, l: SourceLocation
+): FunctionExpression {
+  return {
+    type: 'FunctionExpression',
+    expression: false,
+    generator: false,
+    async: false,
+    params: [],
+    body: {
+      type: 'BlockStatement',
+      body: [
+        {
+          type: 'ReturnStatement',
+          argument: astLiteral(value, l),
+          ...astLocation(l)
+        }
+      ],
+      ...astLocation(l)
+    },
     ...astLocation(l)
   };
 }
