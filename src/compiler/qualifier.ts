@@ -134,7 +134,7 @@ function isFunctionParam(name: string, params: es.Pattern[]) {
   return false;
 }
 
-function inFunctionBody(stack: es.Node[]) {
+export function inFunctionBody(stack: es.Node[]) {
   for (let i = stack.length - 2; i >= 1; i--) {
     if ([
       'FunctionDeclaration',

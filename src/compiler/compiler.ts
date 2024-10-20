@@ -18,6 +18,7 @@ import { SRC_LOGIC_ATTR_PREFIX } from './compiler-page';
 import * as ck from './consts';
 import { qualifyReferences } from './qualifier';
 import { Observable } from './util';
+import { generateDeps } from './dependencies';
 
 export interface CompilerProps {
   csr?: boolean;
@@ -191,7 +192,7 @@ export class CompilerNode {
     this.dom = e;
     this.parent = p;
     this.id = page.count++;
-    this.name = this.getName(e);
+    this.name = this.genName(e);
     this.children = [];
     p?.children.push(this);
     e.setAttribute(rk.OUT_ID_ATTR, `${this.id}`);
@@ -243,9 +244,22 @@ export class CompilerNode {
     return false;
   }
 
-  getName(dom: dom.ServerElement): string | undefined {
+  genName(dom: dom.ServerElement): string | undefined {
     //TODO
     return ck.SRC_DEF_SCOPE_NAMES[dom.tagName];
+  }
+
+  getValue(key: string): CompilerValue | undefined {
+    return this.values ? this.values[key] : undefined;
+  }
+
+  getChild(key: string): CompilerNode | undefined {
+    for (const child of this.children) {
+      if (child.name === key) {
+        return child;
+      }
+    }
+    return undefined;
   }
 
   genAST(p: ast.ObjectExpression | ast.ArrayExpression, k?: string) {
@@ -299,6 +313,7 @@ export class CompilerValue {
   attr: dom.ServerAttribute;
   name: string;
   exp: ast.Expression;
+  deps?: ast.Expression[];
   // as ValueProps
   // exp: value.ValueExp;
   // deps?: value.ValueDep[] | undefined;
@@ -322,7 +337,7 @@ export class CompilerValue {
 
   resolve() {
     qualifyReferences(this.name, this.exp as es.Node);
-    //TODO
+    this.deps = generateDeps(this.node, this.exp as es.Node);
   }
 
   getName(name: string): string {
@@ -337,5 +352,12 @@ export class CompilerValue {
     const obj = astObjectExpression(loc);
     obj.properties.push(astProperty('exp', this.exp, loc));
     p.properties.push(astProperty(k, obj, loc));
+    //TODO: deps
+    if (!this.deps) {
+      return;
+    }
+    const deps = astArrayExpression(loc);
+    this.deps.forEach(e => deps.elements.push(e));
+    obj.properties.push(astProperty('deps', deps, loc));
   }
 }
