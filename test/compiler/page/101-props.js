@@ -9,7 +9,7 @@
       v: {
         exp: function () { return this.x + 1; },
         deps: [
-          function () { return this.$value('x'); }
+          function () { return this.__value__('x'); }
         ]
       },
     },

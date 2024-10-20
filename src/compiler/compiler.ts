@@ -1,20 +1,23 @@
+import * as ast from 'acorn';
 import chokidar from 'chokidar';
+import { generate } from 'escodegen';
+import * as es from 'estree';
+import * as rk from '../../src/runtime/consts';
+import * as idom from '../html/dom';
 import { PageError, Source } from '../html/parser';
 import { Preprocessor } from '../html/preprocessor';
-import * as idom from '../html/dom';
 import * as dom from '../html/server-dom';
 import * as node from '../runtime/node';
 import * as page from '../runtime/page';
-import * as value from '../runtime/value';
 import { defaultLogger, PageLogicLogger } from '../utils/logger';
-import * as ck from './consts';
-import * as rk from '../../src/runtime/consts';
-import { Observable } from './util';
-import { generate } from 'escodegen';
-import { astArrayExpression, astLiteral, astLiteralFunction, astObjectExpression, astProperty } from './ast/acorn-utils';
-import * as ast from 'acorn';
+import {
+  astArrayExpression, astExpFunction, astLiteral, astLiteralFunction,
+  astObjectExpression, astProperty
+} from './ast/acorn-utils';
 import { SRC_LOGIC_ATTR_PREFIX } from './compiler-page';
-import acorn from 'acorn';
+import * as ck from './consts';
+import { qualifyReferences } from './qualifier';
+import { Observable } from './util';
 
 export interface CompilerProps {
   csr?: boolean;
@@ -147,14 +150,17 @@ export class CompilerPage {
   doc: dom.ServerDocument;
   errors: PageError[];
   count: number;
+  global: CompilerNode;
   // as PageProps
   root: CompilerNode;
 
   constructor(doc: dom.ServerDocument) {
     this.doc = doc;
     this.errors = [];
-    this.count = 0;
-    this.root = new CompilerNode(this, doc.documentElement!);
+    this.count = -1;
+    this.global = new CompilerGlobal(this, doc);
+    this.root = this.global.children[0];
+    this.root.resolve();
   }
 
   genAST(): ast.ObjectExpression {
@@ -171,16 +177,19 @@ export class CompilerPage {
 export class CompilerNode {
   page: CompilerPage;
   dom: dom.ServerElement;
+  parent?: CompilerNode;
   // as NodeProps
   id: number;
   name?: string;
   type?: node.NodeType;
+  isolate?: boolean;
   values?: { [key: string]: CompilerValue };
   children: CompilerNode[];
 
   constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
     this.page = page;
     this.dom = e;
+    this.parent = p;
     this.id = page.count++;
     this.name = this.getName(e);
     this.children = [];
@@ -194,6 +203,13 @@ export class CompilerNode {
       }
     }
     this.collectChildren(e);
+  }
+
+  resolve() {
+    this.values && Reflect.ownKeys(this.values).forEach(key => {
+      typeof key === 'string' && this.values![key].resolve();
+    });
+    this.children.forEach(n => n.resolve());
   }
 
   collectChildren(e: dom.ServerElement) {
@@ -219,6 +235,9 @@ export class CompilerNode {
       return false;
     }
     if (a.name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
+      return true;
+    }
+    if (typeof a.value === 'object') {
       return true;
     }
     return false;
@@ -265,10 +284,18 @@ export class CompilerNode {
 }
 
 // =============================================================================
+// CompilerGlobal
+// =============================================================================
+
+export class CompilerGlobal extends CompilerNode {
+}
+
+// =============================================================================
 // CompilerValue
 // =============================================================================
 
 export class CompilerValue {
+  node: CompilerNode;
   attr: dom.ServerAttribute;
   name: string;
   exp: ast.Expression;
@@ -277,20 +304,32 @@ export class CompilerValue {
   // deps?: value.ValueDep[] | undefined;
 
   constructor(node: CompilerNode, attr: dom.ServerAttribute) {
+    this.node = node;
     this.attr = attr;
     this.name = this.getName(attr.name);
     this.exp = typeof attr.value === 'string'
       ? astLiteralFunction(attr.value, attr.valueLoc!)
       : attr.value!;
+    this.exp = astExpFunction(
+      attr.value == null || typeof attr.value === 'string'
+        ? astLiteral(attr.value ?? '', attr.valueLoc!)
+        : attr.value,
+      attr.valueLoc!
+    );
     node.values || (node.values = {});
     node.values[this.name] = this;
+  }
+
+  resolve() {
+    qualifyReferences(this.name, this.exp as es.Node);
+    //TODO
   }
 
   getName(name: string): string {
     if (name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
       return name.substring(SRC_LOGIC_ATTR_PREFIX.length);
     }
-    return name;
+    return rk.RT_ATTR_VALUE_PREFIX + name;
   }
 
   genAST(p: ast.ObjectExpression, k: string) {

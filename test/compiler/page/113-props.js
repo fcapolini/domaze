@@ -19,7 +19,7 @@
           t$0: {
             exp: function () { return this.v; },
             deps: [
-              function () { return this.$value('v'); }
+              function () { return this.__value__('v'); }
             ]
           },
         }

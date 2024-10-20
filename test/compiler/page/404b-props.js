@@ -17,13 +17,11 @@
         id: 2,
         name: 'body',
         values: {
-          z: { exp: function () { return 3; } },
           v: {
-            exp: function () { return this.x + this.head.y + this.z; },
+            exp: function () { return this.x + this.head.y; },
             deps: [
               function () { return this.__value__('x'); },
               function () { return this.head.__value__('y'); },
-              function () { return this.__value__('z'); },
             ]
           }
         }

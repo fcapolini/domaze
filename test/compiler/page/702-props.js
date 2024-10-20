@@ -29,7 +29,7 @@
                   t$0: {
                     exp: function () { return this.item; },
                     deps: [
-                      function () { return this.$value('item'); }
+                      function () { return this.__value__('item'); }
                     ]
                   }
                 },

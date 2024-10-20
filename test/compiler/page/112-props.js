@@ -17,9 +17,9 @@
         name: 'body',
         values: {
           v: {
-            exp: function () { return this.$parent.v + 1; },
+            exp: function () { return this.__parent__.v + 1; },
             deps: [
-              function () { return this.$parent.$value('v'); }
+              function () { return this.__parent__.__value__('v'); }
             ]
           },
         }

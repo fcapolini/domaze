@@ -80,6 +80,30 @@ export function astLiteralFunction(
   };
 }
 
+export function astExpFunction(
+  exp: Expression, l: SourceLocation
+): FunctionExpression {
+  return {
+    type: 'FunctionExpression',
+    expression: false,
+    generator: false,
+    async: false,
+    params: [],
+    body: {
+      type: 'BlockStatement',
+      body: [
+        {
+          type: 'ReturnStatement',
+          argument: exp,
+          ...astLocation(l)
+        }
+      ],
+      ...astLocation(l)
+    },
+    ...astLocation(l)
+  };
+}
+
 export function getProperty(
   o: ObjectExpression,
   name: string

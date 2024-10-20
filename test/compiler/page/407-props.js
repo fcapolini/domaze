@@ -16,10 +16,10 @@
         name: 'body',
         values: {
           v: {
-            exp: function () { return this.x + this.$parent.v; },
+            exp: function () { return this.x + this.__parent__.v; },
             deps: [
-              function () { return this.$value('x'); },
-              function () { return this.$parent.$value('v'); },
+              function () { return this.__value__('x'); },
+              function () { return this.__parent__.__value__('v'); },
             ]
           }
         }
