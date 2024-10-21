@@ -18,10 +18,9 @@
         name: 'body',
         values: {
           v: {
-            exp: function () { return this.x + this.head.y; },
+            exp: function () { return this.x + this.head[this.x]; },
             deps: [
-              function () { return this.__value__('x'); },
-              function () { return this.head.__value__('y'); },
+              function () { return this.__value__('x'); }
             ]
           }
         }

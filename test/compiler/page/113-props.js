@@ -16,7 +16,7 @@
         id: 2,
         name: 'body',
         values: {
-          t$0: {
+          text$0: {
             exp: function () { return this.v; },
             deps: [
               function () { return this.__value__('v'); }

@@ -106,17 +106,14 @@ export interface CompiledPage {
 export function compilePage(src: Source, csr?: boolean): CompiledPage {
   const page = new CompilerPage(src.doc);
   const ret: CompiledPage = { errors: page.errors };
-  // const global = page.global as ServerGlobal;
   if (page.errors.length) {
     return ret;
   }
   let js;
-  // let props;
   try {
     js = generate(page.genAST(), {
       format: { compact: true }
     });
-    // props = eval(`(${js})`);
   } catch (err) {
     page.errors.push(new PageError(
       'error', `compiler internal error: ${err}`, src.doc.loc
@@ -185,6 +182,7 @@ export class CompilerNode {
   type?: node.NodeType;
   isolate?: boolean;
   values?: { [key: string]: CompilerValue };
+  textCount: number;
   children: CompilerNode[];
 
   constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
@@ -193,6 +191,7 @@ export class CompilerNode {
     this.parent = p;
     this.id = page.count++;
     this.name = this.genName(e);
+    this.textCount = 0;
     this.children = [];
     p?.children.push(this);
     e.setAttribute(rk.OUT_ID_ATTR, `${this.id}`);
@@ -214,13 +213,42 @@ export class CompilerNode {
   }
 
   collectChildren(e: dom.ServerElement) {
-    e.childNodes.forEach(n => {
+    [...e.childNodes].forEach(n => {
       if (n.nodeType === idom.NodeType.ELEMENT) {
         if (this.needsScope(n as dom.ServerElement)) {
           new CompilerNode(this.page, n as dom.ServerElement, this);
           return;
         }
         this.collectChildren(n as dom.ServerElement);
+        return;
+      }
+      if (n.nodeType === idom.NodeType.TEXT) {
+        if (typeof (n as dom.ServerText).textContent === 'string') {
+          return;
+        }
+        // adapt markup
+        const id = this.textCount++;
+        const t = n as dom.ServerText;
+        e.insertBefore(new dom.ServerComment(
+          e.ownerDocument,
+          rk.OUT_TEXT_MARKER1 + id,
+          t.loc
+        ), t);
+        e.insertBefore(new dom.ServerComment(
+          e.ownerDocument,
+          rk.OUT_TEXT_MARKER2,
+          t.loc
+        ), t);
+        e.removeChild(t);
+        // add text value
+        this.values || (this.values = {});
+        this.values[rk.RT_TEXT_VALUE_PREFIX + id] = new CompilerValue(
+          this,
+          new dom.ServerAttribute(
+            e.ownerDocument, null, '', t.textContent, t.loc
+          ),
+          rk.RT_TEXT_VALUE_PREFIX + id
+        );
       }
     });
   }
@@ -228,6 +256,14 @@ export class CompilerNode {
   needsScope(e: dom.ServerElement) {
     if (ck.SRC_DEF_SCOPE_NAMES[e.tagName]) {
       return true;
+    }
+    for (const attr of e.attributes) {
+      if (attr.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
+        return true;
+      }
+      if (typeof attr.value === 'object') {
+        return true;
+      }
     }
     return false;
   }
@@ -245,9 +281,19 @@ export class CompilerNode {
     return false;
   }
 
-  genName(dom: dom.ServerElement): string | undefined {
-    //TODO
-    return ck.SRC_DEF_SCOPE_NAMES[dom.tagName];
+  genName(e: dom.ServerElement): string | undefined {
+    const attr = e.getAttributeNode(ck.SRC_NAME_ATTR);
+    if (attr) {
+      if (typeof attr.value !== 'string' || !ck.NODE_NAME_RE.test(attr.value)) {
+        this.page.errors.push(new PageError(
+          'error', 'invalid app node name', e.loc
+        ));
+        return;
+      }
+      e.delAttributeNode(attr);
+      return attr.value;
+    }
+    return ck.SRC_DEF_SCOPE_NAMES[e.tagName];
   }
 
   getValue(key: string): CompilerValue | undefined {
@@ -303,6 +349,13 @@ export class CompilerNode {
 // =============================================================================
 
 export class CompilerGlobal extends CompilerNode {
+  constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
+    super(page, e, p);
+    const dummyAttr = new dom.ServerAttribute(null, null, '', null, e.loc);
+    this.values = {
+      console: new CompilerValue(this, dummyAttr, 'console'),
+    }
+  }
 }
 
 // =============================================================================
@@ -319,18 +372,18 @@ export class CompilerValue {
   // exp: value.ValueExp;
   // deps?: value.ValueDep[] | undefined;
 
-  constructor(node: CompilerNode, attr: dom.ServerAttribute) {
+  constructor(node: CompilerNode, attr: dom.ServerAttribute, name?: string) {
     this.node = node;
     this.attr = attr;
-    this.name = this.getName(attr.name);
+    this.name = name ?? this.getName(attr.name, attr.loc);
     this.exp = typeof attr.value === 'string'
-      ? astLiteralFunction(attr.value, attr.valueLoc!)
+      ? astLiteralFunction(attr.value, attr.valueLoc ?? attr.loc)
       : attr.value!;
     this.exp = astExpFunction(
       attr.value == null || typeof attr.value === 'string'
-        ? astLiteral(attr.value ?? '', attr.valueLoc!)
+        ? astLiteral(attr.value ?? '', attr.valueLoc ?? attr.loc)
         : attr.value,
-      attr.valueLoc!
+      attr.valueLoc ?? attr.loc
     );
     node.values || (node.values = {});
     node.values[this.name] = this;
@@ -341,7 +394,21 @@ export class CompilerValue {
     this.deps = generateDeps(this, this.exp as es.Node);
   }
 
-  getName(name: string): string {
+  getName(name: string, loc: dom.SourceLocation): string {
+    if (name.startsWith(ck.SRC_SYS_ATTR_PREFIX)) {
+      if (name === ck.SRC_NAME_ATTR) {
+        return rk.RT_NAME_KEY;
+      }
+      this.node.page.errors.push(new PageError(
+        'error',
+        `unknown system attribute ${name}`,
+        loc
+      ));
+    }
+    if (name.startsWith(ck.SRC_EV_ATTR_PREFIX)) {
+      const evname = name.substring(ck.SRC_EV_ATTR_PREFIX.length);
+      return rk.RT_EVENT_VALUE_PREFIX + evname;
+    }
     if (name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
       return name.substring(ck.SRC_LOGIC_ATTR_PREFIX.length);
     }

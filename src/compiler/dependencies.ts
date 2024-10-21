@@ -6,6 +6,8 @@ import { generate } from 'escodegen';
 import { astIdentifier, astLiteral } from './ast/acorn-utils';
 import { RT_PARENT_KEY, RT_VALUE_KEY } from '../runtime/consts';
 import { inFunctionBody } from './qualifier';
+import { PageError } from '../html/parser';
+import { SourceLocation } from 'acorn';
 
 export function generateDeps(
   value: CompilerValue,
@@ -28,7 +30,7 @@ export function generateDeps(
           return;
         }
         if (!inFunctionBody(stack)) {
-          const dep = makeDep(value, path);
+          const dep = makeDep(value, path, me!.loc!);
           dep && ret.push(dep);
         }
       }
@@ -45,7 +47,7 @@ export function generateDeps(
 type PathItem = { key: string, type: 'this' | 'id' | 'literal' };
 
 function makeDep(
-  value: CompilerValue, path: string
+  value: CompilerValue, path: string, l: SourceLocation
 ): ast.FunctionExpression | null {
   const prog = ast.parse(path, { ecmaVersion: 'latest' }) as ast.Program;
   const stmt = prog.body[0] as ast.ExpressionStatement;
@@ -71,7 +73,19 @@ function makeDep(
       }
     }
   });
-  if (!valid || items.length < 2 || !refinePath(value, items)) {
+  if (!valid || items.length < 2) {
+    return null;
+  }
+  const res = refinePath(value, items);
+  switch (res) {
+  case 'ignore':
+    return null;
+  case 'error':
+    value.node.page.errors.push(new PageError(
+      'error',
+      'invalid reference: ' + path.replace(/^this\./, ''),
+      l
+    ));
     return null;
   }
   //
@@ -128,34 +142,36 @@ function makeDep(
   return fun;
 }
 
-function refinePath(value: CompilerValue, items: PathItem[]): boolean {
+function refinePath(
+  value: CompilerValue, items: PathItem[]
+): 'ok' | 'ignore' | 'error' {
   let target: CompilerNode | undefined = value.node;
   for (let i = 0; target && i < items.length; i++) {
     if (items[i].type === 'id' || items[i].type === 'literal') {
       const t = lookupTarget(items[i].key, target);
       if (t && t instanceof CompilerValue) {
         items.splice(i + 1);
-        return true;
+        return t.node instanceof CompilerGlobal ? 'ignore' : 'ok';
       }
-      if (!t || !(t instanceof CompilerNode) || t instanceof CompilerGlobal) {
-        return false;
+      if (!t || !(t instanceof CompilerNode)) {
+        return 'error';
       }
       target = t;
     }
   }
-  return false;
+  return 'error';
 }
 
 function lookupTarget(
-  key: string, node?: CompilerNode
+  key: string, node: CompilerNode
 ): CompilerNode | CompilerValue | undefined {
   let ret: CompilerNode | CompilerValue | undefined;
   if (key === RT_PARENT_KEY) {
-    return node?.parent;
+    return node.parent;
   }
-  ret ??= node?.getValue(key);
-  ret ??= node?.getChild(key);
-  ret ??= lookupTarget(key, node?.parent);
+  ret ??= node.getValue(key);
+  ret ??= node.getChild(key);
+  node.parent && (ret ??= lookupTarget(key, node.parent));
   return ret;
 }
 

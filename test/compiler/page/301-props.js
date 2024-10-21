@@ -9,10 +9,7 @@
       },
       {
         id: 2,
-        name: 'app',
-        values: {
-          $name: { exp: function () { return 'app'; } }
-        }
+        name: 'app'
       }
     ]
   }

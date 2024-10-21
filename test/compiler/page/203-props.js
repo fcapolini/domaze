@@ -17,14 +17,13 @@
               v: {
                 exp: function () { return 'hi'; }
               },
-              t$0: {
+              text$0: {
                 exp: function () { return this.v; },
                 deps: [
                   function () { return this.__value__('v'); }
                 ]
               }
-            },
-            children: []
+            }
           }
         ]
       }

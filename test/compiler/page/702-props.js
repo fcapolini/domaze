@@ -26,7 +26,7 @@
                   item: {
                     exp: function () { return ''; }
                   },
-                  t$0: {
+                  text$0: {
                     exp: function () { return this.item; },
                     deps: [
                       function () { return this.__value__('item'); }

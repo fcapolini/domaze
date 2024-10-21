@@ -1,7 +1,10 @@
 
 export const SRC_LOGIC_ATTR_PREFIX = ':';
-export const SRC_SYS_VALUE_PREFIX = SRC_LOGIC_ATTR_PREFIX + ':';
-export const SRC_NAME_ATTR = SRC_SYS_VALUE_PREFIX + 'name';
+export const SRC_SYS_ATTR_PREFIX = SRC_LOGIC_ATTR_PREFIX + ':';
+export const SRC_NAME_ATTR = SRC_SYS_ATTR_PREFIX + 'name';
+export const SRC_EV_ATTR_PREFIX = SRC_LOGIC_ATTR_PREFIX + 'on-';
+
+export const NODE_NAME_RE = /^[a-zA-Z_]\w*$/;
 
 export const SRC_DEF_SCOPE_NAMES: { [key: string]: string } = {
   HTML: 'page',
