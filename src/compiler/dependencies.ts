@@ -1,13 +1,13 @@
 import * as ast from 'acorn';
-import { CompilerGlobal, CompilerNode, CompilerValue } from './compiler';
-import * as es from 'estree';
-import estraverse from 'estraverse';
-import { generate } from 'escodegen';
-import { astIdentifier, astLiteral } from './ast/acorn-utils';
-import { RT_PARENT_KEY, RT_VALUE_KEY } from '../runtime/consts';
-import { inFunctionBody } from './qualifier';
-import { PageError } from '../html/parser';
 import { SourceLocation } from 'acorn';
+import { generate } from 'escodegen';
+import estraverse from 'estraverse';
+import * as es from 'estree';
+import { PageError } from '../html/parser';
+import { RT_PARENT_KEY, RT_VALUE_KEY } from '../runtime/consts';
+import { astIdentifier, astLiteral } from './ast/acorn-utils';
+import { CompilerGlobalNode, CompilerNode, CompilerValue } from './compiler';
+import { inFunctionBody } from './qualifier';
 
 export function generateDeps(
   value: CompilerValue,
@@ -151,7 +151,7 @@ function refinePath(
       const t = lookupTarget(items[i].key, target);
       if (t && t instanceof CompilerValue) {
         items.splice(i + 1);
-        return t.node instanceof CompilerGlobal ? 'ignore' : 'ok';
+        return t.node instanceof CompilerGlobalNode ? 'ignore' : 'ok';
       }
       if (!t || !(t instanceof CompilerNode)) {
         return 'error';

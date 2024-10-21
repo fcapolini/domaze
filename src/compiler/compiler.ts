@@ -15,9 +15,9 @@ import {
   astObjectExpression, astProperty
 } from './ast/acorn-utils';
 import * as ck from './consts';
+import { generateDeps } from './dependencies';
 import { qualifyReferences } from './qualifier';
 import { Observable } from './util';
-import { generateDeps } from './dependencies';
 
 export interface CompilerProps {
   csr?: boolean;
@@ -156,7 +156,7 @@ export class CompilerPage {
     this.doc = doc;
     this.errors = [];
     this.count = -1;
-    this.global = new CompilerGlobal(this, doc);
+    this.global = new CompilerGlobalNode(this, doc);
     this.root = this.global.children[0];
     this.root.resolve();
   }
@@ -185,12 +185,18 @@ export class CompilerNode {
   textCount: number;
   children: CompilerNode[];
 
-  constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
+  constructor(
+    page: CompilerPage,
+    e: dom.ServerElement,
+    p?: CompilerNode,
+    type?: node.NodeType
+  ) {
     this.page = page;
     this.dom = e;
     this.parent = p;
     this.id = page.count++;
     this.name = this.genName(e);
+    this.type = type;
     this.textCount = 0;
     this.children = [];
     p?.children.push(this);
@@ -226,7 +232,7 @@ export class CompilerNode {
           }
           switch (e.tagName) {
           case ck.SRC_FOREACH_DIRECTIVE:
-            new CompilerForeachDirective(this.page, e, this);
+            new CompilerForeachNode(this.page, e, this);
             return;
           }
         }
@@ -272,7 +278,7 @@ export class CompilerNode {
     if (ck.SRC_DEF_NODE_NAMES[e.tagName]) {
       return true;
     }
-    if (p instanceof CompilerDirective) {
+    if (p.type === 'foreach') {
       e.addAttribute(ck.SRC_FOREACH_ITEM_ATTR, '', e.loc);
       return true;
     }
@@ -365,23 +371,12 @@ export class CompilerNode {
 }
 
 // =============================================================================
-// CompilerDirective
+// CompilerForeachNode
 // =============================================================================
 
-export class CompilerDirective extends CompilerNode {
+export class CompilerForeachNode extends CompilerNode {
   constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
-    super(page, e, p);
-  }
-}
-
-// =============================================================================
-// CompilerForeachDirective
-// =============================================================================
-
-export class CompilerForeachDirective extends CompilerDirective {
-  constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
-    super(page, e, p);
-    this.type = 'foreach';
+    super(page, e, p, 'foreach');
     e.tagName = 'TEMPLATE';
     let elementCount = 0;
     [...e.childNodes].forEach(n => {
@@ -412,10 +407,10 @@ export class CompilerForeachDirective extends CompilerDirective {
 }
 
 // =============================================================================
-// CompilerGlobal
+// CompilerGlobalNode
 // =============================================================================
 
-export class CompilerGlobal extends CompilerNode {
+export class CompilerGlobalNode extends CompilerNode {
   constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
     super(page, e, p);
     const dummyAttr = new dom.ServerAttribute(null, null, '', null, e.loc);
