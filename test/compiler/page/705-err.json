@@ -1,0 +1,4 @@
+[
+  "<:foreach> should contain a single element",
+  "missing :item attribute in <:foreach>"
+]

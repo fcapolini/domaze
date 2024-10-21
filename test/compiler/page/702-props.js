@@ -32,8 +32,7 @@
                       function () { return this.__value__('item'); }
                     ]
                   }
-                },
-                children: []
+                }
               }
             ]
           }

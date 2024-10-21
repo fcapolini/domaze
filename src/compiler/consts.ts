@@ -1,3 +1,4 @@
+import { DIRECTIVE_TAG_PREFIX } from "../html/dom";
 
 export const SRC_LOGIC_ATTR_PREFIX = ':';
 export const SRC_SYS_ATTR_PREFIX = SRC_LOGIC_ATTR_PREFIX + ':';
@@ -6,11 +7,17 @@ export const SRC_EV_ATTR_PREFIX = SRC_LOGIC_ATTR_PREFIX + 'on-';
 
 export const NODE_NAME_RE = /^[a-zA-Z_]\w*$/;
 
-export const SRC_DEF_SCOPE_NAMES: { [key: string]: string } = {
+export const SRC_DEF_NODE_NAMES: { [key: string]: string } = {
   HTML: 'page',
   HEAD: 'head',
   BODY: 'body'
 };
+
+export const SRC_FOREACH_DIRECTIVE = DIRECTIVE_TAG_PREFIX + 'FOREACH';
+export const SRC_FOREACH_ITEM_ATTR = SRC_LOGIC_ATTR_PREFIX + 'item';
+export const SRC_DIRECTIVES: string[] = [
+  SRC_FOREACH_DIRECTIVE
+];
 
 export const CLIENT_CODE_SRC = '../client.js';
 export const CLIENT_CODE_REQ = '/.pagelogic.js';

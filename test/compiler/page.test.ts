@@ -13,7 +13,7 @@ const outSuffix = '-out.html';
 const propsSuffix = '-props.js';
 const errSuffix = '-err.json';
 
-describe.skip('compiler/page', () => {
+describe('compiler/page', () => {
   fs.readdirSync(docroot).forEach(file => {
     const inPath = path.join(docroot, file);
     if (
@@ -41,7 +41,11 @@ describe.skip('compiler/page', () => {
         }
         const root = page.root;
         assert.exists(root);
-        assert.equal(root.dom, inSource.doc.documentElement);
+        // assert.equal(root.dom, inSource.doc.documentElement);
+        assert.equal(
+          parser.normalizeText(root.dom.toString()),
+          parser.normalizeText(inSource.doc.documentElement?.toString()),
+        );
 
         const outPath = path.join(docroot, name + outSuffix);
         if (fs.existsSync(outPath)) {

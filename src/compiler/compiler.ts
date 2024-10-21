@@ -215,11 +215,26 @@ export class CompilerNode {
   collectChildren(e: dom.ServerElement) {
     [...e.childNodes].forEach(n => {
       if (n.nodeType === idom.NodeType.ELEMENT) {
-        if (this.needsScope(n as dom.ServerElement)) {
-          new CompilerNode(this.page, n as dom.ServerElement, this);
+        const e = n as dom.ServerElement;
+        if (e.tagName.startsWith(idom.DIRECTIVE_TAG_PREFIX)) {
+          if (!ck.SRC_DIRECTIVES.includes(e.tagName)) {
+            this.page.errors.push(new PageError(
+              'error',
+              'unknown directive ' + e.tagName,
+              e.loc
+            ));
+          }
+          switch (e.tagName) {
+          case ck.SRC_FOREACH_DIRECTIVE:
+            new CompilerForeachDirective(this.page, e, this);
+            return;
+          }
+        }
+        if (this.needsNode(e, this)) {
+          new CompilerNode(this.page, e, this);
           return;
         }
-        this.collectChildren(n as dom.ServerElement);
+        this.collectChildren(e);
         return;
       }
       if (n.nodeType === idom.NodeType.TEXT) {
@@ -253,8 +268,12 @@ export class CompilerNode {
     });
   }
 
-  needsScope(e: dom.ServerElement) {
-    if (ck.SRC_DEF_SCOPE_NAMES[e.tagName]) {
+  needsNode(e: dom.ServerElement, p: CompilerNode) {
+    if (ck.SRC_DEF_NODE_NAMES[e.tagName]) {
+      return true;
+    }
+    if (p instanceof CompilerDirective) {
+      e.addAttribute(ck.SRC_FOREACH_ITEM_ATTR, '', e.loc);
       return true;
     }
     for (const attr of e.attributes) {
@@ -293,7 +312,7 @@ export class CompilerNode {
       e.delAttributeNode(attr);
       return attr.value;
     }
-    return ck.SRC_DEF_SCOPE_NAMES[e.tagName];
+    return ck.SRC_DEF_NODE_NAMES[e.tagName];
   }
 
   getValue(key: string): CompilerValue | undefined {
@@ -319,6 +338,7 @@ export class CompilerNode {
     }
     ret.properties.push(astProperty('id', astLiteral(this.id, loc), loc));
     this.name && this.addLiteral('name', this.name, ret, loc);
+    this.type && this.addLiteral('type', this.type, ret, loc);
     if (this.values) {
       const values = astObjectExpression(loc);
       ret.properties.push(astProperty('values', values, loc));
@@ -341,6 +361,53 @@ export class CompilerNode {
     loc: dom.SourceLocation
   ) {
     obj.properties.push(astProperty(key, astLiteral(val, loc), loc));
+  }
+}
+
+// =============================================================================
+// CompilerDirective
+// =============================================================================
+
+export class CompilerDirective extends CompilerNode {
+  constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
+    super(page, e, p);
+  }
+}
+
+// =============================================================================
+// CompilerForeachDirective
+// =============================================================================
+
+export class CompilerForeachDirective extends CompilerDirective {
+  constructor(page: CompilerPage, e: dom.ServerElement, p?: CompilerNode) {
+    super(page, e, p);
+    this.type = 'foreach';
+    e.tagName = 'TEMPLATE';
+    let elementCount = 0;
+    [...e.childNodes].forEach(n => {
+      if (n.nodeType !== idom.NodeType.ELEMENT) {
+        e.removeChild(n);
+        return;
+      }
+      elementCount++;
+    });
+    if (elementCount !== 1) {
+      this.page.errors.push(new PageError(
+        'error',
+        `<${ck.SRC_FOREACH_DIRECTIVE.toLowerCase()}>`
+          + ' should contain a single element',
+        e.loc
+      ));
+    }
+    const attrKey = ck.SRC_FOREACH_ITEM_ATTR;
+    const valueKey = attrKey.substring(ck.SRC_LOGIC_ATTR_PREFIX.length);
+    if (!this.values || !this.values[valueKey]) {
+      this.page.errors.push(new PageError(
+        'error',
+        "missing :item attribute in <:foreach>",
+        e.loc
+      ));
+    }
   }
 }
 
