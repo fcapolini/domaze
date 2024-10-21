@@ -62,7 +62,9 @@ function loc(node: es.Node) {
 }
 
 function isQualified(id: es.Identifier, parent: es.Node | null) {
-  return parent?.type === 'MemberExpression' && parent.property === id;
+  return parent?.type === 'MemberExpression'
+    && parent.property === id
+    && !parent.computed;
 }
 
 function isInDeclaration(id: es.Identifier, stack: es.Node[]) {

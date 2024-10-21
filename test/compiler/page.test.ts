@@ -41,7 +41,6 @@ describe('compiler/page', () => {
         }
         const root = page.root;
         assert.exists(root);
-        // assert.equal(root.dom, inSource.doc.documentElement);
         assert.equal(
           parser.normalizeText(root.dom.toString()),
           parser.normalizeText(inSource.doc.documentElement?.toString()),
