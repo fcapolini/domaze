@@ -2,7 +2,6 @@ import * as acorn from 'acorn';
 import estraverse from 'estraverse';
 import * as es from 'estree';
 import * as rk from '../runtime/consts';
-import { generate } from 'escodegen';
 
 export function qualifyReferences(
   key: string | null, exp: es.Node

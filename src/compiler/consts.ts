@@ -1,5 +1,6 @@
 
-export const SRC_SYS_VALUE_PREFIX = '::';
+export const SRC_LOGIC_ATTR_PREFIX = ':';
+export const SRC_SYS_VALUE_PREFIX = SRC_LOGIC_ATTR_PREFIX + ':';
 export const SRC_NAME_ATTR = SRC_SYS_VALUE_PREFIX + 'name';
 
 export const SRC_DEF_SCOPE_NAMES: { [key: string]: string } = {

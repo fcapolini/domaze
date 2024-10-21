@@ -14,7 +14,6 @@ import {
   astArrayExpression, astExpFunction, astLiteral, astLiteralFunction,
   astObjectExpression, astProperty
 } from './ast/acorn-utils';
-import { SRC_LOGIC_ATTR_PREFIX } from './compiler-page';
 import * as ck from './consts';
 import { qualifyReferences } from './qualifier';
 import { Observable } from './util';
@@ -111,12 +110,13 @@ export function compilePage(src: Source, csr?: boolean): CompiledPage {
   if (page.errors.length) {
     return ret;
   }
-  let js, props;
+  let js;
+  // let props;
   try {
     js = generate(page.genAST(), {
       format: { compact: true }
     });
-    props = eval(`(${js})`);
+    // props = eval(`(${js})`);
   } catch (err) {
     page.errors.push(new PageError(
       'error', `compiler internal error: ${err}`, src.doc.loc
@@ -218,8 +218,9 @@ export class CompilerNode {
       if (n.nodeType === idom.NodeType.ELEMENT) {
         if (this.needsScope(n as dom.ServerElement)) {
           new CompilerNode(this.page, n as dom.ServerElement, this);
+          return;
         }
-        return;
+        this.collectChildren(n as dom.ServerElement);
       }
     });
   }
@@ -235,7 +236,7 @@ export class CompilerNode {
     if (a.value == null) {
       return false;
     }
-    if (a.name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
+    if (a.name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
       return true;
     }
     if (typeof a.value === 'object') {
@@ -337,12 +338,12 @@ export class CompilerValue {
 
   resolve() {
     qualifyReferences(this.name, this.exp as es.Node);
-    this.deps = generateDeps(this.node, this.exp as es.Node);
+    this.deps = generateDeps(this, this.exp as es.Node);
   }
 
   getName(name: string): string {
-    if (name.startsWith(SRC_LOGIC_ATTR_PREFIX)) {
-      return name.substring(SRC_LOGIC_ATTR_PREFIX.length);
+    if (name.startsWith(ck.SRC_LOGIC_ATTR_PREFIX)) {
+      return name.substring(ck.SRC_LOGIC_ATTR_PREFIX.length);
     }
     return rk.RT_ATTR_VALUE_PREFIX + name;
   }

@@ -1,13 +1,14 @@
 import * as ast from 'acorn';
-import { CompilerNode, CompilerValue } from './compiler';
+import { CompilerGlobal, CompilerNode, CompilerValue } from './compiler';
 import * as es from 'estree';
 import estraverse from 'estraverse';
 import { generate } from 'escodegen';
-import { astIdentifier, astLiteral, astProperty } from './ast/acorn-utils';
-import { RT_VALUE_KEY } from '../runtime/consts';
+import { astIdentifier, astLiteral } from './ast/acorn-utils';
+import { RT_PARENT_KEY, RT_VALUE_KEY } from '../runtime/consts';
+import { inFunctionBody } from './qualifier';
 
 export function generateDeps(
-  node: CompilerNode,
+  value: CompilerValue,
   exp: es.Node
 ): ast.Expression[] | undefined  {
   const ret: ast.Expression[] = [];
@@ -26,8 +27,10 @@ export function generateDeps(
         if (!path || paths.has(path)) {
           return;
         }
-        const dep = makeDep(node, path);
-        dep && ret.push(dep);
+        if (!inFunctionBody(stack)) {
+          const dep = makeDep(value, path);
+          dep && ret.push(dep);
+        }
       }
     },
 
@@ -42,7 +45,7 @@ export function generateDeps(
 type PathItem = { key: string, type: 'this' | 'id' | 'literal' };
 
 function makeDep(
-  node: CompilerNode, path: string
+  value: CompilerValue, path: string
 ): ast.FunctionExpression | null {
   const prog = ast.parse(path, { ecmaVersion: 'latest' }) as ast.Program;
   const stmt = prog.body[0] as ast.ExpressionStatement;
@@ -68,7 +71,7 @@ function makeDep(
       }
     }
   });
-  if (!valid || items.length < 2 || !refinePath(node, items)) {
+  if (!valid || items.length < 2 || !refinePath(value, items)) {
     return null;
   }
   //
@@ -80,8 +83,8 @@ function makeDep(
   for (let i = 1; i < items.length; i++) {
     const item = items[i];
     const property = item.type === 'id'
-      ? astIdentifier(item.key, node.dom.loc)
-      : astLiteral(item.key, node.dom.loc);
+      ? astIdentifier(item.key, value.node.dom.loc)
+      : astLiteral(item.key, value.node.dom.loc);
     ref = {
       type: 'MemberExpression',
       object: ref,
@@ -125,8 +128,8 @@ function makeDep(
   return fun;
 }
 
-function refinePath(node: CompilerNode, items: PathItem[]): boolean {
-  let target: CompilerNode | undefined = node;
+function refinePath(value: CompilerValue, items: PathItem[]): boolean {
+  let target: CompilerNode | undefined = value.node;
   for (let i = 0; target && i < items.length; i++) {
     if (items[i].type === 'id' || items[i].type === 'literal') {
       const t = lookupTarget(items[i].key, target);
@@ -134,7 +137,7 @@ function refinePath(node: CompilerNode, items: PathItem[]): boolean {
         items.splice(i + 1);
         return true;
       }
-      if (!t || !(t instanceof CompilerNode)) {
+      if (!t || !(t instanceof CompilerNode) || t instanceof CompilerGlobal) {
         return false;
       }
       target = t;
@@ -147,6 +150,9 @@ function lookupTarget(
   key: string, node?: CompilerNode
 ): CompilerNode | CompilerValue | undefined {
   let ret: CompilerNode | CompilerValue | undefined;
+  if (key === RT_PARENT_KEY) {
+    return node?.parent;
+  }
   ret ??= node?.getValue(key);
   ret ??= node?.getChild(key);
   ret ??= lookupTarget(key, node?.parent);
