@@ -10,7 +10,11 @@ describe("core", () => {
   });
 
   it("accepts root value", () => {
-    const ctx = new Context({ values: { foo: { exp: () => 'bar' } } });
+    const ctx = new Context({
+      values: {
+        foo: { exp: function() { return 'bar'; } }
+      }
+    });
     expect(ctx.global.root).toBeDefined();
     expect(ctx.global.root.values).toHaveProperty('foo');
   });
