@@ -1,0 +1,6 @@
+{
+  "npm.exclude": [
+    "**/dist"
+  ],
+  "testing.openTesting": "openOnTestFailure"
+}
