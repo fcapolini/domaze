@@ -1,11 +1,11 @@
 {
   "name": "domaze",
   "version": "0.1.0",
-  "main": "index.js",
+  "main": "cli.js",
   "scripts": {
     "test": "vitest --run",
     "coverage": "vitest --run --coverage",
-    "start": "node dist/index.js",
+    "start": "node dist/cli.js",
     "build": "node scripts/build.js"
   },
   "keywords": [],

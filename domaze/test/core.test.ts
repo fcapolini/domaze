@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Context, RT_VALUE_FN } from "../../src/domaze/core";
+import { Context, RT_VALUE_FN } from "../src/core";
 
 describe("core", () => {
 

@@ -1,8 +1,8 @@
 const esbuild = require('esbuild');
 
 esbuild.build({
-  entryPoints: ['./src/index.ts'], // Entry file
-  outfile: './dist/index.js', // Output file
+  entryPoints: ['./src/cli.ts'], // Entry file
+  outfile: './dist/cli.js', // Output file
   bundle: true, // Bundle dependencies
   platform: 'node', // Target Node.js
   target: 'node16', // Specify Node.js version
