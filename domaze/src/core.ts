@@ -6,17 +6,13 @@ export const RT_VALUE_FN = '$value';
 
 export interface ContextProps {
   globalFactory?: (ctx: Context, props: ScopeProps) => Global;
-  scopeFactory?: (ctx: Context, parent: Scope | null, props: ScopeProps) => Scope;
+  scopeFactory?: (ctx: Context, props: ScopeProps, parent?: Scope) => Scope;
   valueFactory?: (key: string, scope: Scope, props: ValueProps) => Value;
 }
 
 export class Context {
   props?: ContextProps;
-  scopeFactory: (
-    ctx: Context,
-    parent: Scope | null,
-    props: ScopeProps
-  ) => Scope;
+  scopeFactory: (ctx: Context, props: ScopeProps, parent?: Scope) => Scope;
   valueFactory: (key: string, scope: Scope, props: ValueProps) => Value;
   global: Global;
   root: Scope;
@@ -50,10 +46,10 @@ export class Context {
 
   static defScopeFactory(
     ctx: Context,
-    parent: Scope | null,
-    props: ScopeProps
+    props: ScopeProps,
+    parent?: Scope
   ) {
-    return new Scope(ctx, parent, props);
+    return new Scope(ctx, props, parent);
   }
 
   static defValueFactory(_key: string, scope: Scope, props: ValueProps) {
@@ -78,12 +74,12 @@ export class Scope {
   ctx: Context;
   props: ScopeProps;
   values: ScopeValues;
-  parent: Scope | null;
+  parent?: Scope;
   children: Scope[];
   cache: Map<string, Value>;
   obj: any;
 
-  constructor(ctx: Context, parent: Scope | null, props: ScopeProps) {
+  constructor(ctx: Context, props: ScopeProps, parent?: Scope) {
     this.ctx = ctx;
     this.props = props;
 
@@ -102,12 +98,11 @@ export class Scope {
     }
 
     this.children = props.children
-      ? props.children.map((props) => ctx.scopeFactory(ctx, this, props))
+      ? props.children.map((props) => ctx.scopeFactory(ctx, props, this))
       : [];
 
     this.cache = new Map();
     this.obj = new Proxy(this.values, {
-
       get: (_, key: string | symbol) => {
         if (typeof key === "symbol") {
           return undefined;
@@ -127,7 +122,6 @@ export class Scope {
       defineProperty: () => false,
 
       deleteProperty: () => false,
-      
     });
   }
 
@@ -186,8 +180,8 @@ export class Global extends Scope {
   root: Scope;
 
   constructor(ctx: Context, props: ScopeProps) {
-    super(ctx, null, {});
-    this.root = ctx.scopeFactory(ctx, this, props);
+    super(ctx, {});
+    this.root = ctx.scopeFactory(ctx, props, this);
   }
 }
 
