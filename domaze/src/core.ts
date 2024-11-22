@@ -121,12 +121,6 @@ export class Scope {
     });
   }
 
-  addValue(key: string, props: ValueProps): this {
-    const val = this.ctx.valueFactory(key, this, props);
-    this.values[key] = val;
-    return this;
-  }
-  
   unlinkValues(recur = true) {
     this.cache.clear();
     this.foreachValue((v) => {
@@ -154,6 +148,12 @@ export class Scope {
     recur && this.children.forEach((s) => s.updateValues());
   }
 
+  protected addValue(key: string, props: ValueProps): this {
+    const val = this.ctx.valueFactory(key, this, props);
+    this.values[key] = val;
+    return this;
+  }
+
   protected foreachValue(cb: (v: Value) => void) {
     const values = this.values;
     (Reflect.ownKeys(values) as string[]).forEach((k) => cb(values[k]));
@@ -174,8 +174,8 @@ export class Scope {
 export class Global extends Scope {
   root: Scope;
 
-  constructor(ctx: Context, props: ScopeProps) {
-    super(ctx, {});
+  constructor(ctx: Context, props: ScopeProps, globalProps: ScopeProps = {}) {
+    super(ctx, globalProps);
     this.root = ctx.scopeFactory(ctx, props, this);
   }
 }
