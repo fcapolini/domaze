@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { Context, RT_VALUE_FN, Scope, Value, ValueProps } from "../src/core";
+import { Context, Global, RT_VALUE_FN, Scope, Value, ValueProps } from "../src/core";
 
 describe("core", () => {
 
-  describe('context', () => {
+  describe("context", () => {
 
     it("accepts empty app", () => {
       const ctx = new Context({});
@@ -30,9 +30,46 @@ describe("core", () => {
 
   });
 
-  // describe("global", () => {});
+  describe("global", () => {
 
-  // describe('scope', () => {});
+    it("should accept global `console` property", () => {
+      const log = new Array<string>();
+      const ctx = new Context({}, {
+        globalFactory: (ctx, props) => {
+          return new Global(ctx, props).addValue("console", {
+            exp: function () {
+              return { log: (...args: any[]) => log.push(args.join(" ")) };
+            },
+          });
+        },
+      });
+      ctx.global.obj.console.log("hi there!");
+      expect(log).toMatchObject(["hi there!"]);
+    });
+
+    it("should make global `console` visible", () => {
+      const log = new Array<string>();
+      new Context({
+        values: {
+          v1: {
+            exp: function() { this.console.log('hi there!') }
+          }
+        }
+      }, {
+        globalFactory: (ctx, props) => {
+          return new Global(ctx, props).addValue("console", {
+            exp: function () {
+              return { log: (...args: any[]) => log.push(args.join(" ")) };
+            },
+          });
+        },
+      });
+      expect(log).toMatchObject(["hi there!"]);
+    });
+
+  });
+
+  // describe("scope", () => {});
 
   describe("value", () => {
 

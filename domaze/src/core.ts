@@ -121,6 +121,12 @@ export class Scope {
     });
   }
 
+  addValue(key: string, props: ValueProps): this {
+    const val = this.ctx.valueFactory(key, this, props);
+    this.values[key] = val;
+    return this;
+  }
+  
   unlinkValues(recur = true) {
     this.cache.clear();
     this.foreachValue((v) => {
@@ -151,11 +157,6 @@ export class Scope {
   protected foreachValue(cb: (v: Value) => void) {
     const values = this.values;
     (Reflect.ownKeys(values) as string[]).forEach((k) => cb(values[k]));
-  }
-
-  protected addValue(key: string, props: ValueProps) {
-    const val = this.ctx.valueFactory(key, this, props);
-    this.values[key] = val;
   }
 
   protected lookupValue(key: string): Value | undefined {
