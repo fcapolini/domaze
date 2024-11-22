@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { Context, RT_VALUE_FN } from "../src/core";
+import { describe, expect, it } from "vitest";
+import { Context, RT_VALUE_FN, Scope, Value, ValueProps } from "../src/core";
 
 describe("core", () => {
 
@@ -81,8 +81,12 @@ describe("core", () => {
         values: {
           v1: { exp: function () { return 1; } },
         },
-      }, (key, val) => {
-        val.cb = (_, v) => (counts[key]++, values[key] = v);
+      }, {
+        valueFactory: (key: string, scope: Scope, props: ValueProps) => {
+          return new Value(scope, props).setCB((_, val) => {
+            return counts[key]++, (values[key] = val);
+          });
+        }
       });
       expect(counts.v1).toBe(1);
       expect(values.v1).toBe(1);
@@ -99,15 +103,27 @@ describe("core", () => {
       const ctx = new Context({
         values: {
           v1: {
-            exp: function () { return 1; }
+            exp: function () {
+              return 1;
+            },
           },
           v2: {
-            exp: function () { return this.v1 + 1; },
-            deps: [function() { return this[RT_VALUE_FN]("v1"); }]
+            exp: function () {
+              return this.v1 + 1;
+            },
+            deps: [
+              function () {
+                return this[RT_VALUE_FN]("v1");
+              },
+            ],
           },
         },
-      }, (key, val) => {
-        val.cb = (_, v) => (counts[key]++, values[key] = v);
+      }, {
+        valueFactory: (key: string, scope: Scope, props: ValueProps) => {
+          return new Value(scope, props).setCB((_, val) => {
+            return counts[key]++, (values[key] = val);
+          });
+        },
       });
       expect(counts.v2).toBe(1);
       expect(values.v2).toBe(2);

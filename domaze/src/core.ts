@@ -4,20 +4,33 @@ export const RT_VALUE_FN = '$value';
 // Context
 // =============================================================================
 
+export interface ContextProps {
+  globalFactory?: (ctx: Context, props: ScopeProps) => Global;
+  scopeFactory?: (ctx: Context, parent: Scope | null, props: ScopeProps) => Scope;
+  valueFactory?: (key: string, scope: Scope, props: ValueProps) => Value;
+}
+
 export class Context {
+  props?: ContextProps;
+  scopeFactory: (
+    ctx: Context,
+    parent: Scope | null,
+    props: ScopeProps
+  ) => Scope;
+  valueFactory: (key: string, scope: Scope, props: ValueProps) => Value;
   global: Global;
   root: Scope;
-  didAddValue?: (key: string, val: Value) => void;
   cycle = 0;
   refreshLevel = 0;
   pushLevel = 0;
 
-  constructor(
-    props: ScopeProps,
-    didAddValue?: (key: string, val: Value) => void
-  ) {
-    this.didAddValue = didAddValue;
-    this.global = new Global(this, props);
+  constructor(props: ScopeProps, contextProps?: ContextProps) {
+    this.props = contextProps;
+    this.scopeFactory = contextProps?.scopeFactory ?? Context.defScopeFactory;
+    this.valueFactory = contextProps?.valueFactory ?? Context.defValueFactory;
+    this.global = contextProps?.globalFactory
+      ? contextProps.globalFactory(this, props)
+      : new Global(this, props);
     this.root = this.global.root;
     this.refresh(this.root);
   }
@@ -34,6 +47,18 @@ export class Context {
     }
     this.refreshLevel--;
   }
+
+  static defScopeFactory(
+    ctx: Context,
+    parent: Scope | null,
+    props: ScopeProps
+  ) {
+    return new Scope(ctx, parent, props);
+  }
+
+  static defValueFactory(_key: string, scope: Scope, props: ValueProps) {
+    return new Value(scope, props);
+  }
 }
 
 // =============================================================================
@@ -49,7 +74,7 @@ export interface ScopeProps {
 
 type ScopeValues = { [key: string]: Value };
 
-class Scope {
+export class Scope {
   ctx: Context;
   props: ScopeProps;
   values: ScopeValues;
@@ -77,7 +102,7 @@ class Scope {
     }
 
     this.children = props.children
-      ? props.children.map((childProps) => new Scope(ctx, this, childProps))
+      ? props.children.map((props) => ctx.scopeFactory(ctx, this, props))
       : [];
 
     this.cache = new Map();
@@ -141,9 +166,8 @@ class Scope {
   }
 
   protected addValue(key: string, props: ValueProps) {
-    const val = new Value(this, props);
+    const val = this.ctx.valueFactory(key, this, props);
     this.values[key] = val;
-    this.ctx.didAddValue && this.ctx.didAddValue(key, val);
   }
 
   protected lookupValue(key: string): Value | undefined {
@@ -163,7 +187,7 @@ export class Global extends Scope {
 
   constructor(ctx: Context, props: ScopeProps) {
     super(ctx, null, {});
-    this.root = new Scope(ctx, this, props);
+    this.root = ctx.scopeFactory(ctx, this, props);
   }
 }
 
@@ -180,7 +204,7 @@ export interface ValueProps {
   deps?: ValueDep[];
 }
 
-class Value {
+export class Value {
   scope: Scope;
   props: ValueProps;
   exp?: ValueExp;
@@ -214,6 +238,11 @@ class Value {
       this.propagate();
     }
     return true;
+  }
+
+  setCB(cb: ValueCB): this {
+    this.cb = cb;
+    return this;
   }
 
   protected update() {
