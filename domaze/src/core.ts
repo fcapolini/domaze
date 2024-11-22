@@ -1,4 +1,4 @@
-export const RT_VALUE_FN = '$value';
+export const RT_VALUE_FN = "$value";
 
 // =============================================================================
 // Context
@@ -44,11 +44,7 @@ export class Context {
     this.refreshLevel--;
   }
 
-  static defScopeFactory(
-    ctx: Context,
-    props: ScopeProps,
-    parent?: Scope
-  ) {
+  static defScopeFactory(ctx: Context, props: ScopeProps, parent?: Scope) {
     return new Scope(ctx, props, parent);
   }
 
@@ -141,9 +137,7 @@ export class Scope {
           const o = dep.apply(this.obj);
           o.dst.add(v);
           v.src.add(o);
-        } catch (ignored) {
-          /* nop */
-        }
+        } catch (ignored) {}
       });
     });
     recur && this.children.forEach((s) => s.linkValues());
