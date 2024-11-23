@@ -1,4 +1,4 @@
-import { Context, FOREACH, Scope } from "../src/core";
+import { Context, FOREACH, Scope } from '../src/core';
 
 export function traverseScopeTree(
   p: Scope,
@@ -21,10 +21,10 @@ export function dumpScopes(ctx: Context): string[] {
     (scope, level) =>
       level &&
       dump.push(
-        "  ".repeat(level - 1) +
-          `${scope.props.type ?? "scope"} ` +
-          `${ownValue(scope, FOREACH.CLONE_NR) ?? null} ` +
-          JSON.stringify(ownValue(scope, FOREACH.DEF_DATA) ?? null)
+        '  '.repeat(level - 1)
+        + `${scope.props.type ?? 'scope'} `
+        + `${ownValue(scope, FOREACH.CLONE_NR) ?? null} `
+        + JSON.stringify(ownValue(scope, FOREACH.DEF_DATA) ?? null)
       )
   );
   return dump;

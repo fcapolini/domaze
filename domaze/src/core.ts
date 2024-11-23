@@ -1,14 +1,13 @@
-
 export enum SCOPE {
-  VALUE_FN = "$value",
-  PARENT = "$parent", //TODO
-  CLONER = "$cloner",
+  VALUE_FN = '$value',
+  PARENT = '$parent', //TODO
+  CLONER = '$cloner',
 }
 
 export enum FOREACH {
-  AS = "as",
-  DEF_DATA = "data",
-  CLONE_NR = "$cloneNr",
+  AS = 'as',
+  DEF_DATA = 'data',
+  CLONE_NR = '$cloneNr',
 }
 
 export type ScopeType = 'foreach' | 'component';
@@ -62,7 +61,7 @@ export class Context {
       scope.linkValues();
       scope.updateValues();
     } catch (err) {
-      console.error("Context.refresh()", err);
+      console.error('Context.refresh()', err);
     }
     this.refreshLevel--;
   }
@@ -73,7 +72,7 @@ export class Context {
     parent?: Scope,
     before?: Scope
   ) {
-    if (props.type === "foreach") {
+    if (props.type === 'foreach') {
       return new Foreach(ctx, props as ForeachProps, parent, before);
     } else if (props.type === 'component') {
       return new Component(ctx, props, parent);
@@ -114,7 +113,7 @@ export class Scope {
     this.values = {};
     props.values &&
       Reflect.ownKeys(props.values).forEach((key) => {
-        if (typeof key === "string") {
+        if (typeof key === 'string') {
           this.addValue(key, props.values![key]);
         }
       });
@@ -128,7 +127,7 @@ export class Scope {
     this.cache = new Map();
     this.obj = new Proxy(this.values, {
       get: (_, key: string | symbol) => {
-        if (typeof key === "symbol") {
+        if (typeof key === 'symbol') {
           return undefined;
         }
         const v = this.cache.get(key) || this.lookupValue(key);
@@ -136,7 +135,7 @@ export class Scope {
       },
 
       set: (_, key: string | symbol, val: any) => {
-        if (typeof key === "symbol" || !this.parent /* is global scope */) {
+        if (typeof key === 'symbol' || !this.parent /* is global scope */) {
           return false;
         }
         const v = this.cache.get(key) || this.lookupValue(key);
@@ -307,7 +306,7 @@ export class Global extends Scope {
 // =============================================================================
 
 export interface ForeachProps extends ScopeProps {
-  type: "foreach";
+  type: 'foreach';
 }
 
 export class Foreach extends Scope {
@@ -409,11 +408,7 @@ export class Foreach extends Scope {
 // =============================================================================
 
 export class Component extends Scope {
-  constructor(
-    ctx: Context,
-    props: ScopeProps,
-    parent?: Scope
-  ) {
+  constructor(ctx: Context, props: ScopeProps, parent?: Scope) {
     super(ctx, props, parent);
   }
 }
