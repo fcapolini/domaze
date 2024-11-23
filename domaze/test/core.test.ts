@@ -32,6 +32,28 @@ describe('core', () => {
     });
   });
 
+  describe('scope', () => {
+    it('should implement $value()', () => {
+      const ctx = new Context({
+        values: {
+          v1: { exp: function() { return 1; } },
+        },
+      });
+      expect(!!ctx.root.obj[SCOPE.VALUE_FN]).toBeTruthy();
+      const v0 = ctx.root.obj[SCOPE.VALUE_FN]('v0');
+      const v1 = ctx.root.obj[SCOPE.VALUE_FN]('v1');
+      expect(v0).toBeUndefined();
+      expect(v1).toBeDefined();
+      expect(v1 instanceof Value).toBeTruthy();
+    });
+
+    it('should implement $parent', () => {
+      const ctx = new Context({});
+      const p = ctx.root.obj[SCOPE.PARENT];
+      expect(p).toBe(ctx.global);
+    });
+  });
+
   describe('value', () => {
     it('001', () => {
       const ctx = new Context({

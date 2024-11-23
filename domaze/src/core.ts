@@ -1,6 +1,6 @@
 export enum SCOPE {
   VALUE_FN = '$value',
-  PARENT = '$parent', //TODO
+  PARENT = '$parent',
   CLONER = '$cloner',
 }
 
@@ -119,6 +119,9 @@ export class Scope {
       });
     this.addValue(SCOPE.VALUE_FN, {
       exp: () => (key: string) => this.values[key],
+    });
+    this.addValue(SCOPE.PARENT, {
+      exp: () => this.parent,
     });
 
     this.children = [];
