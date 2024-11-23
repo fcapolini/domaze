@@ -1,4 +1,11 @@
+// scope
 export const RT_VALUE_FN = "$value";
+export const RT_PARENT_VAL = "$parent";//TODO
+// foreach
+export const RT_AS_VAL = "as";
+export const RT_DEF_DATA_VAL = "data";
+export const RT_CLONE_NR_VAL = "$cloneNr";
+export const RT_CLONED_BY_VAL = "$clonedBy";
 
 // =============================================================================
 // Context
@@ -6,13 +13,23 @@ export const RT_VALUE_FN = "$value";
 
 export interface ContextProps {
   globalFactory?: (ctx: Context, props: ScopeProps) => Global;
-  scopeFactory?: (ctx: Context, props: ScopeProps, parent?: Scope) => Scope;
+  scopeFactory?: (
+    ctx: Context,
+    props: ScopeProps,
+    parent?: Scope,
+    before?: Scope
+  ) => Scope;
   valueFactory?: (key: string, scope: Scope, props: ValueProps) => Value;
 }
 
 export class Context {
   props?: ContextProps;
-  scopeFactory: (ctx: Context, props: ScopeProps, parent?: Scope) => Scope;
+  scopeFactory: (
+    ctx: Context,
+    props: ScopeProps,
+    parent?: Scope,
+    before?: Scope
+  ) => Scope;
   valueFactory: (key: string, scope: Scope, props: ValueProps) => Value;
   global: Global;
   root: Scope;
@@ -44,8 +61,16 @@ export class Context {
     this.refreshLevel--;
   }
 
-  static defScopeFactory(ctx: Context, props: ScopeProps, parent?: Scope) {
-    return new Scope(ctx, props, parent);
+  static defScopeFactory(
+    ctx: Context,
+    props: ScopeProps,
+    parent?: Scope,
+    before?: Scope
+  ) {
+    if (props.type === "foreach") {
+      return new Foreach(ctx, props as ForeachProps, parent, before);
+    }
+    return new Scope(ctx, props, parent, before);
   }
 
   static defValueFactory(_key: string, scope: Scope, props: ValueProps) {
@@ -60,6 +85,7 @@ export class Context {
 export interface ScopeProps {
   id?: string;
   name?: string;
+  type?: string;
   values?: { [key: string]: ValueProps };
   children?: ScopeProps[];
 }
@@ -75,7 +101,7 @@ export class Scope {
   cache: Map<string, Value>;
   obj: any;
 
-  constructor(ctx: Context, props: ScopeProps, parent?: Scope) {
+  constructor(ctx: Context, props: ScopeProps, parent?: Scope, before?: Scope) {
     this.ctx = ctx;
     this.props = props;
 
@@ -89,13 +115,9 @@ export class Scope {
     this.addValue(RT_VALUE_FN, {
       exp: () => (key: string) => this.values[key],
     });
-    if ((this.parent = parent) && props.name) {
-      parent.addValue(props.name, { exp: () => this });
-    }
 
-    this.children = props.children
-      ? props.children.map((props) => ctx.scopeFactory(ctx, props, this))
-      : [];
+    this.children = [];
+    props.children?.forEach(props => ctx.scopeFactory(ctx, props, this));
 
     this.cache = new Map();
     this.obj = new Proxy(this.values, {
@@ -119,6 +141,18 @@ export class Scope {
 
       deleteProperty: () => false,
     });
+
+    if ((this.parent = parent)) {
+      const i = before ? parent.children.indexOf(before) : -1;
+      parent.children.splice(i < 0 ? parent.children.length : i, 0, this);
+      props.name && parent.addValue(props.name, { exp: () => this.obj });
+    }
+  }
+
+  dispose() {
+    const i = this.parent ? this.parent.children.indexOf(this) : -1;
+    i < 0 || this.parent!.children.splice(i, 1);
+    this.unlinkValues();
   }
 
   unlinkValues(recur = true) {
@@ -177,6 +211,89 @@ export class Global extends Scope {
   constructor(ctx: Context, props: ScopeProps, globalProps: ScopeProps = {}) {
     super(ctx, globalProps);
     this.root = ctx.scopeFactory(ctx, props, this);
+  }
+}
+
+// =============================================================================
+// Foreach
+// =============================================================================
+
+export interface ForeachProps extends ScopeProps {
+  type: "foreach";
+}
+
+export class Foreach extends Scope {
+  dataValueName: string;
+  content?: Scope;
+  clones: Scope[];
+
+  constructor(
+    ctx: Context,
+    props: ForeachProps,
+    parent?: Scope,
+    before?: Scope
+  ) {
+    super(ctx, props, parent, before);
+    try {
+      this.dataValueName = props.values![RT_AS_VAL].exp().trim();
+    } catch (ignored) {}
+    this.dataValueName || (this.dataValueName = RT_DEF_DATA_VAL);
+    this.content = this.children.length ? this.children[0] : undefined;
+    this.clones = [];
+    this.values[RT_DEF_DATA_VAL]?.setCB(Foreach.dataCB as ValueCB);
+  }
+
+  static dataCB(self: Foreach, data: any[]) {
+    if (!self.content) {
+      return data;
+    }
+    if (!data || !Array.isArray(data)) {
+      data = [];
+    }
+    const offset = 0;
+    const length = data.length;
+
+    // add/update clones
+    let ci = 0;
+    let di = offset;
+    for (; di < offset + length; ci++, di++) {
+      if (ci < self.clones.length) {
+        self.updateClone(self.clones[ci], data[di]);
+      } else {
+        self.addClone(data[di]);
+      }
+    }
+
+    // remove excess clones
+    while (self.clones.length > length) {
+      self.removeClone(self.clones.length - 1);
+    }
+
+    return data;
+  }
+
+  addClone(data: any) {
+    const that = this;
+    const clone = this.ctx.scopeFactory(
+      this.ctx,
+      this.content!.props,
+      this.parent,
+      this
+    ) as Foreach;
+    this.clones.push(clone);
+    clone.addValue(RT_DEF_DATA_VAL, { exp: () => data });
+    clone.addValue(RT_CLONE_NR_VAL, { exp: () => that.clones.indexOf(clone) });
+    clone.addValue(RT_CLONED_BY_VAL, { exp: () => that.obj });
+    this.ctx.refresh(clone, false);
+  }
+
+  updateClone(clone: Scope, data: any) {
+    clone.obj[RT_DEF_DATA_VAL] = data;
+  }
+
+  removeClone(i: number) {
+    const clone = this.clones.splice(i, 1)[0];
+    clone.dispose();
   }
 }
 

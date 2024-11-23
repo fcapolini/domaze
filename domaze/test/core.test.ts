@@ -34,7 +34,7 @@ describe("core", () => {
       const ctx = new Context({ name: "page" });
       expect(ctx.root).toBeDefined();
       expect(ctx.global.values).toHaveProperty("page");
-      expect(ctx.global.values.page.props.exp()).toBe(ctx.root);
+      expect(ctx.global.values.page.props.exp()).toBe(ctx.root.obj);
     });
   });
 
@@ -87,7 +87,52 @@ describe("core", () => {
     });
   });
 
-  // describe("scope", () => {});
+  describe("foreach", () => {
+
+    it("should replicate foreach's child", () => {
+      const ctx = new Context({
+        children: [{
+          name: 'foreachScope',
+          type: 'foreach',
+          values: {
+            data: {
+              exp: function() { return ['a', 'b']; }
+            }
+          },
+          children: [{}],
+        }],
+      });
+
+      expect(ctx.root.children.length).toBe(3);
+      expect(ctx.root.children[0].props.type).toBeUndefined();
+      expect(ctx.root.children[0].obj.data).toBe('a');
+      expect(ctx.root.children[1].props.type).toBeUndefined();
+      expect(ctx.root.children[1].obj.data).toBe('b');
+      expect(ctx.root.children[2].props.type).toBe('foreach');
+
+      ctx.root.obj['foreachScope'].data = ['x', 'y', 'x'];
+      expect(ctx.root.children.length).toBe(4);
+      expect(ctx.root.children[0].obj.data).toBe("x");
+      expect(ctx.root.children[1].obj.data).toBe("y");
+      expect(ctx.root.children[2].obj.data).toBe("x");
+      expect(ctx.root.children[3].props.type).toBe("foreach");
+
+      ctx.root.obj["foreachScope"].data = ["a"];
+      expect(ctx.root.children.length).toBe(2);
+      expect(ctx.root.children[0].obj.data).toBe("a");
+      expect(ctx.root.children[1].props.type).toBe("foreach");
+
+      ctx.root.obj["foreachScope"].data = null;
+      expect(ctx.root.children.length).toBe(1);
+      expect(ctx.root.children[0].props.type).toBe("foreach");
+
+      ctx.root.obj["foreachScope"].data = ["a"];
+      expect(ctx.root.children.length).toBe(2);
+      expect(ctx.root.children[0].obj.data).toBe("a");
+      expect(ctx.root.children[1].props.type).toBe("foreach");
+    });
+
+  });
 
   describe("value", () => {
     it("001", () => {
