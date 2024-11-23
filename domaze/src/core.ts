@@ -1,11 +1,15 @@
-// scope
-export const RT_VALUE_FN = "$value";
-export const RT_PARENT_VAL = "$parent";//TODO
-// foreach
-export const RT_AS_VAL = "as";
-export const RT_DEF_DATA_VAL = "data";
-export const RT_CLONE_NR_VAL = "$cloneNr";
-export const RT_CLONED_BY_VAL = "$clonedBy";
+
+export enum SCOPE {
+  VALUE_FN = "$value",
+  PARENT = "$parent", //TODO
+  CLONER = "$cloner",
+}
+
+export enum FOREACH {
+  AS = "as",
+  DEF_DATA = "data",
+  CLONE_NR = "$cloneNr",
+}
 
 // =============================================================================
 // Context
@@ -90,12 +94,10 @@ export interface ScopeProps {
   children?: ScopeProps[];
 }
 
-type ScopeValues = { [key: string]: Value };
-
 export class Scope {
   ctx: Context;
   props: ScopeProps;
-  values: ScopeValues;
+  values: { [key: string]: Value };
   parent?: Scope;
   children: Scope[];
   cache: Map<string, Value>;
@@ -112,12 +114,12 @@ export class Scope {
           this.addValue(key, props.values![key]);
         }
       });
-    this.addValue(RT_VALUE_FN, {
+    this.addValue(SCOPE.VALUE_FN, {
       exp: () => (key: string) => this.values[key],
     });
 
     this.children = [];
-    props.children?.forEach(props => ctx.scopeFactory(ctx, props, this));
+    props.children?.forEach((props) => ctx.scopeFactory(ctx, props, this));
 
     this.cache = new Map();
     this.obj = new Proxy(this.values, {
@@ -235,12 +237,12 @@ export class Foreach extends Scope {
   ) {
     super(ctx, props, parent, before);
     try {
-      this.dataValueName = props.values![RT_AS_VAL].exp().trim();
+      this.dataValueName = props.values![FOREACH.AS].exp().trim();
     } catch (ignored) {}
-    this.dataValueName || (this.dataValueName = RT_DEF_DATA_VAL);
+    this.dataValueName || (this.dataValueName = FOREACH.DEF_DATA);
     this.content = this.children.length ? this.children[0] : undefined;
     this.clones = [];
-    this.values[RT_DEF_DATA_VAL]?.setCB(Foreach.dataCB as ValueCB);
+    this.values[FOREACH.DEF_DATA]?.setCB(Foreach.dataCB as ValueCB);
   }
 
   static dataCB(self: Foreach, data: any[]) {
@@ -281,14 +283,14 @@ export class Foreach extends Scope {
       this
     ) as Foreach;
     this.clones.push(clone);
-    clone.addValue(RT_DEF_DATA_VAL, { exp: () => data });
-    clone.addValue(RT_CLONE_NR_VAL, { exp: () => that.clones.indexOf(clone) });
-    clone.addValue(RT_CLONED_BY_VAL, { exp: () => that.obj });
+    clone.addValue(FOREACH.DEF_DATA, { exp: () => data });
+    clone.addValue(FOREACH.CLONE_NR, { exp: () => that.clones.indexOf(clone) });
+    clone.addValue(SCOPE.CLONER, { exp: () => that.obj });
     this.ctx.refresh(clone, false);
   }
 
   updateClone(clone: Scope, data: any) {
-    clone.obj[RT_DEF_DATA_VAL] = data;
+    clone.obj[FOREACH.DEF_DATA] = data;//TODO
   }
 
   removeClone(i: number) {

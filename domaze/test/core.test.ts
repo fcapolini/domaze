@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   Context,
   Global,
-  RT_VALUE_FN,
+  SCOPE,
   Scope,
   Value,
   ValueProps,
@@ -180,7 +180,7 @@ describe("core", () => {
             },
             deps: [
               function () {
-                return this[RT_VALUE_FN]("v1");
+                return this[SCOPE.VALUE_FN]("v1");
               },
             ],
           },
@@ -240,7 +240,7 @@ describe("core", () => {
               },
               deps: [
                 function () {
-                  return this[RT_VALUE_FN]("v1");
+                  return this[SCOPE.VALUE_FN]("v1");
                 },
               ],
             },
