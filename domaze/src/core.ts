@@ -11,6 +11,8 @@ export enum FOREACH {
   CLONE_NR = "$cloneNr",
 }
 
+export type ScopeType = 'foreach' | 'component';
+
 // =============================================================================
 // Context
 // =============================================================================
@@ -73,6 +75,8 @@ export class Context {
   ) {
     if (props.type === "foreach") {
       return new Foreach(ctx, props as ForeachProps, parent, before);
+    } else if (props.type === 'component') {
+      return new Component(ctx, props, parent);
     }
     return new Scope(ctx, props, parent, before);
   }
@@ -89,7 +93,7 @@ export class Context {
 export interface ScopeProps {
   id?: string;
   name?: string;
-  type?: string;
+  type?: ScopeType;
   values?: { [key: string]: ValueProps };
   children?: ScopeProps[];
 }
@@ -204,102 +208,6 @@ export class Scope {
 }
 
 // =============================================================================
-// Global
-// =============================================================================
-
-export class Global extends Scope {
-  root: Scope;
-
-  constructor(ctx: Context, props: ScopeProps, globalProps: ScopeProps = {}) {
-    super(ctx, globalProps);
-    this.root = ctx.scopeFactory(ctx, props, this);
-  }
-}
-
-// =============================================================================
-// Foreach
-// =============================================================================
-
-export interface ForeachProps extends ScopeProps {
-  type: "foreach";
-}
-
-export class Foreach extends Scope {
-  dataValueName: string;
-  content?: Scope;
-  clones: Scope[];
-
-  constructor(
-    ctx: Context,
-    props: ForeachProps,
-    parent?: Scope,
-    before?: Scope
-  ) {
-    super(ctx, props, parent, before);
-    try {
-      this.dataValueName = props.values![FOREACH.AS].exp().trim();
-    } catch (ignored) {}
-    this.dataValueName || (this.dataValueName = FOREACH.DEF_DATA);
-    this.content = this.children.length ? this.children[0] : undefined;
-    this.clones = [];
-    this.values[FOREACH.DEF_DATA]?.setCB(Foreach.dataCB as ValueCB);
-  }
-
-  static dataCB(self: Foreach, data: any[]) {
-    if (!self.content) {
-      return data;
-    }
-    if (!data || !Array.isArray(data)) {
-      data = [];
-    }
-    const offset = 0;
-    const length = data.length;
-
-    // add/update clones
-    let ci = 0;
-    let di = offset;
-    for (; di < offset + length; ci++, di++) {
-      if (ci < self.clones.length) {
-        self.updateClone(self.clones[ci], data[di]);
-      } else {
-        self.addClone(data[di]);
-      }
-    }
-
-    // remove excess clones
-    while (self.clones.length > length) {
-      self.removeClone(self.clones.length - 1);
-    }
-
-    return data;
-  }
-
-  addClone(data: any) {
-    const that = this;
-    const clone = this.ctx.scopeFactory(
-      this.ctx,
-      this.content!.props,
-      this.parent,
-      this
-    ) as Foreach;
-    this.clones.push(clone);
-    clone.addValue(FOREACH.DEF_DATA, { exp: () => data });
-    clone.addValue(FOREACH.CLONE_NR, { exp: () => that.clones.indexOf(clone) });
-    clone.addValue(SCOPE.CLONER, { exp: () => that.obj });
-    this.ctx.refresh(clone, false);
-  }
-
-  updateClone(clone: Scope, data: any) {
-    clone.obj[FOREACH.DEF_DATA] = data;//TODO
-  }
-
-  removeClone(i: number) {
-    const clone = this.clones.splice(i, 1)[0];
-    clone.dispose();
-  }
-}
-
-// =============================================================================
 // Value
 // =============================================================================
 
@@ -378,5 +286,134 @@ export class Value {
       this.dst.forEach((v) => v.get());
     } catch (ignored) {}
     ctx.pushLevel--;
+  }
+}
+
+// =============================================================================
+// Global
+// =============================================================================
+
+export class Global extends Scope {
+  root: Scope;
+
+  constructor(ctx: Context, props: ScopeProps, globalProps: ScopeProps = {}) {
+    super(ctx, globalProps);
+    this.root = ctx.scopeFactory(ctx, props, this);
+  }
+}
+
+// =============================================================================
+// Foreach
+// =============================================================================
+
+export interface ForeachProps extends ScopeProps {
+  type: "foreach";
+}
+
+export class Foreach extends Scope {
+  dataValueName: string;
+  content?: Scope;
+  clones: Scope[];
+
+  constructor(
+    ctx: Context,
+    props: ForeachProps,
+    parent?: Scope,
+    before?: Scope
+  ) {
+    super(ctx, props, parent, before);
+    try {
+      this.dataValueName = props.values![FOREACH.AS].exp().trim();
+    } catch (ignored) {}
+    this.dataValueName || (this.dataValueName = FOREACH.DEF_DATA);
+    this.content = this.children.length ? this.children[0] : undefined;
+    this.clones = [];
+    this.values[FOREACH.DEF_DATA]?.setCB(Foreach.dataCB as ValueCB);
+  }
+
+  override dispose() {
+    this.clones.forEach((it) => it.dispose());
+    super.dispose();
+  }
+
+  override unlinkValues(recur = true) {
+    super.unlinkValues(false);
+  }
+
+  override linkValues(recur = true) {
+    super.linkValues(false);
+  }
+
+  override updateValues(recur = true) {
+    super.updateValues(false);
+  }
+
+  static dataCB(self: Foreach, data: any[]) {
+    if (!self.content) {
+      return data;
+    }
+    if (!data || !Array.isArray(data)) {
+      data = [];
+    }
+    const offset = 0;
+    const length = data.length;
+
+    // add/update clones
+    let ci = 0;
+    let di = offset;
+    for (; di < offset + length; ci++, di++) {
+      if (ci < self.clones.length) {
+        self.updateClone(self.clones[ci], data[di]);
+      } else {
+        self.addClone(data[di]);
+      }
+    }
+
+    // remove excess clones
+    while (self.clones.length > length) {
+      self.removeClone(self.clones.length - 1);
+    }
+
+    return data;
+  }
+
+  addClone(data: any) {
+    const that = this;
+    const props = { ...this.content!.props };
+    props.values || (props.values = {});
+    props.values[FOREACH.DEF_DATA] = { exp: () => data };
+    props.values[FOREACH.CLONE_NR] = { exp: () => that.clones.indexOf(clone) };
+    props.values[SCOPE.CLONER] = { exp: () => that.obj };
+    const clone = this.ctx.scopeFactory(
+      this.ctx,
+      props,
+      this.parent,
+      this
+    ) as Foreach;
+    this.clones.push(clone);
+    this.ctx.refresh(clone, false);
+  }
+
+  updateClone(clone: Scope, data: any) {
+    clone.obj[FOREACH.DEF_DATA] = data; //TODO
+  }
+
+  removeClone(i: number) {
+    const clone = this.clones.splice(i, 1)[0];
+    clone.dispose();
+  }
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
+export class Component extends Scope {
+  constructor(
+    ctx: Context,
+    props: ScopeProps,
+    parent?: Scope
+  ) {
+    super(ctx, props, parent);
   }
 }
