@@ -282,6 +282,34 @@ describe('core', () => {
       expect(ctx.root.children[2].props.type).toBe('foreach');
     });
 
+    it('should ignore content name', () => {
+      const ctx = new Context({
+        children: [
+          {
+            name: 'foreachScope',
+            type: 'foreach',
+            values: {
+              data: {
+                exp: function () {
+                  return ['a', 'b'];
+                },
+              },
+            },
+            children: [{
+              name: 'contentScope'
+            }],
+          },
+        ],
+      });
+
+      expect(ctx.root.children.length).toBe(3);
+      expect(!!ctx.root.obj.foreachScope).toBeTruthy();
+      expect(!!ctx.root.obj.contentScope).toBeFalsy();
+      expect(ctx.root.children[0].props.name).toBeUndefined();
+      expect(ctx.root.children[1].props.name).toBeUndefined();
+      expect(ctx.root.children[2].props.name).toBe('foreachScope');
+    });
+
     it('should reflect foreach data changes', () => {
       const ctx = new Context({
         children: [
@@ -429,7 +457,8 @@ describe('core', () => {
   //         },
   //       ],
   //     });
-
+  //     const comp1 = ctx.root.obj.comp1;
+  //     expect(comp1).toBeDefined();
   //   });
 
   // });

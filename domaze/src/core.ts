@@ -383,6 +383,7 @@ export class Foreach extends Scope {
     props.values[FOREACH.DEF_DATA] = { exp: () => data };
     props.values[FOREACH.CLONE_NR] = { exp: () => that.clones.indexOf(clone) };
     props.values[SCOPE.CLONER] = { exp: () => that.obj };
+    delete props.name;
     const clone = this.ctx.scopeFactory(
       this.ctx,
       props,
