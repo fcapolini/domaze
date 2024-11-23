@@ -89,28 +89,87 @@ describe("core", () => {
 
   describe("foreach", () => {
 
-    it("should replicate foreach's child", () => {
+    it("should accept empty foreach", () => {
       const ctx = new Context({
-        children: [{
-          name: 'foreachScope',
-          type: 'foreach',
-          values: {
-            data: {
-              exp: function() { return ['a', 'b']; }
-            }
+        children: [
+          {
+            name: "foreachScope",
+            type: "foreach",
+            values: {
+              data: {
+                exp: function () {
+                  return ["a", "b"];
+                },
+              },
+            },
           },
-          children: [{}],
-        }],
+        ],
+      });
+
+      expect(ctx.root.children.length).toBe(1);
+      expect(ctx.root.children[0].props.type).toBe("foreach");
+    });
+
+    it("should accept empty foreach data", () => {
+      const ctx = new Context({
+        children: [
+          {
+            name: "foreachScope",
+            type: "foreach",
+            children: [{}],
+          },
+        ],
+      });
+
+      expect(ctx.root.children.length).toBe(1);
+      expect(ctx.root.children[0].props.type).toBe("foreach");
+    });
+
+    it("should replicate foreach content", () => {
+      const ctx = new Context({
+        children: [
+          {
+            name: "foreachScope",
+            type: "foreach",
+            values: {
+              data: {
+                exp: function () {
+                  return ["a", "b"];
+                },
+              },
+            },
+            children: [{}],
+          },
+        ],
       });
 
       expect(ctx.root.children.length).toBe(3);
       expect(ctx.root.children[0].props.type).toBeUndefined();
-      expect(ctx.root.children[0].obj.data).toBe('a');
+      expect(ctx.root.children[0].obj.data).toBe("a");
       expect(ctx.root.children[1].props.type).toBeUndefined();
-      expect(ctx.root.children[1].obj.data).toBe('b');
-      expect(ctx.root.children[2].props.type).toBe('foreach');
+      expect(ctx.root.children[1].obj.data).toBe("b");
+      expect(ctx.root.children[2].props.type).toBe("foreach");
+    });
 
-      ctx.root.obj['foreachScope'].data = ['x', 'y', 'x'];
+    it("should reflect foreach data changes", () => {
+      const ctx = new Context({
+        children: [
+          {
+            name: "foreachScope",
+            type: "foreach",
+            values: {
+              data: {
+                exp: function () {
+                  return ["a", "b"];
+                },
+              },
+            },
+            children: [{}],
+          },
+        ],
+      });
+
+      ctx.root.obj["foreachScope"].data = ["x", "y", "x"];
       expect(ctx.root.children.length).toBe(4);
       expect(ctx.root.children[0].obj.data).toBe("x");
       expect(ctx.root.children[1].obj.data).toBe("y");
