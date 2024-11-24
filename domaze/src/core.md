@@ -33,7 +33,7 @@ const v2 = new Value(scope, {
 
 The Scope exposes its Values via a proxy object (more on that later) so that `this.v1` returns v1's current value. It also exposes the `$value()` function which returns the Value object by name.
 
-> NOTE: Value names should be valid JS identifiers **not starting with a '$' sign** (this is reserved to implementation details)
+> NOTE: Value names should be valid JS identifiers **not including a '$' sign** (it's reserved to implementation details)
 
 In the example above, `v2` depends on `v1`. Should `v1` ever change its current value, `v2`'s expression whould be automatically re-evaluated to update its own current value in turn.
 
