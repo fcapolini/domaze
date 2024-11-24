@@ -50,8 +50,49 @@ describe('core', () => {
     it('should implement $parent', () => {
       const ctx = new Context({});
       const p = ctx.root.obj[SCOPE.PARENT];
-      expect(p).toBe(ctx.global);
+      expect(p).toBe(ctx.global.obj);
     });
+
+    it('should implement $scope', () => {
+      const ctx = new Context({});
+      const s = ctx.root.obj[SCOPE.SCOPE];
+      expect(s).toBe(ctx.global.children[0]);
+    });
+
+    // it('should support property `proto`', () => {
+    //   const ctx = new Context({
+    //     children: [
+    //       {
+    //         name: 'component',
+    //         values: {
+    //           v1: {
+    //             exp: function () {
+    //               return 1;
+    //             },
+    //           },
+    //         },
+    //       },
+    //       {
+    //         name: 'instance',
+    //         proto: 'component',
+    //         values: {
+    //           v2: {
+    //             exp: function () {
+    //               return this.v1 + 1;
+    //             },
+    //             deps: [
+    //               function () {
+    //                 return this[SCOPE.VALUE_FN]('v1');
+    //               },
+    //             ],
+    //           },
+    //         },
+    //       },
+    //     ],
+    //   });
+    //   const instance = ctx.root.obj.instance;
+    //   expect(instance.v2).toBe(2);
+    // });
   });
 
   describe('value', () => {

@@ -2,6 +2,7 @@ export enum SCOPE {
   VALUE_FN = '$value',
   PARENT = '$parent',
   CLONER = '$cloner',
+  SCOPE = '$scope',
 }
 
 export enum FOREACH {
@@ -93,6 +94,7 @@ export interface ScopeProps {
   id?: string;
   name?: string;
   type?: ScopeType;
+  proto?: string;
   values?: { [key: string]: ValueProps };
   children?: ScopeProps[];
 }
@@ -110,7 +112,10 @@ export class Scope {
     this.ctx = ctx;
     this.props = props;
 
-    this.values = {};
+    let proto = null;
+    //TODO
+
+    this.values = Object.create(proto);
     props.values &&
       Reflect.ownKeys(props.values).forEach((key) => {
         if (typeof key === 'string') {
@@ -121,13 +126,16 @@ export class Scope {
       exp: () => (key: string) => this.values[key],
     });
     this.addValue(SCOPE.PARENT, {
-      exp: () => this.parent,
+      exp: () => this.parent?.obj,
+    });
+    this.addValue(SCOPE.SCOPE, {
+      exp: () => this,
     });
 
+    this.cache = new Map();
     this.children = [];
     props.children?.forEach((props) => ctx.scopeFactory(ctx, props, this));
 
-    this.cache = new Map();
     this.obj = new Proxy(this.values, {
       get: (_, key: string | symbol) => {
         if (typeof key === 'symbol') {
