@@ -5,7 +5,7 @@ import { Value } from "./value";
  * - '__'-prefixed keys are reserved to implementation details
  * - all other keys must have a value of type ValueProps
  */
-interface ScopeProps {
+export interface ScopeProps {
   [key: string]: any;
   __name?: string;
   __children?: ScopeProps[];

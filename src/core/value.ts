@@ -1,3 +1,4 @@
+import { Scope } from "./scope";
 
 export type ValueExp = () => any;
 export type ValueDep = () => Value;

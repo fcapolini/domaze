@@ -1,4 +1,4 @@
-import { Scope } from "./scope";
+import { Scope, ScopeProps } from "./scope";
 import { Value, ValueProps } from "./value";
 
 export interface ContextProps {
