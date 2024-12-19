@@ -33,7 +33,7 @@ export class Context {
     return newScope(this, props);
   }
 
-  valueFactory(scope: Scope, props: ValueProps): Value {
+  valueFactory(scope: Scope, _key: string, props: ValueProps): Value {
     return new Value(scope, props);
   }
 

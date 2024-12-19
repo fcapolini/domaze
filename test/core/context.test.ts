@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { expect, it } from 'vitest';
 import { Context } from '../../src/core/context';
 
 it('should create a context', () => {

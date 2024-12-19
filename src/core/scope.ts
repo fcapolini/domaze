@@ -35,13 +35,13 @@ export interface Scope {
 }
 
 export function newScope(ctx: Context, props: ScopeProps): Scope {
-  const ret = Object.create(null) as Scope;
+  const self = Object.create(null) as Scope;
 
   //
   // methods
   //
 
-  ret.__link = function(parent: Scope, before?: Scope) {
+  self.__link = function(parent: Scope, before?: Scope) {
     this.__parent = parent;
     const i = before ? parent.__children.indexOf(before) : -1;
     i < 0 ? parent.__children.push(this) : parent.__children.splice(i, 0, this);
@@ -53,33 +53,33 @@ export function newScope(ctx: Context, props: ScopeProps): Scope {
     return this;
   }
 
-  ret.__add = function(props: ScopeProps) {
+  self.__add = function(props: ScopeProps) {
     Object.keys(props).forEach(key => {
       if (!key.startsWith('__')) {
-        ret[key] = ret.__ctx.valueFactory(this, props[key]);
+        self[key] = self.__ctx.valueFactory(this, key, props[key]);
       }
     });
   }
 
-  ret.__get = function(key: string) {
+  self.__get = function(key: string) {
     return key.startsWith('__')
-      ? ret[key]
-      : (ret.__cache.get(key) ?? ret.__lookup(key))?.get();
+      ? self[key]
+      : (self.__cache.get(key) ?? self.__lookup(key))?.get();
   }
 
-  ret.__set = function(key: string, val: any) {
+  self.__set = function(key: string, val: any) {
     return key.startsWith('__')
-      ? ((ret[key] = val) ?? true)
-      : ((ret.__cache.get(key) ?? ret.__lookup(key))
+      ? ((self[key] = val) ?? true)
+      : ((self.__cache.get(key) ?? self.__lookup(key))
       ?.set(val)
       ?? false);
   }
 
-  ret.__value = function(key: string) {
-    return ret.__cache.get(key) ?? ret.__lookup(key);
+  self.__value = function(key: string) {
+    return self.__cache.get(key) ?? self.__lookup(key);
   }
 
-  ret.__lookup = function(key: string) {
+  self.__lookup = function(key: string) {
     let t: Scope | undefined = this;
     let v: Value;
     do {
@@ -95,40 +95,41 @@ export function newScope(ctx: Context, props: ScopeProps): Scope {
   // reactivity
   //
 
-  ret.__unlinkValues = function(recur = true) {
-    ret.__cache.clear();
-    Object.keys(ret).forEach(key => key.startsWith('__') || ret[key].unlink());
-    recur && ret.__children.forEach((scope: Scope) => scope.__unlinkValues())
+  self.__unlinkValues = function(recur = true) {
+    self.__cache.clear();
+    Object.keys(self).forEach(key => key.startsWith('__') || self[key].unlink());
+    recur && self.__children.forEach((scope: Scope) => scope.__unlinkValues())
   }
 
-  ret.__linkValues = function (recur = true) {
-    Object.keys(ret).forEach(key => key.startsWith('__') || ret[key].link());
-    recur && ret.__children.forEach((scope: Scope) => scope.__linkValues())
+  self.__linkValues = function (recur = true) {
+    Object.keys(self).forEach(key => key.startsWith('__') || self[key].link());
+    recur && self.__children.forEach((scope: Scope) => scope.__linkValues())
   }
 
-  ret.__updateValues = function (recur = true) {
-    Object.keys(ret).forEach(key => key.startsWith('__') || ret[key].get());
-    recur && ret.__children.forEach((scope: Scope) => scope.__updateValues())
+  self.__updateValues = function (recur = true) {
+    Object.keys(self).forEach(key => key.startsWith('__') || self[key].get());
+    recur && self.__children.forEach((scope: Scope) => scope.__updateValues())
   }
-
-  //
-  // init
-  //
-
-  ret.__ctx = ctx;
-  ret.__props = props;
-  ret.__children = [];
-  ret.__cache = new Map();
-  ret.__add(props);
 
   //
   // proxy
   //
 
-  // ret.__target = ret;
-  ret.__handler = {
-    get: (_, key: string) => ret.__get(key),
-    set: (_, key: string, val: any) => ret.__set(key, val),
+  self.__handler = {
+    get: (_, key: string) => self.__get(key),
+    set: (_, key: string, val: any) => self.__set(key, val),
   };
-  return new Proxy(ret, ret.__handler);
+  const proxy = new Proxy(self, self.__handler);
+
+  //
+  // init
+  //
+
+  self.__ctx = ctx;
+  self.__props = props;
+  self.__children = [];
+  self.__cache = new Map();
+  proxy.__add(props);
+
+  return proxy;
 }
