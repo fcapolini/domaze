@@ -1,4 +1,5 @@
 import { newScope, Scope, ScopeProps } from "./scope";
+import { makeForeach } from "./scopes/foreach";
 import { Value, ValueProps } from "./value";
 
 export interface ContextProps {
@@ -20,6 +21,9 @@ export class Context {
   load(parent: Scope, props: ScopeProps, before?: Scope): any {
     const ret = this.scopeFactory(props).__link(parent, before);
     props.__children?.forEach(props => this.load(ret, props));
+    if (props.__type === 'foreach') {
+      makeForeach(ret);
+    }
     return ret;
   }
 
@@ -30,7 +34,8 @@ export class Context {
   }
 
   scopeFactory(props: ScopeProps): Scope {
-    return newScope(this, props);
+    let ret = newScope(this, props);
+    return ret;
   }
 
   valueFactory(scope: Scope, _key: string, props: ValueProps): Value {

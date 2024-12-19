@@ -10,7 +10,7 @@ class CustomContext extends Context {
   override valueFactory(scope: Scope, key: string, props: ValueProps): Value {
     this.values || (this.values = new Map());
     this.counts || (this.counts = new Map());
-    return new Value(scope, props, (_, v) => {
+    return new Value(scope, props).setCB((_, v) => {
       this.counts.set(key, (this.counts.get(key) ?? 0) + 1);
       this.values.set(key, v);
       return v;

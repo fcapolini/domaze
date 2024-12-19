@@ -7,6 +7,7 @@ import { Value } from "./value";
  */
 export interface ScopeProps {
   [key: string]: any;
+  __type?: 'foreach';
   __name?: string;
   __children?: ScopeProps[];
 }
@@ -18,28 +19,41 @@ export interface Scope {
   __children: Scope[];
   __cache: Map<string, Value>;
 
-  __link: (parent: Scope, before?: Scope) => this;
+  __dispose(): void;
+  __link(parent: Scope, before?: Scope): this;
 
-  __add: (props: ScopeProps) => void;
-  __get: (key: string) => any;
-  __set: (key: string, val: any) => boolean;
-  __value: (key: string) => Value | undefined;
-  __lookup: (key: string) => Value | undefined;
+  __add(props: ScopeProps): void;
+  __get(key: string): any;
+  __set(key: string, val: any): boolean;
+  __value(key: string): Value | undefined;
+  __lookup(key: string): Value | undefined;
 
-  __unlinkValues: (recur?: boolean) => void;
-  __linkValues: (recur?: boolean) => void;
-  __updateValues: (recur?: boolean) => void;
+  __unlinkValues(recur?: boolean): void;
+  __linkValues(recur?: boolean): void;
+  __updateValues(recur?: boolean): void;
 
-  // __target: Scope;
+  __target: Scope;
   __handler: any;
 }
 
+/**
+ * Creates a base scope.
+ * @param ctx reactive context
+ * @param props scope properties
+ * @returns newly created scope
+ */
 export function newScope(ctx: Context, props: ScopeProps): Scope {
   const self = Object.create(null) as Scope;
 
   //
   // methods
   //
+
+  self.__dispose = function() {
+    const i = self.__parent ? self.__parent.__children.indexOf(this) : -1;
+    i < 0 || self.__parent!.__children.splice(i, 1);
+    this.__unlinkValues();
+  }
 
   self.__link = function(parent: Scope, before?: Scope) {
     this.__parent = parent;
@@ -115,6 +129,7 @@ export function newScope(ctx: Context, props: ScopeProps): Scope {
   // proxy
   //
 
+  self.__target = self;
   self.__handler = {
     get: (_, key: string) => self.__get(key),
     set: (_, key: string, val: any) => self.__set(key, val),

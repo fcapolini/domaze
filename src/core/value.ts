@@ -19,14 +19,18 @@ export class Value {
   cycle: number;
   value: any;
 
-  constructor(scope: Scope, props: ValueProps, cb?: ValueCallback) {
+  constructor(scope: Scope, props: ValueProps) {
     this.scope = scope;
     this.props = props;
     this.exp = props.e;
-    this.cb = cb;
     this.src = new Set();
     this.dst = new Set();
     this.cycle = 0;
+  }
+
+  setCB(cb?: ValueCallback): this {
+    this.cb = cb;
+    return this;
   }
 
   link() {
