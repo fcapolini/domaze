@@ -1,4 +1,4 @@
-import { Scope, ScopeProps } from "./scope";
+import { newScope, Scope, ScopeProps } from "./scope";
 import { Value, ValueProps } from "./value";
 
 export interface ContextProps {
@@ -10,31 +10,27 @@ export class Context {
   root: Scope;
 
   constructor(props: ContextProps) {
-    this.global = new Proxy(this.globalFactory(), {
-      get: (scope: Scope, key: string) => scope.__get(key),
-      set: (_scope: Scope, _key: string, _val: any) => false,
-    });
+    this.global = this.globalFactory();
+    // write-protect global object
+    this.global.__handler.set = () => false;
     this.root = this.load(this.global, props.root);
     this.refresh();
   }
 
   load(parent: Scope, props: ScopeProps, before?: Scope): any {
-    const ret = new Proxy(this.scopeFactory(props), {
-      get: (scope: Scope, key: string) => scope.__get(key),
-      set: (scope: Scope, key: string, val: any) => scope.__set(key, val),
-    }).__link(parent, before);
+    const ret = this.scopeFactory(props).__link(parent, before);
     props.__children?.forEach(props => this.load(ret, props));
     return ret;
   }
 
   globalFactory(): Scope {
-    return new Scope(this, {
+    return newScope(this, {
       console: { e: () => console },
     });
   }
 
   scopeFactory(props: ScopeProps): Scope {
-    return new Scope(this, props);
+    return newScope(this, props);
   }
 
   valueFactory(scope: Scope, props: ValueProps): Value {

@@ -27,4 +27,9 @@ export class Value {
     //TODO
     return true;
   }
+
+  update() {}
+
+  link() {}
+  unlink() {}
 }
