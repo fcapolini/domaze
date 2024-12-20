@@ -1,11 +1,13 @@
 import { Scope } from "./scope";
 
 export type ValueExp = () => any;
+export type ValueFun = () => any;
 export type ValueDep = () => Value;
 export type ValueCallback = (s: Scope, v: any) => any;
 
 export interface ValueProps {
-  e: ValueExp;
+  e?: ValueExp;
+  f?: ValueFun;
   d?: ValueDep[];
 }
 
@@ -22,7 +24,11 @@ export class Value {
   constructor(scope: Scope, props: ValueProps) {
     this.scope = scope;
     this.props = props;
-    this.exp = props.e;
+    if (props.f) {
+      this.value = props.f;
+    } else {
+      this.exp = props.e;
+    }
     this.src = new Set();
     this.dst = new Set();
     this.cycle = 0;
@@ -55,7 +61,11 @@ export class Value {
     return this.value;
   }
 
-  set(val: any): true {
+  set(val: any): boolean {
+    if (this.props.f) {
+      // write protect functions
+      return false;
+    }
     const old = this.value;
     delete this.exp;
     this.src.clear();

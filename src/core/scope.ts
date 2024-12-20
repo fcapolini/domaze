@@ -1,4 +1,5 @@
 import { Context } from "./context";
+import { Define } from "./scopes/define";
 import { Value } from "./value";
 
 /**
@@ -7,7 +8,8 @@ import { Value } from "./value";
  */
 export interface ScopeProps {
   [key: string]: any;
-  __type?: 'foreach';
+  __type?: 'foreach' | 'define';
+  __proto?: string;
   __name?: string;
   __children?: ScopeProps[];
 }
@@ -43,7 +45,10 @@ export interface Scope {
  * @returns newly created scope
  */
 export function newScope(ctx: Context, props: ScopeProps): Scope {
-  const self = Object.create(null) as Scope;
+  const proto = props.__proto
+    ? ctx.protos.get(props.__proto)?.__target as Define
+    : null;
+  const self = Object.create(proto ?? null) as Scope;
 
   //
   // methods
@@ -84,9 +89,7 @@ export function newScope(ctx: Context, props: ScopeProps): Scope {
   self.__set = function(key: string, val: any) {
     return key.startsWith('__')
       ? ((self[key] = val) ?? true)
-      : ((self.__cache.get(key) ?? self.__lookup(key))
-      ?.set(val)
-      ?? false);
+      : ((self.__cache.get(key) ?? self.__lookup(key))?.set(val) ?? false);
   }
 
   self.__value = function(key: string) {
@@ -144,7 +147,9 @@ export function newScope(ctx: Context, props: ScopeProps): Scope {
   self.__props = props;
   self.__children = [];
   self.__cache = new Map();
+  proto && proxy.__add(proto.__values);
   proxy.__add(props);
+  proto?.__props.__children?.forEach(props => ctx.load(proxy, props));
 
   return proxy;
 }

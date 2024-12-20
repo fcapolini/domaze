@@ -1,4 +1,5 @@
 import { newScope, Scope, ScopeProps } from "./scope";
+import { Define, makeDefine } from "./scopes/define";
 import { makeForeach } from "./scopes/foreach";
 import { Value, ValueProps } from "./value";
 
@@ -7,10 +8,12 @@ export interface ContextProps {
 }
 
 export class Context {
+  protos: Map<string, Define>;
   global: Scope;
   root: Scope;
 
   constructor(props: ContextProps) {
+    this.protos = new Map();
     this.global = this.globalFactory();
     // write-protect global object
     this.global.__handler.set = () => false;
@@ -19,8 +22,14 @@ export class Context {
   }
 
   load(parent: Scope, props: ScopeProps, before?: Scope): any {
-    const ret = this.scopeFactory(props).__link(parent, before);
-    props.__children?.forEach(props => this.load(ret, props));
+    const ret = this.scopeFactory(props);
+    if (props.__type === 'define') {
+      makeDefine(ret);
+      props.__name && this.protos.set(props.__name, ret as Define);
+    } else {
+      ret.__link(parent, before);
+      props.__children?.forEach(props => this.load(ret, props));
+    }
     if (props.__type === 'foreach') {
       makeForeach(ret);
     }

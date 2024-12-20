@@ -8,6 +8,8 @@ esbuild.build({
   target: 'node16',// Specify Node.js version
   sourcemap: true,// Include sourcemaps
   minify: false,// Minify output for production
+  // sourcemap: false,// Include sourcemaps
+  // minify: true,// Minify output for production
   loader: { '.ts': 'ts' },// Add loader for TS
 }).then(() => {
   console.log('Build completed!');

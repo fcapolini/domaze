@@ -4,6 +4,7 @@ import { ValueProps } from "../value";
 export interface ForeachProps extends ScopeProps {
   __type: 'foreach';
   data: ValueProps;
+  //TODO: key property
 }
 
 export interface Foreach extends Scope {
