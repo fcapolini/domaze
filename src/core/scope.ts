@@ -45,6 +45,13 @@ export class ScopeFactory {
     this.ctx = ctx;
   }
 
+  create(props: ScopeProps, parent: Scope, before?: Scope): Scope {
+    const ret = this.make(props);
+    ret.__link(parent, before);
+    props.__children?.forEach(props => this.ctx.create(props, ret));
+    return ret;
+  }
+
   make(props: ScopeProps): Scope {
     const proto = props.__proto
       ? this.ctx.protos.get(props.__proto)?.__target as Define
@@ -150,7 +157,7 @@ export class ScopeFactory {
     self.__cache = new Map();
     proto && proxy.__add(proto.__values);
     proxy.__add(props);
-    proto?.__props.__children?.forEach(props => this.ctx.load(proxy, props));
+    proto?.__props.__children?.forEach(props => this.ctx.create(props, proxy));
 
     return proxy;
   }
