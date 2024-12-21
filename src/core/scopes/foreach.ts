@@ -1,5 +1,5 @@
 import { Context } from "../context";
-import { Scope, ScopeFactory, ScopeProps } from "../scope";
+import { BaseFactory, Scope, ScopeProps } from "../scope";
 import { ValueProps } from "../value";
 
 export interface ForeachProps extends ScopeProps {
@@ -16,15 +16,15 @@ export interface Foreach extends Scope {
   __removeClone(i: number): void;
 }
 
-export class ForeachFactory extends ScopeFactory {
+export class ForeachFactory extends BaseFactory {
 
   create(props: ScopeProps, parent: Scope, before?: Scope): Scope {
     const ret = super.create(props, parent, before);
-    this.adapt(ret, props as ForeachProps);
+    this.augment(ret);
     return ret;
   }
 
-  adapt(scope: Scope, props: ForeachProps): Foreach {
+  augment(scope: Scope): Foreach {
     const self = scope.__target as Foreach;
 
     self.__children.length && (self.__content = self.__children[0]);

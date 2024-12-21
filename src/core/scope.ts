@@ -1,4 +1,5 @@
 import { Context } from "./context";
+import { ScopeFactory } from "./scopes/base";
 import { Define } from "./scopes/define";
 import { Value } from "./value";
 
@@ -38,7 +39,7 @@ export interface Scope {
   __handler: any;
 }
 
-export class ScopeFactory {
+export class BaseFactory implements ScopeFactory {
   ctx: Context;
 
   constructor(ctx: Context) {

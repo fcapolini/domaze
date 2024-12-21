@@ -1,6 +1,6 @@
-import { ScopeFactory, Scope, ScopeProps } from "./scope";
+import { BaseFactory, Scope, ScopeProps } from "./scope";
 import { Define, DefineFactory } from "./scopes/define";
-import { ForeachFactory, ForeachProps } from "./scopes/foreach";
+import { ForeachFactory } from "./scopes/foreach";
 import { Value, ValueProps } from "./value";
 
 export interface ContextProps {
@@ -9,7 +9,7 @@ export interface ContextProps {
 
 export class Context {
   protos: Map<string, Define>;
-  scopeFactory: ScopeFactory;
+  scopeFactory: BaseFactory;
   foreachFactory: ForeachFactory;
   defineFactory: DefineFactory;
   global: Scope;
@@ -38,18 +38,6 @@ export class Context {
     return this.scopeFactory.create(props, parent, before);
   }
 
-  // load(parent: Scope, props: ScopeProps, before?: Scope): any {
-  //   const ret = this.createScope(props);
-  //   if (props.__type === 'define') {
-  //     makeDefine(ret);
-  //     props.__name && this.protos.set(props.__name, ret as Define);
-  //   } else {
-  //     ret.__link(parent, before);
-  //     props.__children?.forEach(props => this.load(ret, props));
-  //   }
-  //   return ret;
-  // }
-
   makeGlobal(): Scope {
     return this.scopeFactory.make({
       console: { e: () => console },
@@ -60,14 +48,8 @@ export class Context {
     return new Value(scope, props);
   }
 
-  // createScope(props: ScopeProps): Scope {
-  //   if (props.__type === 'foreach') {
-  //     return this.foreachFactory.make(props as ForeachProps);
-  //   }
-  //   return this.scopeFactory.make(props);
-  // }
   createScopeFactory() {
-    return new ScopeFactory(this);
+    return new BaseFactory(this);
   }
   createForeachFactory() {
     return new ForeachFactory(this);
