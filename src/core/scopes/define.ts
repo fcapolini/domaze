@@ -1,5 +1,6 @@
-import { BaseFactory, Scope, ScopeProps } from "../scope";
+import { Scope, ScopeProps } from "../scope";
 import { Value, ValueProps } from "../value";
+import { BaseFactory } from "./base";
 
 export interface DefineProps extends ScopeProps {
   __type: 'define';
@@ -12,7 +13,7 @@ export interface Define extends Scope {
 
 export class DefineFactory extends BaseFactory {
 
-  override create(props: ScopeProps, parent: Scope, before?: Scope): Scope {
+  override create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
     const ret = this.make(props);
     props.__name && this.ctx.protos.set(props.__name, ret as Define);
     return ret;

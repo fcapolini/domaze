@@ -217,7 +217,7 @@ it('should instantiate an etended definition', () => {
   expect(inst1['v2']).toBe(315);
 
   //TODO: carefully check child scopes
-  //inparticular inherited children in two different instances must be distinct
+  //in particular inherited children in two different instances must be distinct
 
   // expect(inst1.__children.length).toBe(3);
   // expect(inst1['baseChild']).toBeDefined();

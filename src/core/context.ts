@@ -1,25 +1,40 @@
-import { BaseFactory, Scope, ScopeProps } from "./scope";
+import { Scope, ScopeFactory, ScopeProps } from "./scope";
 import { Define, DefineFactory } from "./scopes/define";
 import { ForeachFactory } from "./scopes/foreach";
+import { BaseFactory } from "./scopes/base";
 import { Value, ValueProps } from "./value";
 
 export interface ContextProps {
   root: ScopeProps;
+  scopeFactory?: ScopeFactory;
 }
 
 export class Context {
   protos: Map<string, Define>;
-  scopeFactory: BaseFactory;
-  foreachFactory: ForeachFactory;
-  defineFactory: DefineFactory;
+  scopeFactory: ScopeFactory;
   global: Scope;
   root: Scope;
 
   constructor(props: ContextProps) {
     this.protos = new Map();
-    this.scopeFactory = this.createScopeFactory();
-    this.foreachFactory = this.createForeachFactory();
-    this.defineFactory = this.createDefineFactory();
+    this.scopeFactory = props.scopeFactory
+      ? props.scopeFactory
+      : new class implements ScopeFactory {
+        base: ScopeFactory;
+        map: Map<string, ScopeFactory>;
+
+        constructor(ctx: Context) {
+          this.map = new Map();
+          this.base = new BaseFactory(ctx);
+          this.map.set('define', new DefineFactory(ctx));
+          this.map.set('foreach', new ForeachFactory(ctx));
+        }
+
+        create(props: ScopeProps, parent: Scope, before?: Scope) {
+          const factory = (props.__type && this.map.get(props.__type)) ?? this.base;
+          return factory.create(props, parent, before);
+        }
+      }(this);
     this.global = this.makeGlobal();
     // write-protect global object
     this.global.__handler.set = () => false;
@@ -29,17 +44,17 @@ export class Context {
   }
 
   create(props: ScopeProps, parent: Scope, before?: Scope): Scope {
-    if (props.__type === 'foreach') {
-      return this.foreachFactory.create(props, parent, before);
-    }
-    if (props.__type === 'define') {
-      return this.defineFactory.create(props, parent, before);
-    }
+    // if (props.__type === 'foreach') {
+    //   return this.foreachFactory.create(props, parent, before);
+    // }
+    // if (props.__type === 'define') {
+    //   return this.defineFactory.create(props, parent, before);
+    // }
     return this.scopeFactory.create(props, parent, before);
   }
 
   makeGlobal(): Scope {
-    return this.scopeFactory.make({
+    return this.scopeFactory.create({
       console: { e: () => console },
     });
   }
@@ -48,15 +63,15 @@ export class Context {
     return new Value(scope, props);
   }
 
-  createScopeFactory() {
-    return new BaseFactory(this);
-  }
-  createForeachFactory() {
-    return new ForeachFactory(this);
-  }
-  createDefineFactory() {
-    return new DefineFactory(this);
-  }
+  // createScopeFactory() {
+  //   return new BaseFactory(this);
+  // }
+  // createForeachFactory() {
+  //   return new ForeachFactory(this);
+  // }
+  // createDefineFactory() {
+  //   return new DefineFactory(this);
+  // }
 
   // ===========================================================================
   // reactivity
@@ -77,5 +92,22 @@ export class Context {
       console.error('Context.refresh()', err);
     }
     this.refreshLevel--;
+  }
+}
+
+class DefaultScopeFactory implements ScopeFactory {
+  base: ScopeFactory;
+  map: Map<string, ScopeFactory>;
+
+  constructor(ctx: Context) {
+    this.map = new Map();
+    this.base = new BaseFactory(ctx);
+    this.map.set('define', new DefineFactory(ctx));
+    this.map.set('foreach', new ForeachFactory(ctx));
+  }
+
+  create(props: ScopeProps, parent: Scope, before?: Scope) {
+    const factory = (props.__type && this.map.get(props.__type)) ?? this.base;
+    return factory.create(props, parent, before);
   }
 }

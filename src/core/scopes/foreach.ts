@@ -1,6 +1,7 @@
 import { Context } from "../context";
-import { BaseFactory, Scope, ScopeProps } from "../scope";
+import { Scope, ScopeProps } from "../scope";
 import { ValueProps } from "../value";
+import { BaseFactory } from "./base";
 
 export interface ForeachProps extends ScopeProps {
   __type: 'foreach';
@@ -18,7 +19,7 @@ export interface Foreach extends Scope {
 
 export class ForeachFactory extends BaseFactory {
 
-  create(props: ScopeProps, parent: Scope, before?: Scope): Scope {
+  create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
     const ret = super.create(props, parent, before);
     this.augment(ret);
     return ret;
