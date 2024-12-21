@@ -51,7 +51,7 @@ it('should insert a scope before another', () => {
   });
   expect(ctx.root.__children.length).toBe(1);
   expect(ctx.root.__children[0].__props.__name).toBe(bodyName);
-  ctx.scopeFactory({
+  ctx.scopeFactory.make({
     __name: headName,
   }).__link(ctx.root, ctx.root.__children[0]);
   expect(ctx.root.__children.length).toBe(2);
