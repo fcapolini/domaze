@@ -47,7 +47,7 @@ export class BaseFactory implements ScopeFactory {
     self.__add = function(props: ScopeProps) {
       Object.keys(props).forEach(key => {
         if (!key.startsWith('__')) {
-          self[key] = self.__ctx.valueFactory(this, key, props[key]);
+          self[key] = self.__ctx.newValue(this, key, props[key]);
         }
       });
     }
@@ -119,11 +119,17 @@ export class BaseFactory implements ScopeFactory {
     self.__props = props;
     self.__children = [];
     self.__cache = new Map();
-    proto && proxy.__add(proto.__values);
+    proto && this.addValues(self, proxy, proto.__values);
     this.addValues(self, proxy, props);
 
-    //TODO
-    this.addChildren(self, proxy, proto?.__props.__children);
+    const populateFromProto = (proto: Scope) => {
+      if (proto.__props.__proto) {
+        const p = this.ctx.protos.get(proto.__props.__proto);
+        p && populateFromProto(p);
+      }
+      this.addChildren(self, proxy, proto?.__props.__children);
+    }
+    proto && populateFromProto(proto);
 
     this.addChildren(self, proxy, props.__children);
 

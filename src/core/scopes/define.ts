@@ -25,7 +25,7 @@ export class DefineFactory extends BaseFactory {
     props: { [key: string]: ValueProps }
   ) {
     const functions = {};
-    self.__values = {};
+    self.__values ??= {};
     Reflect.ownKeys(props).forEach(key => {
       if (typeof key !== 'string' || key.startsWith('__')) {
         return;
