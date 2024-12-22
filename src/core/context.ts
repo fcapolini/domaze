@@ -31,26 +31,15 @@ export class Context {
         }
 
         create(props: ScopeProps, parent: Scope, before?: Scope) {
-          const factory = (props.__type && this.map.get(props.__type)) ?? this.base;
-          return factory.create(props, parent, before);
+          return ((props.__type && this.map.get(props.__type)) ?? this.base)
+            .create(props, parent, before);
         }
       }(this);
     this.global = this.makeGlobal();
     // write-protect global object
     this.global.__handler.set = () => false;
-    // this.root = this.load(this.global, props.root);
-    this.root = this.create(props.root, this.global);
+    this.root = this.scopeFactory.create(props.root, this.global);
     this.refresh();
-  }
-
-  create(props: ScopeProps, parent: Scope, before?: Scope): Scope {
-    // if (props.__type === 'foreach') {
-    //   return this.foreachFactory.create(props, parent, before);
-    // }
-    // if (props.__type === 'define') {
-    //   return this.defineFactory.create(props, parent, before);
-    // }
-    return this.scopeFactory.create(props, parent, before);
   }
 
   makeGlobal(): Scope {
@@ -62,16 +51,6 @@ export class Context {
   valueFactory(scope: Scope, _key: string, props: ValueProps): Value {
     return new Value(scope, props);
   }
-
-  // createScopeFactory() {
-  //   return new BaseFactory(this);
-  // }
-  // createForeachFactory() {
-  //   return new ForeachFactory(this);
-  // }
-  // createDefineFactory() {
-  //   return new DefineFactory(this);
-  // }
 
   // ===========================================================================
   // reactivity

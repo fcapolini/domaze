@@ -82,7 +82,7 @@ export class ForeachFactory extends BaseFactory {
       const props = { ...self.__content!.__props };
       props['data'] = { e: function() { return data; } };
       delete props.__name;
-      const clone = self.__ctx.create(props, self.__parent!, this);
+      const clone = self.__ctx.scopeFactory.create(props, self.__parent, this);
       self.__clones.push(clone);
       self.__ctx.refresh(clone, false);
     }

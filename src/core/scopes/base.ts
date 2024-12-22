@@ -1,7 +1,7 @@
 import { Scope, ScopeFactory, ScopeProps } from "../scope";
 import { Context } from "../context";
 import { Define } from "./define";
-import { Value } from "../value";
+import { Value, ValueProps } from "../value";
 
 export class BaseFactory implements ScopeFactory {
   ctx: Context;
@@ -13,11 +13,10 @@ export class BaseFactory implements ScopeFactory {
   create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
     const ret = this.make(props);
     parent && ret.__link(parent, before);
-    props.__children?.forEach(props => this.ctx.create(props, ret));
     return ret;
   }
 
-  make(props: ScopeProps): Scope {
+  protected make(props: ScopeProps): Scope {
     const proto = props.__proto
       ? this.ctx.protos.get(props.__proto)?.__target as Define
       : null;
@@ -121,9 +120,29 @@ export class BaseFactory implements ScopeFactory {
     self.__children = [];
     self.__cache = new Map();
     proto && proxy.__add(proto.__values);
-    proxy.__add(props);
-    proto?.__props.__children?.forEach(props => this.ctx.create(props, proxy));
+    this.addValues(self, proxy, props);
+
+    //TODO
+    this.addChildren(self, proxy, proto?.__props.__children);
+
+    this.addChildren(self, proxy, props.__children);
 
     return proxy;
+  }
+
+  protected addValues(
+    _self: Scope,
+    proxy: Scope,
+    props: { [key: string]: ValueProps }
+  ) {
+    proxy.__add(props);
+  }
+
+  protected addChildren(
+    _self: Scope,
+    proxy: Scope,
+    children?: { [key: string]: ValueProps }[]
+  ) {
+    children?.forEach(props => this.ctx.scopeFactory.create(props, proxy));
   }
 }

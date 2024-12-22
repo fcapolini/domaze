@@ -13,28 +13,38 @@ export interface Define extends Scope {
 
 export class DefineFactory extends BaseFactory {
 
-  override create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
+  override create(props: ScopeProps, _parent?: Scope, _before?: Scope): Scope {
     const ret = this.make(props);
     props.__name && this.ctx.protos.set(props.__name, ret as Define);
     return ret;
   }
 
-  override make(props: ScopeProps): Define {
-    const scope = super.make(props);
-    const self = scope.__target as Define;
-    // only keep function values in the prototype object
+  protected override addValues(
+    self: Define,
+    proxy: Define,
+    props: { [key: string]: ValueProps }
+  ) {
+    const functions = {};
     self.__values = {};
-    [...Reflect.ownKeys(self)].forEach(key => {
-      const v = self[key] as Value;
-      if (typeof key === 'string' && v instanceof Value && !v.props.f) {
-        //TODO: non-function values shouldn't be created in the first place
-        //and they should be stored in __values directly from __props
-        //NOTE: that will complicate value inheritance a bit in definitions
-        //extending other definitions
-        delete self[key];
-        self.__values[key] = v.props;
+    Reflect.ownKeys(props).forEach(key => {
+      if (typeof key !== 'string' || key.startsWith('__')) {
+        return;
+      }
+      const v = props[key] as ValueProps;
+      if (v.e) {
+        self.__values[key] = v;
+      } else {
+        functions[key] = v;
       }
     });
-    return self;
+    proxy.__add(functions);
+  }
+
+  protected addChildren(
+    _self: Scope,
+    _proxy: Scope,
+    _children?: { [key: string]: ValueProps }[]
+  ) {
+    // nop
   }
 }

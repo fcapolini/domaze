@@ -9,11 +9,19 @@ it('should define a component', () => {
         __name: 'my-tag',
         v1: { e: function() { return 1; } },
         f1: { f: function() { return 2; } },
+        __children: [{
+          __name: 'protoChild'
+        }]
       }],
     }
   });
   expect(ctx.root.__children.length).toBe(0);
   expect(ctx.protos.size).toBe(1);
+  const proto = ctx.protos.get('my-tag')!;
+  expect(proto['v1']).toBeUndefined();
+  expect(proto['f1']).toBeDefined();
+  expect(proto.__values['v1']).toBeDefined();
+  expect(proto.__children.length).toBe(0);
 });
 
 // it('should instantiate a component', () => {
