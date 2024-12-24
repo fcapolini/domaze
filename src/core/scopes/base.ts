@@ -17,10 +17,11 @@ export class BaseFactory implements ScopeFactory {
   }
 
   protected make(props: ScopeProps): Scope {
-    const proto = props.__proto
-      ? this.ctx.protos.get(props.__proto)?.__target as Define
-      : null;
-    const self = Object.create(proto ?? null) as Scope;
+    // const proto = props.__proto
+    //   ? this.ctx.protos.get(props.__proto)?.__target as Define
+    //   : null;
+    // const self = Object.create(proto ?? null) as Scope;
+    const self = Object.create(null) as Scope;
 
     //
     // methods
@@ -119,17 +120,13 @@ export class BaseFactory implements ScopeFactory {
     self.__props = props;
     self.__children = [];
     self.__cache = new Map();
-    proto && this.addValues(self, proxy, proto.__values);
-    this.addValues(self, proxy, props);
 
-    const populateFromProto = (proto: Scope) => {
-      if (proto.__props.__proto) {
-        const p = this.ctx.protos.get(proto.__props.__proto);
-        p && populateFromProto(p);
-      }
-      this.addChildren(self, proxy, proto?.__props.__children);
-    }
-    proto && populateFromProto(proto);
+    const proto = props.__proto
+      ? this.ctx.protos.get(props.__proto)?.__target as Define
+      : null;
+    proto && proto.__apply(proxy);
+
+    this.addValues(self, proxy, props);
     this.addChildren(self, proxy, props.__children);
 
     return proxy;

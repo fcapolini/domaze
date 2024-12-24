@@ -217,36 +217,40 @@ it('should define an extended component (2)', () => {
 it('should instantiate an extended definition', () => {
   const ctx = new Context({
     root: {
-      __children: [{
-        __type: 'define',
-        __name: 'base-tag',
-        v0: { e: function() { return 100; }},
-        f0: { f: function() { return 200; }},
-        __children: [{
-          __name: 'baseChild',
-        }]
-      }, {
-        __type: 'define',
-        __name: 'my-tag',
-        __proto: 'base-tag',
-        v1: {
-          e: function() { return this.v0 + 5; },
-          d: [function() { return this.__value('v0'); }],
+      __children: [
+        {
+          __type: 'define',
+          __name: 'base-tag',
+          v0: { e: function() { return 100; }},
+          f0: { f: function() { return 200; }},
+          __children: [{
+            __name: 'baseChild',
+          }]
         },
-        f1: { f: function() { return 2; } },
-        __children: [{
-          __name: 'protoChild',
-        }]
-      }, {
-        __proto: 'my-tag',
-        v2: {
-          e: function() { return this.v1 + 10; },
-          d: [function() { return this.__value('v1'); }],
+        {
+          __type: 'define',
+          __name: 'my-tag',
+          __proto: 'base-tag',
+          v1: {
+            e: function() { return this.v0 + 5; },
+            d: [function() { return this.__value('v0'); }],
+          },
+          f1: { f: function() { return 2; } },
+          __children: [{
+            __name: 'protoChild',
+          }]
         },
-        __children: [{
-          __name: 'instanceChild',
-        }]
-      }],
+        {
+          __proto: 'my-tag',
+          v2: {
+            e: function() { return this.v1 + 10; },
+            d: [function() { return this.__value('v1'); }],
+          },
+          __children: [{
+            __name: 'instanceChild',
+          }]
+        }
+      ],
     }
   });
   expect(ctx.root.__children.length).toBe(1);

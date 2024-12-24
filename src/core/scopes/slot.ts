@@ -8,7 +8,7 @@ export interface SlotProps extends ScopeProps {
 }
 
 export class SlotFactory extends BaseFactory {
-  protected addChildren(
+  protected override addChildren(
     _self: Scope,
     _proxy: Scope,
     _children?: { [key: string]: ValueProps }[]

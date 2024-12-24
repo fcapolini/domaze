@@ -9,6 +9,7 @@ export interface DefineProps extends ScopeProps {
 
 export interface Define extends Scope {
   __values: { [key: string]: ValueProps };
+  __apply(dst: Scope): void;
   // __slots: { [key: string]: Scope };
 }
 
@@ -40,6 +41,24 @@ export class DefineFactory extends BaseFactory {
       }
     });
     proxy.__add(functions);
+
+    self.__apply = function(dest: Scope) {
+      const target = dest.__target;
+      Object.setPrototypeOf(target, self);
+      if (target.__props.__type === 'define') {
+        return;
+      }
+      const apply = (self: Define) => {
+        const proto = self.__props.__proto;
+        const supr = proto && self.__ctx.protos.get(proto)?.__target as Define;
+        supr && apply(supr);
+        dest.__add(self.__values);
+        self.__props.__children?.forEach(props => {
+          self.__ctx.scopeFactory.create(props, dest);
+        });
+      }
+      apply(self);
+    }
   }
 
   protected addChildren(
