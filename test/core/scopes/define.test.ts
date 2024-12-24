@@ -235,7 +235,7 @@ it('should instantiate an extended definition', () => {
         },
         f1: { f: function() { return 2; } },
         __children: [{
-          __name: 'child',
+          __name: 'protoChild',
         }]
       }, {
         __proto: 'my-tag',
@@ -262,10 +262,10 @@ it('should instantiate an extended definition', () => {
 
   expect(inst1.__children.length).toBe(3);
   expect(inst1['baseChild']).toBeDefined();
-  expect(inst1['child']).toBeDefined();
+  expect(inst1['protoChild']).toBeDefined();
   expect(inst1['instanceChild']).toBeDefined();
   expect(inst1.__children[0]).toBe(inst1['baseChild']);
-  expect(inst1.__children[1]).toBe(inst1['child']);
+  expect(inst1.__children[1]).toBe(inst1['protoChild']);
   expect(inst1.__children[2]).toBe(inst1['instanceChild']);
 });
 

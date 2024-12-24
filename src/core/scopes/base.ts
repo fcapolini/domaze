@@ -130,7 +130,6 @@ export class BaseFactory implements ScopeFactory {
       this.addChildren(self, proxy, proto?.__props.__children);
     }
     proto && populateFromProto(proto);
-
     this.addChildren(self, proxy, props.__children);
 
     return proxy;

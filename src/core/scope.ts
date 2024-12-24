@@ -7,7 +7,7 @@ import { Value } from "./value";
  */
 export interface ScopeProps {
   [key: string]: any;
-  __type?: 'foreach' | 'define';
+  __type?: 'foreach' | 'define' | 'slot';
   __proto?: string;
   __name?: string;
   __children?: ScopeProps[];

@@ -9,3 +9,5 @@
 
 * [ ] prevent declaring '__'-prefixed values (they're reserved to implementation)
 * [ ] check foreach contains a single scope
+* [ ] tags w/ a __slot prop must have their own scope
+* [ ] slot tags must have a valid __name
