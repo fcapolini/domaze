@@ -48,13 +48,15 @@ export class DefineFactory extends BaseFactory {
       if (target.__props.__type === 'define') {
         return;
       }
+      target.__slots = new Map();
+      const ctx = self.__ctx;
       const apply = (self: Define) => {
         const proto = self.__props.__proto;
-        const supr = proto && self.__ctx.protos.get(proto)?.__target as Define;
+        const supr = proto && ctx.protos.get(proto)?.__target as Define;
         supr && apply(supr);
         dest.__add(self.__values);
         self.__props.__children?.forEach(props => {
-          self.__ctx.scopeFactory.create(props, dest);
+          ctx.scopeFactory.create(props, dest);
         });
       }
       apply(self);

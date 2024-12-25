@@ -18,6 +18,7 @@ export interface Scope {
   __parent?: Scope;
   __props: ScopeProps;
   __children: Scope[];
+  __slots?: Map<string, Scope>;
   __cache: Map<string, Value>;
 
   __dispose(): void;

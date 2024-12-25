@@ -34,6 +34,12 @@ export class BaseFactory implements ScopeFactory {
     }
 
     self.__link = function(parent: Scope, before?: Scope) {
+      if (self.__props.__type === 'slot') {
+        //TODO: add this slot to instance
+        // - find closest ancestor w/ __slots !== undefined
+        // - remove possible replaced slot w/ same name
+        // - add this slot
+      }
       this.__parent = parent;
       const i = before ? parent.__children.indexOf(before) : -1;
       i < 0 ? parent.__children.push(this) : parent.__children.splice(i, 0, this);
