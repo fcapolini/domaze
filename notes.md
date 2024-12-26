@@ -10,4 +10,13 @@
 * [ ] prevent declaring '__'-prefixed values (they're reserved to implementation)
 * [ ] check foreach contains a single scope
 * [ ] tags w/ a __slot prop must have their own scope
-* [ ] slot tags must have a valid __name
+* [ ] slot tags must have a valid __name and no children/values/functions
+
+## TODO
+
+* [ ] DOM
+  * [ ] server-side dom + parser and preprocessor
+  * [ ] server-side load
+  * [ ] server-side replication
+  * [ ] client-side reload
+  * [ ] client-side replication

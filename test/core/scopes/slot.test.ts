@@ -79,7 +79,6 @@ it('should consider slot in extended proto', () => {
       }],
     }
   });
-  console.log(dump(ctx.root));
   expect(dump(ctx.root)).toEqual(JSON.stringify({
     "children": [
       {
@@ -135,7 +134,6 @@ it('should replace slot in extended proto', () => {
       }],
     }
   });
-  console.log(dump(ctx.root));
   expect(dump(ctx.root)).toEqual(JSON.stringify({
     "children": [
       {
