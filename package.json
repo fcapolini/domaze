@@ -6,7 +6,8 @@
     "test": "vitest --run",
     "coverage": "vitest --run --coverage",
     "start": "node dist/index.js",
-    "build": "node scripts/build.js"
+    "build": "node scripts/build.js",
+    "check": "tsc"
   },
   "keywords": [],
   "author": "",

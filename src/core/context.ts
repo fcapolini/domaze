@@ -9,22 +9,42 @@ export interface ContextProps {
 }
 
 export class Context {
-  protos: Map<string, Define>;
-  scopeFactory: ScopeFactory;
-  global: Scope;
+  props: ContextProps;
+  protos!: Map<string, Define>;
+  protected scopeFactory!: ScopeFactory;
+  global!: Scope;
   root: Scope;
 
   constructor(props: ContextProps) {
-    this.protos = new Map();
-    this.scopeFactory = this.newScopeFactory();
+    this.props = props;
+    this.init();
     this.global = this.newGlobal();
     // write-protect global object
     this.global.__handler.set = () => false;
-    this.root = this.scopeFactory.create(props.root, this.global);
+    this.root = this.newScope(props.root, this.global);
     this.refresh();
   }
 
-  newScopeFactory(): ScopeFactory {
+  newGlobal(): Scope {
+    return this.scopeFactory.create({
+      console: { e: () => console },
+    });
+  }
+
+  newScope(props: ScopeProps, parent: Scope, before?: Scope) {
+    return this.scopeFactory.create(props, parent, before);
+  }
+
+  newValue(scope: Scope, _key: string, props: ValueProps): Value {
+    return new Value(scope, props);
+  }
+
+  protected init() {
+    this.protos = new Map();
+    this.scopeFactory = this.newScopeFactory();
+  }
+
+  protected newScopeFactory(): ScopeFactory {
     return new class implements ScopeFactory {
       base: ScopeFactory;
       map: Map<string, ScopeFactory>;
@@ -41,16 +61,6 @@ export class Context {
           .create(props, parent, before);
       }
     }(this);
-  }
-
-  newGlobal(): Scope {
-    return this.scopeFactory.create({
-      console: { e: () => console },
-    });
-  }
-
-  newValue(scope: Scope, _key: string, props: ValueProps): Value {
-    return new Value(scope, props);
   }
 
   // ===========================================================================

@@ -24,8 +24,8 @@ export class BaseFactory implements ScopeFactory {
 
     self.__target = self;
     self.__handler = {
-      get: (_, key: string) => self.__get(key),
-      set: (_, key: string, val: any) => self.__set(key, val),
+      get: (_: any, key: string) => self.__get(key),
+      set: (_: any, key: string, val: any) => self.__set(key, val),
     };
     const proxy = new Proxy(self, self.__handler);
 
@@ -52,8 +52,8 @@ export class BaseFactory implements ScopeFactory {
       const i = before ? parent.__children.indexOf(before) : -1;
       i < 0 ? parent.__children.push(this) : parent.__children.splice(i, 0, this);
       if (this.__props.__name || this.__props.__type !== 'slot') {
-        const props = {};
-        props[this.__props.__name] = { e: () => this };
+        const props: { [key: string]: any } = {};
+        props[this.__props.__name!] = { e: () => this };
         parent.__add(props);
       }
       // collect slot
@@ -75,20 +75,20 @@ export class BaseFactory implements ScopeFactory {
     self.__add = function(props: ScopeProps) {
       Object.keys(props).forEach(key => {
         if (!key.startsWith('__')) {
-          self[key] = self.__ctx.newValue(this, key, props[key]);
+          (self as any)[key] = self.__ctx.newValue(this, key, props[key]);
         }
       });
     }
 
     self.__get = function(key: string) {
       return key.startsWith('__')
-        ? self[key]
+        ? (self as any)[key]
         : (self.__cache.get(key) ?? self.__lookup(key))?.get();
     }
 
     self.__set = function(key: string, val: any) {
       return key.startsWith('__')
-        ? ((self[key] = val) ?? true)
+        ? (((self as any)[key] = val) ?? true)
         : ((self.__cache.get(key) ?? self.__lookup(key))?.set(val) ?? false);
     }
 
@@ -114,17 +114,17 @@ export class BaseFactory implements ScopeFactory {
 
     self.__unlinkValues = function(recur = true) {
       self.__cache.clear();
-      Object.keys(self).forEach(key => key.startsWith('__') || self[key].unlink());
+      Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].unlink());
       recur && self.__children.forEach((scope: Scope) => scope.__unlinkValues())
     }
 
     self.__linkValues = function (recur = true) {
-      Object.keys(self).forEach(key => key.startsWith('__') || self[key].link());
+      Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].link());
       recur && self.__children.forEach((scope: Scope) => scope.__linkValues())
     }
 
     self.__updateValues = function (recur = true) {
-      Object.keys(self).forEach(key => key.startsWith('__') || self[key].get());
+      Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].get());
       recur && self.__children.forEach((scope: Scope) => scope.__updateValues())
     }
 
@@ -168,6 +168,6 @@ export class BaseFactory implements ScopeFactory {
     proxy: Scope,
     children?: { [key: string]: ValueProps }[]
   ) {
-    children?.forEach(props => this.ctx.scopeFactory.create(props, proxy));
+    children?.forEach(props => this.ctx.newScope(props, proxy));
   }
 }

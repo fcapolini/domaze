@@ -51,6 +51,7 @@ export class ForeachFactory extends BaseFactory {
       superUpdateValues(false);
     }
 
+    // @ts-ignore
     self['data']?.setCB((scope: Foreach, data: any[]) => {
       if (!self.__content) {
         return data;
@@ -81,12 +82,13 @@ export class ForeachFactory extends BaseFactory {
       const props = { ...self.__content!.__props };
       props['data'] = { e: function() { return data; } };
       delete props.__name;
-      const clone = self.__ctx.scopeFactory.create(props, self.__parent, this);
+      const clone = self.__ctx.newScope(props, self.__parent!, this);
       self.__clones.push(clone);
       self.__ctx.refresh(clone, false);
     }
 
     self.__updateClone = function(clone: Scope, data: any) {
+      // @ts-ignore
       clone['data'] = data;
     }
 

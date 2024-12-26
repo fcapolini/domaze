@@ -25,7 +25,7 @@ export class DefineFactory extends BaseFactory {
     proxy: Define,
     props: { [key: string]: ValueProps }
   ) {
-    const functions = {};
+    const functions: { [key: string]: ValueProps } = {};
     self.__values ??= {};
     Reflect.ownKeys(props).forEach(key => {
       if (typeof key !== 'string' || key.startsWith('__')) {
@@ -54,7 +54,7 @@ export class DefineFactory extends BaseFactory {
         supr && apply(supr);
         dest.__add(self.__values);
         self.__props.__children?.forEach(props => {
-          ctx.scopeFactory.create(props, dest);
+          ctx.newScope(props, dest);
         });
       }
       apply(self);
