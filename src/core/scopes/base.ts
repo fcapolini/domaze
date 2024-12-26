@@ -51,7 +51,7 @@ export class BaseFactory implements ScopeFactory {
       this.__parent = parent;
       const i = before ? parent.__children.indexOf(before) : -1;
       i < 0 ? parent.__children.push(this) : parent.__children.splice(i, 0, this);
-      if (this.__props.__name) {
+      if (this.__props.__name || this.__props.__type !== 'slot') {
         const props = {};
         props[this.__props.__name] = { e: () => this };
         parent.__add(props);
@@ -146,6 +146,11 @@ export class BaseFactory implements ScopeFactory {
 
     this.addValues(self, proxy, props);
     this.addChildren(self, proxy, props.__children);
+
+    if (self.__slots) {
+      self.__slots.forEach(slot => slot.__dispose());
+      delete self.__slots;
+    }
 
     return proxy;
   }
