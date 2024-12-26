@@ -1,5 +1,5 @@
 import { Scope, ScopeProps } from "../scope";
-import { Value, ValueProps } from "../value";
+import { ValueProps } from "../value";
 import { BaseFactory } from "./base";
 
 export interface DefineProps extends ScopeProps {
@@ -10,7 +10,6 @@ export interface DefineProps extends ScopeProps {
 export interface Define extends Scope {
   __values: { [key: string]: ValueProps };
   __apply(dst: Scope): void;
-  // __slots: { [key: string]: Scope };
 }
 
 export class DefineFactory extends BaseFactory {
@@ -28,7 +27,6 @@ export class DefineFactory extends BaseFactory {
   ) {
     const functions = {};
     self.__values ??= {};
-    // self.__slots ??= {};
     Reflect.ownKeys(props).forEach(key => {
       if (typeof key !== 'string' || key.startsWith('__')) {
         return;

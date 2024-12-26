@@ -1,4 +1,3 @@
-import { Context } from "../context";
 import { Scope, ScopeProps } from "../scope";
 import { ValueProps } from "../value";
 import { BaseFactory } from "./base";

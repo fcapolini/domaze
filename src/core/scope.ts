@@ -10,6 +10,7 @@ export interface ScopeProps {
   __type?: 'foreach' | 'define' | 'slot';
   __proto?: string;
   __name?: string;
+  __slot?: string;
   __children?: ScopeProps[];
 }
 

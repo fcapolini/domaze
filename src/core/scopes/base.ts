@@ -11,17 +11,23 @@ export class BaseFactory implements ScopeFactory {
   }
 
   create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
-    const ret = this.make(props);
-    parent && ret.__link(parent, before);
+    const ret = this.make(props, parent, before);
     return ret;
   }
 
-  protected make(props: ScopeProps): Scope {
-    // const proto = props.__proto
-    //   ? this.ctx.protos.get(props.__proto)?.__target as Define
-    //   : null;
-    // const self = Object.create(proto ?? null) as Scope;
+  protected make(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
     const self = Object.create(null) as Scope;
+
+    //
+    // proxy
+    //
+
+    self.__target = self;
+    self.__handler = {
+      get: (_, key: string) => self.__get(key),
+      set: (_, key: string, val: any) => self.__set(key, val),
+    };
+    const proxy = new Proxy(self, self.__handler);
 
     //
     // methods
@@ -34,11 +40,13 @@ export class BaseFactory implements ScopeFactory {
     }
 
     self.__link = function(parent: Scope, before?: Scope) {
-      if (self.__props.__type === 'slot') {
-        //TODO: add this slot to instance
-        // - find closest ancestor w/ __slots !== undefined
-        // - remove possible replaced slot w/ same name
-        // - add this slot
+      // link scope
+      if (self.__props.__slot && parent.__slots) {
+        const slot = parent.__slots.get(self.__props.__slot);
+        if (slot) {
+          parent = slot.__parent!;
+          before ??= slot;
+        }
       }
       this.__parent = parent;
       const i = before ? parent.__children.indexOf(before) : -1;
@@ -47,6 +55,19 @@ export class BaseFactory implements ScopeFactory {
         const props = {};
         props[this.__props.__name] = { e: () => this };
         parent.__add(props);
+      }
+      // collect slot
+      if (self.__props.__type === 'slot') {
+        const name = self.__props.__name!;
+        let instance: Scope | undefined = self;
+        while (instance && !instance.__slots) {
+          instance = instance.__parent;
+        }
+        const slots = instance?.__slots;
+        if (slots) {
+          slots.get(name)?.__dispose();
+          slots.set(name, proxy);
+        }
       }
       return this;
     }
@@ -108,17 +129,6 @@ export class BaseFactory implements ScopeFactory {
     }
 
     //
-    // proxy
-    //
-
-    self.__target = self;
-    self.__handler = {
-      get: (_, key: string) => self.__get(key),
-      set: (_, key: string, val: any) => self.__set(key, val),
-    };
-    const proxy = new Proxy(self, self.__handler);
-
-    //
     // init
     //
 
@@ -126,6 +136,8 @@ export class BaseFactory implements ScopeFactory {
     self.__props = props;
     self.__children = [];
     self.__cache = new Map();
+
+    parent && proxy.__link(parent, before);
 
     const proto = props.__proto
       ? this.ctx.protos.get(props.__proto)?.__target as Define
