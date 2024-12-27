@@ -33,6 +33,7 @@ export interface Element extends Node {
   insertBefore(n: Node, ref: Node | null): Node;
   setAttribute(name: string, value: string): void;
   getAttribute(name: string): string | null;
+  removeAttribute(name: string): void;
   addEventListener(evname: string, listener: unknown): void;
   removeEventListener(evname: string, listener: unknown): void;
 }

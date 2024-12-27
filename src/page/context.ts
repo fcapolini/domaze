@@ -1,10 +1,12 @@
 import * as core from "../core/all";
 import { Document, Element, NodeType } from "../html/dom";
+import { ATTR_VALUE_PREFIX, Scope, ScopeProps } from "./scope";
 
 export const SCOPE_ID_ATTR = 'data-domaze';
 
 export interface ContextProps extends core.ContextProps {
   doc: Document;
+  root: ScopeProps;
 }
 
 export class Context extends core.Context {
@@ -16,12 +18,28 @@ export class Context extends core.Context {
   }
 
   override newScope(
-    props: core.ScopeProps,
+    props: ScopeProps,
     parent: core.Scope,
     before?: core.Scope
   ) {
     const ret = super.newScope(props, parent, before);
+    (ret.__target as Scope).__dom = this.elements.get(props.__id)!;
+    return ret;
+  }
 
+  override newValue(scope: Scope, key: string, props: core.ValueProps) {
+    const ret = new core.Value(scope, props);
+    if (key.startsWith(ATTR_VALUE_PREFIX)) {
+      const k = key.substring(ATTR_VALUE_PREFIX.length);
+      ret.setCB((_, v) => {
+        if (v) {
+          (scope.__dom as Element).setAttribute(k, `${v}`);
+        } else {
+          (scope.__dom as Element).removeAttribute(k);
+        }
+        return v;
+      });
+    }
     return ret;
   }
 
