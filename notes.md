@@ -15,7 +15,7 @@
 ## TODO
 
 * [ ] DOM
-  * [ ] server-side dom + parser and preprocessor
+  * [x] server-side dom + parser and preprocessor
   * [ ] server-side load
   * [ ] server-side replication
   * [ ] client-side reload

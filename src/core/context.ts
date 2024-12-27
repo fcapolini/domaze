@@ -25,12 +25,6 @@ export class Context {
     this.refresh();
   }
 
-  newGlobal(): Scope {
-    return this.scopeFactory.create({
-      console: { e: () => console },
-    });
-  }
-
   newScope(props: ScopeProps, parent: Scope, before?: Scope) {
     return this.scopeFactory.create(props, parent, before);
   }
@@ -39,9 +33,19 @@ export class Context {
     return new Value(scope, props);
   }
 
+  // ===========================================================================
+  // private
+  // ===========================================================================
+
   protected init() {
     this.protos = new Map();
     this.scopeFactory = this.newScopeFactory();
+  }
+
+  protected newGlobal(): Scope {
+    return this.scopeFactory.create({
+      console: { e: () => console },
+    });
   }
 
   protected newScopeFactory(): ScopeFactory {
