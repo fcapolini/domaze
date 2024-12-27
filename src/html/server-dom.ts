@@ -223,8 +223,8 @@ class ServerClassProp implements ClassProp {
 class ServerStyleProp implements StyleProp {
   list = new Map<string, string>();
 
-  setProperty(key: string, val: string): void {
-    this.list.set(key, val);
+  setProperty(key: string, val: string | null | undefined): void {
+    val ? this.list.set(key, val) : this.list.delete(key);
   }
 
   getPropertyValue(key: string): string {

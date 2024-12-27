@@ -3,6 +3,7 @@ import { Node } from "../html/dom";
 
 export const ATTR_VALUE_PREFIX = 'attr_';
 export const CLASS_VALUE_PREFIX = 'class_';
+export const STYLE_VALUE_PREFIX = 'style_';
 
 export interface ScopeProps extends core.ScopeProps {
   __id: string;

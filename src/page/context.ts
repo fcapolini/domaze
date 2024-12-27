@@ -1,6 +1,6 @@
 import * as core from "../core/all";
 import { Document, Element, NodeType } from "../html/dom";
-import { ATTR_VALUE_PREFIX, CLASS_VALUE_PREFIX, Scope, ScopeProps } from "./scope";
+import { ATTR_VALUE_PREFIX, CLASS_VALUE_PREFIX, Scope, ScopeProps, STYLE_VALUE_PREFIX } from "./scope";
 
 export const SCOPE_ID_ATTR = 'data-domaze';
 
@@ -29,29 +29,38 @@ export class Context extends core.Context {
 
   override newValue(scope: Scope, key: string, props: core.ValueProps) {
     const ret = new core.Value(scope, props);
-    key = key.toLowerCase();
-    if (key === ATTR_VALUE_PREFIX + 'class') {
+    const lkey = key.toLowerCase();
+    if (lkey === ATTR_VALUE_PREFIX + 'class') {
       ret.setCB((_, v) => {
         (scope.__dom as Element).className = `${v}`;
         return v;
       });
-    } else if (key.startsWith(ATTR_VALUE_PREFIX)) {
-      const k = key.substring(ATTR_VALUE_PREFIX.length);
+    } else if (lkey === ATTR_VALUE_PREFIX + 'style') {
+      ret.setCB((_, v) => {
+        (scope.__dom as Element).style.cssText = `${v}`;
+        return v;
+      });
+    } else if (lkey.startsWith(ATTR_VALUE_PREFIX)) {
+      const k = camelToDash(key.substring(ATTR_VALUE_PREFIX.length));
       ret.setCB((_, v) => {
         v ? (scope.__dom as Element).setAttribute(k, `${v}`)
           : (scope.__dom as Element).removeAttribute(k);
         return v;
       });
-    } else if (key.startsWith(CLASS_VALUE_PREFIX)) {
-      const k = key.substring(CLASS_VALUE_PREFIX.length);
+    } else if (lkey.startsWith(CLASS_VALUE_PREFIX)) {
+      const k = camelToDash(key.substring(CLASS_VALUE_PREFIX.length));
       ret.setCB((_, v) => {
         v ? (scope.__dom as Element).classList.add(k)
           : (scope.__dom as Element).classList.remove(k);
         return v;
       });
+    } else if (lkey.startsWith(STYLE_VALUE_PREFIX)) {
+      const k = camelToDash(key.substring(STYLE_VALUE_PREFIX.length));
+      ret.setCB((_, v) => {
+        (scope.__dom as Element).style.setProperty(k, v);
+        return v;
+      });
     }
-    //TODO: test class_, attr_class
-    //TODO style_, attr_style
     return ret;
   }
 
@@ -75,4 +84,8 @@ export class Context extends core.Context {
       document: { e: () => this.doc },
     });
   }
+}
+
+function camelToDash(s: string): string {
+  return s.replace(/([a-z][A-Z])/g, (g) => g[0] + '-' + g[1].toLowerCase());
 }

@@ -55,7 +55,7 @@ export interface ClassProp {
 }
 
 export interface StyleProp {
-  setProperty(key: string, val: string): void;
+  setProperty(key: string, val: string | null | undefined): void;
   getPropertyValue(key: string): string;
   cssText: string;
 }
