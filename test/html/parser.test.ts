@@ -1,14 +1,14 @@
-import { assert, describe, expect, it } from 'vitest';
 import * as acorn from 'acorn';
 import fs from 'fs';
 import path from 'path';
+import { assert, describe, it } from 'vitest';
 import * as dom from '../../src/html/dom';
 import * as parser from '../../src/html/parser';
 import { ServerElement } from '../../src/html/server-dom';
 
 const docroot = path.join(__dirname, 'parser');
 
-describe('html/parser', () => {
+// describe('html/parser', () => {
   fs.readdirSync(docroot).forEach(file => {
     const filePath = path.join(docroot, file);
     if (
@@ -34,8 +34,14 @@ describe('html/parser', () => {
         } else {
           const actualHTML = source.doc!.toString() + '\n';
           const pname = path.join(docroot, file.replace('-in.', '-out.'));
-          const expectedHTML = await fs.promises.readFile(pname, { encoding: 'utf8' });
-          assert.equal(parser.normalizeText(actualHTML), parser.normalizeText(expectedHTML));
+          const expectedHTML = await fs.promises.readFile(
+            pname,
+            { encoding: 'utf8' }
+          );
+          assert.equal(
+            parser.normalizeText(actualHTML),
+            parser.normalizeText(expectedHTML)
+          );
         }
       });
 
@@ -285,4 +291,4 @@ describe('html/parser', () => {
       i2: 170,
     });
   });
-});
+// });

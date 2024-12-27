@@ -28,6 +28,8 @@ export interface Comment extends Node {
 export interface Element extends Node {
   tagName: string;
   childNodes: Node[];
+  classList: ClassProp;
+  className: string;
 
   appendChild(n: Node): Node;
   insertBefore(n: Node, ref: Node | null): Node;
@@ -41,6 +43,13 @@ export interface Element extends Node {
 // export interface TemplateElement extends Element {
 //   content: DocumentFragment;
 // }
+
+export interface ClassProp {
+  // list: Set<string>;
+  length: number;
+  add(key: string): void;
+  remove(key: string): void;
+}
 
 export interface Attribute extends Node {
   name: string;

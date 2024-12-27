@@ -1,6 +1,6 @@
 import * as acorn from 'acorn';
 import {
-  Attribute, Comment,
+  Attribute, ClassProp, Comment,
   DIRECTIVE_TAG_PREFIX,
   Document,
   Element, Node, NodeType,
@@ -23,6 +23,7 @@ export abstract class ServerNode implements Node {
   parentElement: ServerElement | null;
   nodeType: number;
   loc: SourceLocation;
+  protected _classList?: ClassProp;
 
   constructor(
     doc: ServerDocument | null,
@@ -38,6 +39,18 @@ export abstract class ServerNode implements Node {
   unlink(): this {
     this.parentElement?.removeChild(this);
     return this;
+  }
+
+  get classList(): ClassProp {
+    return this._classList ?? (this._classList = new ServerClassProp());
+  }
+
+  get className(): string {
+    return (this.classList as ServerClassProp).toString();
+  }
+
+  set className(name: string) {
+    (this.classList as ServerClassProp).fromString(name);
   }
 
   get nextSibling(): Node | null {
@@ -67,6 +80,30 @@ export abstract class ServerNode implements Node {
 
   abstract toMarkup(ret: string[]): void;
   abstract clone(doc: ServerDocument | null, parent: ServerElement | null): ServerNode;
+}
+
+class ServerClassProp implements ClassProp {
+  list = new Set<string>();
+
+  get length(): number {
+    return this.list.size;
+  }
+
+  add(key: string): void {
+    this.list.add(key);
+  }
+
+  remove(key: string): void {
+    this.list.delete(key);
+  }
+
+  toString(): string {
+    return [...this.list].join(' ');
+  }
+
+  fromString(s: string) {
+    this.list = new Set(s.split(/\s+/));
+  }
 }
 
 export class ServerText extends ServerNode implements Text {

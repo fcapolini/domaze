@@ -6,7 +6,7 @@ import { normalizeText } from '../../src/html/parser';
 
 const docroot = path.join(__dirname, 'preprocessor');
 
-describe('html/preprocessor', () => {
+// describe('html/preprocessor', () => {
   fs.readdirSync(docroot).forEach(dir => {
     const dirPath = path.join(docroot, dir);
     if (
@@ -52,4 +52,4 @@ describe('html/preprocessor', () => {
 
     }
   });
-});
+// });
