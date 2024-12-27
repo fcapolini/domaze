@@ -33,7 +33,7 @@ it('should handle attr_class using className property', () => {
     attr_class: { e: function() { return 'a b'; } },
   } });
   expect(doc.documentElement?.classList.length).toBe(2);
-  ctx.root[ATTR_VALUE_PREFIX + 'class'] = null;
-  //TODO
-  // expect(doc.documentElement?.classList.length).toBe(0);
+  ctx.root[ATTR_VALUE_PREFIX + 'class'] = '';
+  expect(doc.documentElement?.classList.length).toBe(1);
+  expect(doc.documentElement?.className).toBe('');
 });

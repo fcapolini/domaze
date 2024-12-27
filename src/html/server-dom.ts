@@ -4,6 +4,7 @@ import {
   DIRECTIVE_TAG_PREFIX,
   Document,
   Element, Node, NodeType,
+  StyleProp,
   Text
 } from './dom';
 
@@ -23,7 +24,6 @@ export abstract class ServerNode implements Node {
   parentElement: ServerElement | null;
   nodeType: number;
   loc: SourceLocation;
-  protected _classList?: ClassProp;
 
   constructor(
     doc: ServerDocument | null,
@@ -39,18 +39,6 @@ export abstract class ServerNode implements Node {
   unlink(): this {
     this.parentElement?.removeChild(this);
     return this;
-  }
-
-  get classList(): ClassProp {
-    return this._classList ?? (this._classList = new ServerClassProp());
-  }
-
-  get className(): string {
-    return (this.classList as ServerClassProp).toString();
-  }
-
-  set className(name: string) {
-    (this.classList as ServerClassProp).fromString(name);
   }
 
   get nextSibling(): Node | null {
@@ -80,30 +68,6 @@ export abstract class ServerNode implements Node {
 
   abstract toMarkup(ret: string[]): void;
   abstract clone(doc: ServerDocument | null, parent: ServerElement | null): ServerNode;
-}
-
-class ServerClassProp implements ClassProp {
-  list = new Set<string>();
-
-  get length(): number {
-    return this.list.size;
-  }
-
-  add(key: string): void {
-    this.list.add(key);
-  }
-
-  remove(key: string): void {
-    this.list.delete(key);
-  }
-
-  toString(): string {
-    return [...this.list].join(' ');
-  }
-
-  fromString(s: string) {
-    this.list = new Set(s.split(/\s+/));
-  }
 }
 
 export class ServerText extends ServerNode implements Text {
@@ -232,10 +196,63 @@ export class ServerAttribute extends ServerNode implements Attribute {
   }
 }
 
+class ServerClassProp implements ClassProp {
+  list = new Set<string>();
+
+  get length(): number {
+    return this.list.size;
+  }
+
+  add(key: string): void {
+    this.list.add(key);
+  }
+
+  remove(key: string): void {
+    this.list.delete(key);
+  }
+
+  toString(): string {
+    return [...this.list].join(' ');
+  }
+
+  fromString(s: string) {
+    this.list = new Set(s.split(/\s+/));
+  }
+}
+
+class ServerStyleProp implements StyleProp {
+  list = new Map<string, string>();
+
+  setProperty(key: string, val: string): void {
+    this.list.set(key, val);
+  }
+
+  getPropertyValue(key: string): string {
+    return this.list.get(key) ?? '';
+  }
+
+  get cssText(): string {
+    const ret: string[] = [];
+    this.list.forEach((val, key) => ret.push(`${key}: ${val};`))
+    return ret.join(' ');
+  }
+
+  set cssText(s: string) {
+    const parts = s.split(/\s*;\s*/);
+    this.list.clear();
+    s.split(/\s*;\s*/).forEach(s => {
+      const parts = s.split(/\s*:\s*/);
+      parts.length === 2 && this.list.set(parts[0], parts[1]);
+    });
+  }
+}
+
 export class ServerElement extends ServerNode implements Element {
   tagName: string;
   childNodes: Node[];
   attributes: Attribute[];
+  protected _classList?: ClassProp;
+  protected _style?: StyleProp;
 
   constructor(
     doc: ServerDocument | null,
@@ -246,6 +263,26 @@ export class ServerElement extends ServerNode implements Element {
     this.tagName = name.toUpperCase();
     this.childNodes = [];
     this.attributes = [];
+  }
+
+  get classList(): ClassProp {
+    return this._classList ?? (this._classList = new ServerClassProp());
+  }
+
+  get className(): string {
+    return (this.classList as ServerClassProp).toString();
+  }
+
+  set className(name: string) {
+    (this.classList as ServerClassProp).fromString(name);
+  }
+
+  get style(): StyleProp {
+    return this._style ?? (this._style = new ServerStyleProp());
+  }
+
+  set style(s: any) {
+    (this.style as ServerStyleProp).cssText = `${s}`;
   }
 
   appendChild(n: Node): Node {
@@ -348,6 +385,16 @@ export class ServerElement extends ServerNode implements Element {
     }
     ret.push('<');
     ret.push(this.tagName.toLowerCase());
+    if (this._classList) {
+      // either className/classList or setAttribute('class') should be used,
+      // not both
+      ret.push(` class="${this.className}"`);
+    }
+    if (this._style) {
+      // either the style property or setAttribute('style') should be used,
+      // not both
+      ret.push(` style="${this.style.cssText}"`);
+    }
     this.attributes.forEach(a => (a as ServerAttribute).toMarkup(ret));
     ret.push('>');
     if (VOID_ELEMENTS.has(this.tagName)) {

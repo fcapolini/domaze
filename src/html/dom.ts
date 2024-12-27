@@ -31,6 +31,9 @@ export interface Element extends Node {
   classList: ClassProp;
   className: string;
 
+  get style(): StyleProp;
+  set style(s: any);
+
   appendChild(n: Node): Node;
   insertBefore(n: Node, ref: Node | null): Node;
   setAttribute(name: string, value: string): void;
@@ -49,6 +52,12 @@ export interface ClassProp {
   length: number;
   add(key: string): void;
   remove(key: string): void;
+}
+
+export interface StyleProp {
+  setProperty(key: string, val: string): void;
+  getPropertyValue(key: string): string;
+  cssText: string;
 }
 
 export interface Attribute extends Node {
