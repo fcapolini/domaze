@@ -28,7 +28,7 @@ export class Context extends core.Context {
   }
 
   override newValue(scope: Scope, key: string, props: core.ValueProps) {
-    const ret = new core.Value(scope, props);
+    const ret = super.newValue(scope, key, props);
     const lkey = key.toLowerCase();
     if (lkey === ATTR_VALUE_PREFIX + 'class') {
       ret.setCB((_, v) => {
@@ -87,5 +87,5 @@ export class Context extends core.Context {
 }
 
 function camelToDash(s: string): string {
-  return s.replace(/([a-z][A-Z])/g, (g) => g[0] + '-' + g[1].toLowerCase());
+  return s.replace(/([a-z][A-Z])/g, (s) => s[0] + '-' + s[1].toLowerCase());
 }

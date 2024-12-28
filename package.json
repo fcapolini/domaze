@@ -14,13 +14,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/acorn": "^4.0.6",
-    "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^2.1.8",
-    "esbuild": "^0.24.0",
-    "vitest": "^2.1.8"
+    "@types/acorn": "4.0.6",
+    "@types/node": "22.10.2",
+    "@vitest/coverage-v8": "2.1.8",
+    "esbuild": "^0.24.2",
+    "vitest": "2.1.8"
   },
   "dependencies": {
-    "acorn": "^8.14.0"
+    "acorn": "8.14.0"
   }
 }

@@ -14,9 +14,15 @@
 
 ## TODO
 
-* [ ] DOM
+* [ ] page
   * [x] server-side dom + parser and preprocessor
   * [ ] server-side load
+    * [ ] scopes
+      * [x] logic values
+      * [x] attr values
+      * [x] class values
+      * [x] style values
+    * [ ] texts
   * [ ] server-side replication
   * [ ] client-side reload
   * [ ] client-side replication
