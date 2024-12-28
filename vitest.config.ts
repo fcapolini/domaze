@@ -5,6 +5,8 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, "scripts/*"],
     coverage: {
       include: ["src/**"],
+      provider: 'v8', // Use c8 for coverage
+      reporter: ['text', 'lcov'], // Generate lcov report for Coveralls
     },
   },
 });
