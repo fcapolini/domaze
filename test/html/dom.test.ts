@@ -1,11 +1,97 @@
 import { assert, describe, it } from 'vitest';
-import { ServerDocument, ServerElement, SourceLocation } from '../../src/html/server-dom';
+import { ServerComment, ServerDocument, ServerElement, ServerText, SourceLocation } from '../../src/html/server-dom';
+import { Comment, Element, Text } from '../../src/html/dom';
 
 const LOC: SourceLocation = {
   start: { line: 0, column: 0 },
   end: { line: 0, column: 0 },
   i1: 0, i2: 0
 }
+
+describe('node', () => {
+
+  it('should append a node', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    assert.equal(doc.toString(), `<html></html>`);
+  });
+
+  it('should append a node', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    const text = root.appendChild(new ServerText(doc, 'test', LOC)) as Text;
+    assert.equal(doc.toString(), `<html>test</html>`);
+    text.unlink();
+    assert.equal(doc.toString(), `<html></html>`);
+  });
+
+  it('should implement dummy addEventListener()', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    root.addEventListener('dummy', () => {});
+  });
+
+  it('should implement dummy removeEventListener()', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    root.removeEventListener('dummy', () => {});
+  });
+
+  it('should clone a node', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as ServerElement;
+    const t = root.appendChild(new ServerText(doc, 'test', LOC)) as ServerText;
+    const e = root.appendChild(new ServerElement(doc, 'div', LOC)) as ServerElement;
+    e.setAttribute('class', 'a');
+    e.appendChild(new ServerText(doc, 'text', LOC));
+    e.appendChild(new ServerElement(doc, 'p', LOC));
+    const c = root.appendChild(new ServerComment(doc, 'test', LOC)) as ServerComment;
+    assert.equal(
+      doc.toString(),
+      `<html>test<div class="a">text<p></p></div><!--test--></html>`
+    );
+    t.clone(doc, root);
+    e.clone(doc, root);
+    c.clone(doc, root);
+    assert.equal(
+      doc.toString(),
+      `<html>test<div class="a">text<p></p></div><!--test-->`
+      + `test<div class="a">text<p></p></div><!--test--></html>`
+    );
+  });
+
+});
+
+describe('document', () => {
+
+  it('should implement documentElement property', () => {
+    const doc = new ServerDocument('test');
+    assert.isNull(doc.documentElement);
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC));
+    assert.equal(doc.documentElement, root);
+  });
+
+  it('should implement head property', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    assert.isNull(doc.head);
+    assert.equal(doc.toString(), `<html></html>`);
+    const head = root.appendChild(new ServerElement(doc, 'head', LOC));
+    assert.equal(doc.head, head);
+    assert.equal(doc.toString(), `<html><head></head></html>`);
+  });
+
+  it('should implement body property', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    assert.isNull(doc.body);
+    assert.equal(doc.toString(), `<html></html>`);
+    const body = root.appendChild(new ServerElement(doc, 'body', LOC));
+    assert.equal(doc.body, body);
+    assert.equal(doc.toString(), `<html><body></body></html>`);
+  });
+
+});
 
 describe('classList', () => {
 
