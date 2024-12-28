@@ -247,7 +247,7 @@ function parseExpressionValue(
   if (i2 >= s.length || s.charCodeAt(i2) !== REXP) {
     errors.push(new PageError(
       'error',
-      'unterminated attribute expression',
+      'Unterminated attribute expression',
       src.loc(i1, i1)
     ));
     // abort parsing
@@ -306,7 +306,7 @@ function parseAtomicText(p: dom.ServerElement, src: Source, i1: number, i2: numb
     if (j1 >= i2 || s.charCodeAt(j1) === REXP) {
       errors.push(new PageError(
         'error',
-        'invalid expression',
+        'Invalid expression',
         src.loc(j2, j2)
       ));
       break;
@@ -368,7 +368,7 @@ function parseSplittableText(p: dom.ServerElement, src: Source, i1: number, i2: 
     if (j1 >= i2 || s.charCodeAt(j1) === REXP) {
       errors.push(new PageError(
         'error',
-        'invalid expression',
+        'Invalid expression',
         src.loc(j2, j2)
       ));
       break;
@@ -518,9 +518,9 @@ export function normalizeText(s?: string): string | undefined {
   return s?.split(/\n\s+/).join('\n').split(/\s{2,}/).join(' ');
 }
 
-export function normalizeSpace(s?: string): string | undefined {
-  return s?.split(/\s+/).join(' ');
-}
+// export function normalizeSpace(s?: string): string | undefined {
+//   return s?.split(/\s+/).join(' ');
+// }
 
 export class Source {
   s!: string;
