@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { assert, it } from 'vitest';
 import { Context } from '../../../src/core/context';
 import { dump } from '../util';
 
@@ -30,9 +30,9 @@ it('should define a slot', () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(1);
+  assert.equal(ctx.root.__children.length, 1);
   const inst = ctx.root.__children[0];
-  expect(dump(inst)).toEqual(JSON.stringify({
+  assert.equal(dump(inst), JSON.stringify({
     "proto": "my-tag",
     "children": [
       {
@@ -79,7 +79,7 @@ it('should consider slot in extended proto', () => {
       }],
     }
   });
-  expect(dump(ctx.root)).toEqual(JSON.stringify({
+  assert.equal(dump(ctx.root), JSON.stringify({
     "children": [
       {
         "proto": "proto-tag",
@@ -134,7 +134,7 @@ it('should replace slot in extended proto', () => {
       }],
     }
   });
-  expect(dump(ctx.root)).toEqual(JSON.stringify({
+  assert.equal(dump(ctx.root), JSON.stringify({
     "children": [
       {
         "proto": "proto-tag",

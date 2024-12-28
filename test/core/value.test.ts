@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { assert, it } from 'vitest';
 import { Context } from '../../src/core/context';
 import { Scope } from '../../src/core/scope';
 import { Value, ValueProps } from '../../src/core/value';
@@ -24,7 +24,7 @@ it('should create a value', () => {
       v1: { e: function () { return 1; } },
     }
   });
-  expect(ctx.root['v1']).toBe(1);
+  assert.equal(ctx.root['v1'], 1);
 });
 
 it('should create a custom value', () => {
@@ -33,14 +33,14 @@ it('should create a custom value', () => {
       v1: { e: function () { return 20; } },
     }
   });
-  expect(ctx.values.get('v1')).toBe(20);
-  expect(ctx.counts.get('v1')).toBe(1);
+  assert.equal(ctx.values.get('v1'), 20);
+  assert.equal(ctx.counts.get('v1'), 1);
   ctx.root['v1'] = 20;
-  expect(ctx.values.get('v1')).toBe(20);
-  expect(ctx.counts.get('v1')).toBe(1);
+  assert.equal(ctx.values.get('v1'), 20);
+  assert.equal(ctx.counts.get('v1'), 1);
   ctx.root['v1'] = 30;
-  expect(ctx.values.get('v1')).toBe(30);
-  expect(ctx.counts.get('v1')).toBe(2);
+  assert.equal(ctx.values.get('v1'), 30);
+  assert.equal(ctx.counts.get('v1'), 2);
 });
 
 it('should create a dependent value', () => {
@@ -55,11 +55,11 @@ it('should create a dependent value', () => {
       }
     }
   });
-  expect(ctx.root['v1']).toBe(1);
-  expect(ctx.root['v2']).toBe(2);
+  assert.equal(ctx.root['v1'], 1);
+  assert.equal(ctx.root['v2'], 2);
   ctx.root['v1']++;
-  expect(ctx.root['v1']).toBe(2);
-  expect(ctx.root['v2']).toBe(3);
+  assert.equal(ctx.root['v1'], 2);
+  assert.equal(ctx.root['v2'], 3);
 });
 
 it('should create a custom dependent value', () => {
@@ -74,18 +74,18 @@ it('should create a custom dependent value', () => {
       }
     }
   });
-  expect(ctx.values.get('v1')).toBe(20);
-  expect(ctx.counts.get('v1')).toBe(1);
-  expect(ctx.values.get('v2')).toBe(21);
-  expect(ctx.counts.get('v2')).toBe(1);
+  assert.equal(ctx.values.get('v1'), 20);
+  assert.equal(ctx.counts.get('v1'), 1);
+  assert.equal(ctx.values.get('v2'), 21);
+  assert.equal(ctx.counts.get('v2'), 1);
   ctx.root['v1'] = 20;
-  expect(ctx.values.get('v1')).toBe(20);
-  expect(ctx.counts.get('v1')).toBe(1);
-  expect(ctx.values.get('v2')).toBe(21);
-  expect(ctx.counts.get('v2')).toBe(1);
+  assert.equal(ctx.values.get('v1'), 20);
+  assert.equal(ctx.counts.get('v1'), 1);
+  assert.equal(ctx.values.get('v2'), 21);
+  assert.equal(ctx.counts.get('v2'), 1);
   ctx.root['v1'] = 30;
-  expect(ctx.values.get('v1')).toBe(30);
-  expect(ctx.counts.get('v1')).toBe(2);
-  expect(ctx.values.get('v2')).toBe(31);
-  expect(ctx.counts.get('v2')).toBe(2);
+  assert.equal(ctx.values.get('v1'), 30);
+  assert.equal(ctx.counts.get('v1'), 2);
+  assert.equal(ctx.values.get('v2'), 31);
+  assert.equal(ctx.counts.get('v2'), 2);
 });

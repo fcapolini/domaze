@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { assert, it } from 'vitest';
 import { Context } from '../../../src/core/context';
 
 it('should replicate foreach content', () => {
@@ -9,17 +9,17 @@ it('should replicate foreach content', () => {
       __children: [{}],
     }],
   } });
-  expect(ctx.root.__children.length).toBe(4);
-  expect(ctx.root.__children[0]['data']).toBe(1);
-  expect(ctx.root.__children[1]['data']).toBe(2);
-  expect(ctx.root.__children[2]['data']).toBe(3);
-  expect(ctx.root.__children[3]['data']).toEqual([1, 2, 3]);
+  assert.equal(ctx.root.__children.length, 4);
+  assert.equal(ctx.root.__children[0]['data'], 1);
+  assert.equal(ctx.root.__children[1]['data'], 2);
+  assert.equal(ctx.root.__children[2]['data'], 3);
+  assert.deepEqual(ctx.root.__children[3]['data'], [1, 2, 3]);
   const foreach = ctx.root.__children[3];
   foreach['data'] = ['a', 'b'];
-  expect(ctx.root.__children.length).toBe(3);
-  expect(ctx.root.__children[0]['data']).toBe('a');
-  expect(ctx.root.__children[1]['data']).toBe('b');
-  expect(ctx.root.__children[2]['data']).toEqual(['a', 'b']);
+  assert.equal(ctx.root.__children.length, 3);
+  assert.equal(ctx.root.__children[0]['data'], 'a');
+  assert.equal(ctx.root.__children[1]['data'], 'b');
+  assert.deepEqual(ctx.root.__children[2]['data'], ['a', 'b']);
   foreach['data'] = null;
-  expect(ctx.root.__children.length).toBe(1);
+  assert.equal(ctx.root.__children.length, 1);
 });

@@ -1,13 +1,13 @@
-import { expect, it } from 'vitest';
+import { assert, it } from 'vitest';
 import { Context } from '../../src/core/context';
 
 it('should create a context', () => {
   const ctx = new Context({ root: {} });
-  expect(ctx.global).toBeDefined();
-  expect(ctx.root).toBeDefined();
-  expect(ctx.global.__children[0]).toBe(ctx.root);
-  expect(ctx.root.__parent).toBe(ctx.global);
-  expect(ctx.cycle).toBe(1);
+  assert.exists(ctx.global);
+  assert.exists(ctx.root);
+  assert.equal(ctx.global.__children[0], ctx.root);
+  assert.equal(ctx.root.__parent, ctx.global);
+  assert.equal(ctx.cycle, 1);
 });
 
 it('should write-protect the global object', () => {
@@ -24,6 +24,6 @@ it('should write-protect the global object', () => {
   } catch (err) {
     rootErr = err;
   }
-  expect(globalErr).toBeDefined();
-  expect(rootErr).toBeUndefined();
+  assert.exists(globalErr);
+  assert.notExists(rootErr);
 })

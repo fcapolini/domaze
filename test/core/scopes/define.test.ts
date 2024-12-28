@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { assert, it } from 'vitest';
 import { Context } from '../../../src/core/context';
 
 it('should define a component', () => {
@@ -15,13 +15,13 @@ it('should define a component', () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(0);
-  expect(ctx.protos.size).toBe(1);
+  assert.equal(ctx.root.__children.length, 0);
+  assert.equal(ctx.protos.size, 1);
   const proto = ctx.protos.get('my-tag')!;
-  expect(proto['v1']).toBeUndefined();
-  expect(proto['f1']).toBeDefined();
-  expect(proto.__values['v1']).toBeDefined();
-  expect(proto.__children.length).toBe(0);
+  assert.notExists(proto['v1']);
+  assert.exists(proto['f1']);
+  assert.exists(proto.__values['v1']);
+  assert.equal(proto.__children.length, 0);
 });
 
 it('should instantiate a component', () => {
@@ -44,24 +44,24 @@ it('should instantiate a component', () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(1);
+  assert.equal(ctx.root.__children.length, 1);
   const proto = ctx.protos.get('my-tag')!;
-  expect(proto).toBeDefined();
+  assert.exists(proto);
 
   // proto doesn't instantiate its own children
-  expect(proto.__children.length).toBe(0);
-  expect(proto['child']).toBeUndefined();
+  assert.equal(proto.__children.length, 0);
+  assert.notExists(proto['child']);
 
   const inst1 = ctx.root.__children[0];
-  expect(inst1['v1']).toBe(1);
-  expect(inst1['v2']).toBe(11);
-  expect(inst1['f1']()).toBe(2);
+  assert.equal(inst1['v1'], 1);
+  assert.equal(inst1['v2'], 11);
+  assert.equal(inst1['f1'](), 2);
   inst1['v1'] = 5;
-  expect(inst1['v2']).toBe(15);
+  assert.equal(inst1['v2'], 15);
 
   // inst1 doesn't define any children, but it inherits them from proto
-  expect(inst1.__children.length).toBe(1);
-  expect(inst1['child']).toBeDefined();
+  assert.equal(inst1.__children.length, 1);
+  assert.exists(inst1['child']);
 });
 
 it("should keep inherited instances' values apart", () => {
@@ -90,15 +90,15 @@ it("should keep inherited instances' values apart", () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(2);
+  assert.equal(ctx.root.__children.length, 2);
   const inst1 = ctx.root.__children[0];
   const inst2 = ctx.root.__children[1];
-  expect(inst1['v2']).toBe(11);
-  expect(inst2['v2']).toBe(21);
+  assert.equal(inst1['v2'], 11);
+  assert.equal(inst2['v2'], 21);
   inst1['v1'] = 5;
   inst2['v1'] = 6;
-  expect(inst1['v2']).toBe(15);
-  expect(inst2['v2']).toBe(26);
+  assert.equal(inst1['v2'], 15);
+  assert.equal(inst2['v2'], 26);
 });
 
 it('should populate a component', () => {
@@ -124,13 +124,13 @@ it('should populate a component', () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(1);
+  assert.equal(ctx.root.__children.length, 1);
   const inst1 = ctx.root.__children[0];
-  expect(inst1.__children.length).toBe(2);
-  expect(inst1.__children[0].__props.__name).toBe('protoChild');
-  expect(inst1.__children[1].__props.__name).toBe('instanceChild');
-  expect(inst1['protoChild']).toBeDefined();
-  expect(inst1['instanceChild']).toBeDefined();
+  assert.equal(inst1.__children.length, 2);
+  assert.equal(inst1.__children[0].__props.__name, 'protoChild');
+  assert.equal(inst1.__children[1].__props.__name, 'instanceChild');
+  assert.exists(inst1['protoChild']);
+  assert.exists(inst1['instanceChild']);
 });
 
 it('should define an extended component (1)', () => {
@@ -158,16 +158,16 @@ it('should define an extended component (1)', () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(0);
-  expect(ctx.protos.size).toBe(2);
+  assert.equal(ctx.root.__children.length, 0);
+  assert.equal(ctx.protos.size, 2);
   const proto = ctx.protos.get('my-tag')!;
-  expect(proto['v1']).toBeUndefined();
-  expect(proto['v2']).toBeUndefined();
-  expect(proto['f1']).toBeDefined();
-  expect(proto['f2']).toBeDefined();
-  expect(proto.__values['v1']).toBeDefined();
-  expect(proto.__values['v2']).toBeDefined();
-  expect(proto.__children.length).toBe(0);
+  assert.notExists(proto['v1']);
+  assert.notExists(proto['v2']);
+  assert.exists(proto['f1']);
+  assert.exists(proto['f2']);
+  assert.exists(proto.__values['v1']);
+  assert.exists(proto.__values['v2']);
+  assert.equal(proto.__children.length, 0);
 });
 
 it('should define an extended component (2)', () => {
@@ -205,13 +205,13 @@ it('should define an extended component (2)', () => {
       }],
     }
   });
-  expect(ctx.protos.size).toBe(2);
+  assert.equal(ctx.protos.size, 2);
   const baseTag = ctx.protos.get('base-tag');
   const myTag = ctx.protos.get('my-tag');
-  expect(baseTag).toBeDefined();
-  expect(myTag).toBeDefined();
-  expect(baseTag?.__children.length).toBe(0);
-  expect(myTag?.__children.length).toBe(0);
+  assert.exists(baseTag);
+  assert.exists(myTag);
+  assert.equal(baseTag?.__children.length, 0);
+  assert.equal(myTag?.__children.length, 0);
 });
 
 it('should instantiate an extended definition', () => {
@@ -253,24 +253,24 @@ it('should instantiate an extended definition', () => {
       ],
     }
   });
-  expect(ctx.root.__children.length).toBe(1);
+  assert.equal(ctx.root.__children.length, 1);
   const inst1 = ctx.root.__children[0];
-  expect(inst1['v0']).toBe(100);
-  expect(inst1['f0']()).toBe(200);
-  expect(inst1['v1']).toBe(105);
-  expect(inst1['f1']()).toBe(2);
-  expect(inst1['v2']).toBe(115);
+  assert.equal(inst1['v0'], 100);
+  assert.equal(inst1['f0'](), 200);
+  assert.equal(inst1['v1'], 105);
+  assert.equal(inst1['f1'](), 2);
+  assert.equal(inst1['v2'], 115);
   inst1['v0'] = 300;
-  expect(inst1['v1']).toBe(305);
-  expect(inst1['v2']).toBe(315);
+  assert.equal(inst1['v1'], 305);
+  assert.equal(inst1['v2'], 315);
 
-  expect(inst1.__children.length).toBe(3);
-  expect(inst1['baseChild']).toBeDefined();
-  expect(inst1['protoChild']).toBeDefined();
-  expect(inst1['instanceChild']).toBeDefined();
-  expect(inst1.__children[0]).toBe(inst1['baseChild']);
-  expect(inst1.__children[1]).toBe(inst1['protoChild']);
-  expect(inst1.__children[2]).toBe(inst1['instanceChild']);
+  assert.equal(inst1.__children.length, 3);
+  assert.exists(inst1['baseChild']);
+  assert.exists(inst1['protoChild']);
+  assert.exists(inst1['instanceChild']);
+  assert.equal(inst1.__children[0], inst1['baseChild']);
+  assert.equal(inst1.__children[1], inst1['protoChild']);
+  assert.equal(inst1.__children[2], inst1['instanceChild']);
 });
 
 //TODO: slots

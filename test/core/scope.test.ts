@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { assert, it } from 'vitest';
 import { Context } from '../../src/core/context';
 
 it('should create a named root scope', () => {
@@ -8,9 +8,9 @@ it('should create a named root scope', () => {
       __name: rootName,
     }
   });
-  expect(ctx.global.__children.length).toBe(1);
-  expect(ctx.root.__children.length).toBe(0);
-  expect(ctx.global[rootName]).toBe(ctx.root);
+  assert.equal(ctx.global.__children.length, 1);
+  assert.equal(ctx.root.__children.length, 0);
+  assert.equal(ctx.global[rootName], ctx.root);
 });
 
 it('should create a nested scope', () => {
@@ -19,8 +19,8 @@ it('should create a nested scope', () => {
       __children: [{}],
     }
   });
-  expect(ctx.global.__children.length).toBe(1);
-  expect(ctx.root.__children.length).toBe(1);
+  assert.equal(ctx.global.__children.length, 1);
+  assert.equal(ctx.root.__children.length, 1);
 });
 
 it('should create a nested named scope', () => {
@@ -34,9 +34,9 @@ it('should create a nested named scope', () => {
       }],
     }
   });
-  expect(ctx.global.__children.length).toBe(1);
-  expect(ctx.root.__children.length).toBe(1);
-  expect(ctx.global[rootName][bodyName]).toBe(ctx.root.__children[0]);
+  assert.equal(ctx.global.__children.length, 1);
+  assert.equal(ctx.root.__children.length, 1);
+  assert.equal(ctx.global[rootName][bodyName], ctx.root.__children[0]);
 });
 
 it('should insert a scope before another', () => {
@@ -49,12 +49,10 @@ it('should insert a scope before another', () => {
       }],
     }
   });
-  expect(ctx.root.__children.length).toBe(1);
-  expect(ctx.root.__children[0].__props.__name).toBe(bodyName);
-  ctx.scopeFactory.create({
-    __name: headName,
-  }).__link(ctx.root, ctx.root.__children[0]);
-  expect(ctx.root.__children.length).toBe(2);
-  expect(ctx.root.__children[0].__props.__name).toBe(headName);
-  expect(ctx.root.__children[1].__props.__name).toBe(bodyName);
+  assert.equal(ctx.root.__children.length, 1);
+  assert.equal(ctx.root.__children[0].__props.__name, bodyName);
+  ctx.newScope({ __name: headName }, ctx.root, ctx.root.__children[0]);
+  assert.equal(ctx.root.__children.length, 2);
+  assert.equal(ctx.root.__children[0].__props.__name, headName);
+  assert.equal(ctx.root.__children[1].__props.__name, bodyName);
 });
