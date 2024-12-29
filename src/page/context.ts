@@ -1,6 +1,7 @@
 import * as core from "../core/all";
 import { Document, Element, NodeType } from "../html/dom";
 import { ATTR_VALUE_PREFIX, CLASS_VALUE_PREFIX, Scope, ScopeProps, STYLE_VALUE_PREFIX } from "./scope";
+import { BaseFactory } from '../core/scopes/base';
 
 export const SCOPE_ID_ATTR = 'data-domaze';
 
@@ -83,6 +84,26 @@ export class Context extends core.Context {
       console: { e: () => console },
       document: { e: () => this.doc },
     });
+  }
+
+  //TODO refactoring
+  protected newScopeFactory(): core.ScopeFactory {
+    return new class implements core.ScopeFactory {
+      base: core.ScopeFactory;
+      map: Map<string, core.ScopeFactory>;
+
+      constructor(ctx: Context) {
+        this.map = new Map();
+        this.base = new BaseFactory(ctx);
+        this.map.set('define', new core.DefineFactory(ctx));
+        this.map.set('foreach', new core.ForeachFactory(ctx));
+      }
+
+      create(props: ScopeProps, parent: Scope, before?: Scope) {
+        return ((props.__type && this.map.get(props.__type)) ?? this.base)
+          .create(props, parent, before);
+      }
+    }(this);
   }
 }
 

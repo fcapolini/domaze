@@ -139,10 +139,11 @@ export class BaseFactory implements ScopeFactory {
 
     parent && proxy.__link(parent, before);
 
-    const proto = props.__proto
-      ? this.ctx.protos.get(props.__proto)?.__target as Define
-      : null;
-    proto && proto.__apply(proxy);
+    props.__proto && this.inherit(props.__proto, proxy);
+    // const proto = props.__proto
+    //   ? this.ctx.protos.get(props.__proto)?.__target as Define
+    //   : null;
+    // proto && proto.__apply(proxy);
 
     this.addValues(self, proxy, props);
     this.addChildren(self, proxy, props.__children);
@@ -169,5 +170,11 @@ export class BaseFactory implements ScopeFactory {
     children?: { [key: string]: ValueProps }[]
   ) {
     children?.forEach(props => this.ctx.newScope(props, proxy));
+  }
+
+  protected inherit(protoName: string, proxy: Scope): Define | undefined {
+    const proto = this.ctx.protos.get(protoName)?.__target as Define;
+    proto && proto.__apply(proxy);
+    return proto;
   }
 }
