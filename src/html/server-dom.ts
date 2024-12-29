@@ -5,7 +5,9 @@ import {
   Document,
   Element, Node, NodeType,
   StyleProp,
-  Text
+  TemplateElement,
+  Text,
+  DocumentFragment
 } from './dom';
 
 export const VOID_ELEMENTS = new Set([
@@ -50,13 +52,6 @@ export abstract class ServerNode implements Node {
   //   return null;
   // }
 
-  // toJSON(): object {
-  //   return {
-  //     type: this.nodeType,
-  //     loc: this.ownerDocument?.jsonLoc ? this.loc : null
-  //   };
-  // }
-
   toString(): string {
     const sb = new Array<string>();
     this.toMarkup(sb);
@@ -87,14 +82,6 @@ export class ServerText extends ServerNode implements Text {
     this.escaping = escaping;
   }
 
-  // toJSON(): object {
-  //   return {
-  //     type: this.nodeType,
-  //     value: this.textContent,
-  //     loc: this.ownerDocument?.jsonLoc ? this.loc : null
-  //   };
-  // }
-
   toMarkup(ret: string[]): void {
     if (typeof this.textContent === 'string') {
       ret.push(this.escaping
@@ -121,14 +108,6 @@ export class ServerComment extends ServerNode implements Comment {
     super(doc, NodeType.COMMENT, loc);
     this.textContent = value;
   }
-
-  // toJSON(): object {
-  //   return {
-  //     type: this.nodeType,
-  //     value: this.textContent,
-  //     loc: this.ownerDocument?.jsonLoc ? this.loc : null
-  //   };
-  // }
 
   toMarkup(ret: string[]): void {
     ret.push('<!--');
@@ -161,16 +140,6 @@ export class ServerAttribute extends ServerNode implements Attribute {
     this.value = value;
     parent && parent.attributes.push(this);
   }
-
-  // toJSON(): object {
-  //   return {
-  //     type: this.nodeType,
-  //     name: this.name,
-  //     value: this.value,
-  //     quote: this.quote,
-  //     loc: this.ownerDocument?.jsonLoc ? this.loc : null
-  //   };
-  // }
 
   toMarkup(ret: string[]): void {
     if (this.value !== null && typeof this.value !== 'string') {
@@ -351,31 +320,7 @@ export class ServerElement extends ServerNode implements Element {
     attr && this.delAttributeNode(attr);
   }
 
-  // toJSON(): object {
-  //   return {
-  //     type: this.nodeType,
-  //     name: this.tagName,
-  //     attributes: this.attributes,
-  //     children: this.childNodes,
-  //     loc: this.ownerDocument?.jsonLoc ? this.loc : null
-  //   };
-  // }
-
   toMarkup(ret: string[]): void {
-    // if (this.tagName.startsWith(DIRECTIVE_TAG_PREFIX)) {
-    //   return;
-    // }
-    // ret.push('<');
-    // ret.push(this.tagName.toLowerCase());
-    // this.attributes.forEach(a => (a as ServerAttribute).toMarkup(ret));
-    // ret.push('>');
-    // if (VOID_ELEMENTS.has(this.tagName)) {
-    //   return;
-    // }
-    // this.childNodes.forEach(n => (n as ServerNode).toMarkup(ret));
-    // ret.push('</');
-    // ret.push(this.tagName.toLowerCase());
-    // ret.push('>');
     this.toMarkup2(ret);
   }
 
@@ -421,28 +366,27 @@ export class ServerElement extends ServerNode implements Element {
   }
 }
 
-// export class ServerTemplateElement extends ServerElement implements TemplateElement {
-//   content: ServerDocumentFragment;
+export class ServerTemplateElement extends ServerElement implements TemplateElement {
+  content: ServerDocumentFragment;
 
-//   constructor(
-//     doc: ServerDocument | null,
-//     name: string,
-//     loc: SourceLocation
-//   ) {
-//     super(doc, name, loc);
-//     this.content = new ServerDocumentFragment(loc);
-//   }
+  constructor(
+    doc: ServerDocument | null,
+    loc: SourceLocation
+  ) {
+    super(doc, 'template', loc);
+    this.content = new ServerDocumentFragment(loc);
+  }
 
-//   override appendChild(n: Node): Node {
-//     return this.content.insertBefore(n, null);
-//   }
+  override appendChild(n: Node): Node {
+    return this.content.insertBefore(n, null);
+  }
 
-//   toMarkup(ret: string[]): void {
-//     super.toMarkup2(ret, () => {
-//       this.content.toMarkup(ret);
-//     })
-//   }
-// }
+  toMarkup(ret: string[]): void {
+    super.toMarkup2(ret, () => {
+      this.content.toMarkup(ret);
+    })
+  }
+}
 
 export class ServerDocument extends ServerElement implements Document {
   jsonLoc = true;
@@ -496,18 +440,6 @@ export class ServerDocument extends ServerElement implements Document {
     return null;
   }
 
-  // createTextNode(text: string): Text {
-  //   return new ServerText(this, text, this.loc);
-  // }
-
-  // toJSON(): object {
-  //   return {
-  //     type: this.nodeType,
-  //     children: this.childNodes,
-  //     loc: this.jsonLoc ? this.loc : null
-  //   };
-  // }
-
   toMarkup(ret: string[]): void {
     for (const n of this.childNodes) {
       if (n.nodeType === NodeType.ELEMENT) {
@@ -516,22 +448,14 @@ export class ServerDocument extends ServerElement implements Document {
       }
     }
   }
-
-  // override clone(_: ServerDocument | null, __: ServerElement | null): ServerDocument {
-  //   const ret = new ServerDocument(this.loc);
-  //   this.childNodes.forEach(n => {
-  //     (n as ServerNode).clone(ret, ret);
-  //   });
-  //   return ret;
-  // }
 }
 
-// export class ServerDocumentFragment extends ServerDocument implements DocumentFragment {
-//   cloneNode(deep?: boolean): Node {
-//     const ret = this.documentElement!.clone(this, null);
-//     return ret;
-//   }
-// }
+export class ServerDocumentFragment extends ServerDocument implements DocumentFragment {
+  cloneNode(_deep?: boolean): Node {
+    const ret = this.documentElement!.clone(this, null);
+    return ret;
+  }
+}
 
 function escape(text: string, chars = ''): string {
   let r = text;

@@ -1,6 +1,6 @@
 import { assert, describe, it } from 'vitest';
-import { ServerComment, ServerDocument, ServerElement, ServerText, SourceLocation } from '../../src/html/server-dom';
-import { Comment, Element, Text } from '../../src/html/dom';
+import { ServerComment, ServerDocument, ServerElement, ServerTemplateElement, ServerText, SourceLocation } from '../../src/html/server-dom';
+import { Element, TemplateElement, Text } from '../../src/html/dom';
 
 const LOC: SourceLocation = {
   start: { line: 0, column: 0 },
@@ -166,6 +166,42 @@ describe('style', () => {
     assert.equal(
       root.toString(),
       `<html style="color: blue; border: 0px;"></html>`
+    );
+  });
+
+});
+
+describe('template', () => {
+
+  it('should support template tags', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p1.setAttribute('a', '1');
+    p1.appendChild(new ServerText(doc, 'text', LOC));
+    const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot.setAttribute('name', 'slot1');
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
+      + `</html>`
+    );
+
+    // - this is the only usage pattern for template tags in the framework
+    // - it will work the same in both the client and the server, in spite of
+    //   clone being a DocumentFragment in the client and a simple node in the
+    //   server
+    // - however, this means we can include only a single node in a template
+    const clone = root.appendChild(tpl.content.cloneNode(true));
+
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
+      + `<p a="1">text<slot name="slot1"></slot></p>`
+      + `</html>`
     );
   });
 

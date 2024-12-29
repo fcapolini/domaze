@@ -22,6 +22,10 @@ test('use happy-dom in this test file', () => {
 })
 ```
 
+## MDN
+
+* [Using templates and slots](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_templates_and_slots)
+
 ## Compiler requirements
 
 * [ ] prevent declaring '__'-prefixed values (they're reserved to implementation)

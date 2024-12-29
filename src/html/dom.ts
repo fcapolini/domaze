@@ -43,12 +43,11 @@ export interface Element extends Node {
   removeEventListener(evname: string, listener: unknown): void;
 }
 
-// export interface TemplateElement extends Element {
-//   content: DocumentFragment;
-// }
+export interface TemplateElement extends Element {
+  content: DocumentFragment;
+}
 
 export interface ClassProp {
-  // list: Set<string>;
   length: number;
   add(key: string): void;
   remove(key: string): void;
@@ -68,9 +67,8 @@ export interface Attribute extends Node {
 
 export interface Document extends Element {
   documentElement: Element | null;
-  // createTextNode(text: string): Text;
 }
 
-// export interface DocumentFragment extends Document {
-//   cloneNode(deep?: boolean): Node;
-// }
+export interface DocumentFragment extends Document {
+  cloneNode(deep: true): Node;
+}

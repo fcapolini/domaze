@@ -109,7 +109,9 @@ function parseElement(p: dom.ServerElement, src: Source, i1: number, i2: number,
   const s = src.s;
   const tagName = s.substring(i1, i2).toUpperCase();
   const loc = src.loc(i1 - 1, i2);
-  const e = new dom.ServerElement(p.ownerDocument, tagName, loc);
+  const e = tagName === 'TEMPLATE'
+    ? new dom.ServerTemplateElement(p.ownerDocument, loc)
+    : new dom.ServerElement(p.ownerDocument, tagName, loc);
   p.appendChild(e);
   i1 = parseAttributes(e, src, i2, errors);
   i1 = skipBlanks(s, i1);

@@ -4,7 +4,7 @@ import path from 'path';
 import { assert, describe, it } from 'vitest';
 import * as dom from '../../src/html/dom';
 import * as parser from '../../src/html/parser';
-import { ServerElement } from '../../src/html/server-dom';
+import { ServerElement, ServerTemplateElement } from '../../src/html/server-dom';
 
 const docroot = path.join(__dirname, 'parser');
 
@@ -289,4 +289,10 @@ it('loc() (1)', () => {
     i1: 169,
     i2: 170,
   });
+});
+
+it('should parse template tags', () => {
+  const s = parser.parse('<template>content</template>', 'test', undefined, false);
+  const root = s.doc.documentElement;
+  assert.instanceOf(root, ServerTemplateElement);
 });
