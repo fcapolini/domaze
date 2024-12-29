@@ -2,23 +2,23 @@ import * as core from "../../core/all";
 import { Node } from "../../html/dom";
 import { Context } from "../context";
 
-export interface DefineProps extends core.DefineProps {
+export interface ScopeProps extends core.ScopeProps {
   __id: string;
 }
 
-export interface Define extends core.Define {
+export interface Scope extends core.Scope {
   __dom: Node;
 }
 
-export class DefineFactory extends core.DefineFactory {
+export class BaseFactory extends core.BaseFactory {
   protected addValues(
-    self: core.Define,
-    proxy: core.Define,
+    self: core.Scope,
+    proxy: core.Scope,
     props: { [key: string]: core.ValueProps }
   ) {
-    const id = (self.__props as DefineProps).__id;
+    const id = (self.__props as ScopeProps).__id;
     const dom = (this.ctx as Context).elements.get(id)!;
-    (self as Define).__dom = dom;
+    (self as Scope).__dom = dom;
     super.addValues(self, proxy, props);
   }
 }

@@ -1,7 +1,8 @@
 import * as core from "../core/all";
 import { Document, Element, NodeType } from "../html/dom";
 import { ATTR_VALUE_PREFIX, CLASS_VALUE_PREFIX, Scope, ScopeProps, STYLE_VALUE_PREFIX } from "./scope";
-import { BaseFactory } from '../core/scopes/base';
+import { BaseFactory } from "./scopes/base";
+import { DefineFactory } from "./scopes/define";
 
 export const SCOPE_ID_ATTR = 'data-domaze';
 
@@ -18,15 +19,15 @@ export class Context extends core.Context {
     super(props);
   }
 
-  override newScope(
-    props: ScopeProps,
-    parent: core.Scope,
-    before?: core.Scope
-  ) {
-    const ret = super.newScope(props, parent, before);
-    (ret.__target as Scope).__dom = this.elements.get(props.__id)!;
-    return ret;
-  }
+  // override newScope(
+  //   props: ScopeProps,
+  //   parent: core.Scope,
+  //   before?: core.Scope
+  // ) {
+  //   const ret = super.newScope(props, parent, before);
+  //   (ret.__target as Scope).__dom = this.elements.get(props.__id)!;
+  //   return ret;
+  // }
 
   override newValue(scope: Scope, key: string, props: core.ValueProps) {
     const ret = super.newValue(scope, key, props);
@@ -66,6 +67,10 @@ export class Context extends core.Context {
   }
 
   protected override init() {
+    this.baseFactory ??= new BaseFactory(this);
+    this.defineFactory ??= new DefineFactory(this);
+    //TODO
+    // this.foreachFactory ??= new ForeachFactory(this);
     super.init();
     this.doc = (this.props as ContextProps).doc;
     this.elements = new Map();
@@ -80,31 +85,31 @@ export class Context extends core.Context {
   }
 
   protected override newGlobal(): core.Scope {
-    return this.scopeFactory.create({
+    return this.newScope({
       console: { e: () => console },
       document: { e: () => this.doc },
     });
   }
 
   //TODO refactoring
-  protected newScopeFactory(): core.ScopeFactory {
-    return new class implements core.ScopeFactory {
-      base: core.ScopeFactory;
-      map: Map<string, core.ScopeFactory>;
+  // protected newScopeFactory(): core.ScopeFactory {
+  //   return new class implements core.ScopeFactory {
+  //     base: core.ScopeFactory;
+  //     map: Map<string, core.ScopeFactory>;
 
-      constructor(ctx: Context) {
-        this.map = new Map();
-        this.base = new BaseFactory(ctx);
-        this.map.set('define', new core.DefineFactory(ctx));
-        this.map.set('foreach', new core.ForeachFactory(ctx));
-      }
+  //     constructor(ctx: Context) {
+  //       this.map = new Map();
+  //       this.base = new BaseFactory(ctx);
+  //       this.map.set('define', new core.DefineFactory(ctx));
+  //       this.map.set('foreach', new core.ForeachFactory(ctx));
+  //     }
 
-      create(props: ScopeProps, parent: Scope, before?: Scope) {
-        return ((props.__type && this.map.get(props.__type)) ?? this.base)
-          .create(props, parent, before);
-      }
-    }(this);
-  }
+  //     create(props: ScopeProps, parent: Scope, before?: Scope) {
+  //       return ((props.__type && this.map.get(props.__type)) ?? this.base)
+  //         .create(props, parent, before);
+  //     }
+  //   }(this);
+  // }
 }
 
 function camelToDash(s: string): string {
