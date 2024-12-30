@@ -3,11 +3,17 @@ import { Context } from "../context";
 import { Define } from "./define";
 import { Value, ValueProps } from "../value";
 
+export interface ScopeFactoryDelegate {
+  didInit: (self: Scope, proxy: Scope) => void;
+}
+
 export class BaseFactory implements ScopeFactory {
   ctx: Context;
+  delegate?: ScopeFactoryDelegate;
 
-  constructor(ctx: Context) {
+  constructor(ctx: Context, delegate?: ScopeFactoryDelegate) {
     this.ctx = ctx;
+    this.delegate = delegate;
   }
 
   create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
@@ -146,6 +152,8 @@ export class BaseFactory implements ScopeFactory {
     // proto && proto.__apply(proxy);
 
     this.addValues(self, proxy, props);
+    this.delegate?.didInit(self, proxy);
+
     this.addChildren(self, proxy, props.__children);
 
     if (self.__slots) {

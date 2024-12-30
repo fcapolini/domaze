@@ -56,12 +56,18 @@ export class Context extends core.Context {
     return ret;
   }
 
+  protected makeFactories(): core.ScopeFactories {
+    const baseFactory = new BaseFactory(this);
+    return {
+      base: baseFactory,
+      define: new DefineFactory(this),
+      slot: baseFactory,
+      //TODO
+      foreach: baseFactory,
+    }
+  }
+
   protected override init() {
-    this.baseFactory = new BaseFactory(this);
-    this.defineFactory = new DefineFactory(this);
-    //TODO
-    // this.foreachFactory ??= new ForeachFactory(this);
-    // super.init();
     this.doc = (this.props as ContextProps).doc;
     this.elements = new Map();
     const lookup = (e: Element) => {
