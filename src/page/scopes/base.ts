@@ -11,6 +11,13 @@ export interface Scope extends core.Scope {
 }
 
 export class BaseFactory extends core.BaseFactory {
+
+  protected override inherit(protoName: string, proxy: core.Scope): core.Define | undefined {
+    const proto = super.inherit(protoName, proxy);
+    //TODO: clone template
+    return proto;
+  }
+
   protected addValues(
     self: core.Scope,
     proxy: core.Scope,

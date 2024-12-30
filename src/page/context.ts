@@ -19,16 +19,6 @@ export class Context extends core.Context {
     super(props);
   }
 
-  // override newScope(
-  //   props: ScopeProps,
-  //   parent: core.Scope,
-  //   before?: core.Scope
-  // ) {
-  //   const ret = super.newScope(props, parent, before);
-  //   (ret.__target as Scope).__dom = this.elements.get(props.__id)!;
-  //   return ret;
-  // }
-
   override newValue(scope: Scope, key: string, props: core.ValueProps) {
     const ret = super.newValue(scope, key, props);
     const lkey = key.toLowerCase();
@@ -67,11 +57,11 @@ export class Context extends core.Context {
   }
 
   protected override init() {
-    this.baseFactory ??= new BaseFactory(this);
-    this.defineFactory ??= new DefineFactory(this);
+    this.baseFactory = new BaseFactory(this);
+    this.defineFactory = new DefineFactory(this);
     //TODO
     // this.foreachFactory ??= new ForeachFactory(this);
-    super.init();
+    // super.init();
     this.doc = (this.props as ContextProps).doc;
     this.elements = new Map();
     const lookup = (e: Element) => {
@@ -90,26 +80,6 @@ export class Context extends core.Context {
       document: { e: () => this.doc },
     });
   }
-
-  //TODO refactoring
-  // protected newScopeFactory(): core.ScopeFactory {
-  //   return new class implements core.ScopeFactory {
-  //     base: core.ScopeFactory;
-  //     map: Map<string, core.ScopeFactory>;
-
-  //     constructor(ctx: Context) {
-  //       this.map = new Map();
-  //       this.base = new BaseFactory(ctx);
-  //       this.map.set('define', new core.DefineFactory(ctx));
-  //       this.map.set('foreach', new core.ForeachFactory(ctx));
-  //     }
-
-  //     create(props: ScopeProps, parent: Scope, before?: Scope) {
-  //       return ((props.__type && this.map.get(props.__type)) ?? this.base)
-  //         .create(props, parent, before);
-  //     }
-  //   }(this);
-  // }
 }
 
 function camelToDash(s: string): string {
