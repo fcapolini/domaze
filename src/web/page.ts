@@ -1,10 +1,10 @@
+import { Context, ContextProps, ScopeFactories } from "../core/context";
+import { Scope } from "../core/scope";
+import { BaseFactory, ScopeFactoryDelegate } from "../core/scopes/base";
+import { DefineFactory } from "../core/scopes/define";
+import { ForeachFactory } from '../core/scopes/foreach';
+import { Value, ValueProps } from "../core/value";
 import { Document } from '../html/dom';
-import { Context, ContextProps, ScopeFactories } from "./context";
-import { Scope } from "./scope";
-import { BaseFactory, ScopeFactoryDelegate } from "./scopes/base";
-import { DefineFactory } from "./scopes/define";
-import { ForeachFactory } from './scopes/foreach';
-import { Value, ValueProps } from "./value";
 
 export const SCOPE_ID_ATTR = 'data-domaze';
 

@@ -1,8 +1,8 @@
 import { assert, it } from 'vitest';
 import { parse } from '../../../src/html/parser';
 import { ServerTemplateElement } from '../../../src/html/server-dom';
-import { Context, SCOPE_ID_ATTR } from '../../../src/page/context';
-import { Define } from '../../../src/page/scopes/define';
+import { Context, SCOPE_ID_ATTR } from '../../../src/web/context';
+import { Define } from '../../../src/web/scopes/define';
 
 it('should define a component', () => {
   const doc = parse(`<html ${SCOPE_ID_ATTR}="1">

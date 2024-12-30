@@ -1,6 +1,6 @@
 import { assert, describe, expect, it } from 'vitest';
 import { parse } from '../../src/html/parser';
-import { Page, SCOPE_ID_ATTR } from '../../src/core/page';
+import { Page, SCOPE_ID_ATTR } from '../../src/web/page';
 
 describe('page', () => {
 

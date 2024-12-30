@@ -1,7 +1,7 @@
 import { assert, it } from 'vitest';
 import { parse } from '../../src/html/parser';
-import { Context, SCOPE_ID_ATTR } from '../../src/page/context';
-import { ATTR_VALUE_PREFIX, CLASS_VALUE_PREFIX, Scope, STYLE_VALUE_PREFIX } from '../../src/page/scope';
+import { Context, SCOPE_ID_ATTR } from '../../src/web/context';
+import { ATTR_VALUE_PREFIX, CLASS_VALUE_PREFIX, Scope, STYLE_VALUE_PREFIX } from '../../src/web/scope';
 
 it('should create root', () => {
   const doc = parse(`<html ${SCOPE_ID_ATTR}="1"></html>`, 'test').doc;

@@ -1,6 +1,6 @@
 import { assert, expect, it } from 'vitest';
 import { parse } from '../../src/html/parser';
-import { Context, SCOPE_ID_ATTR } from '../../src/page/context';
+import { Context, SCOPE_ID_ATTR } from '../../src/web/context';
 
 it('should create a page', () => {
   const doc = parse(`<html ${SCOPE_ID_ATTR}="1">
