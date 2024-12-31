@@ -1,6 +1,6 @@
-const esbuild = require('esbuild');
+import { build } from 'esbuild';
 
-esbuild.build({
+build({
   entryPoints: ['./src/index.ts'],// Entry file
   outfile: './dist/index.js',// Output file
   bundle: true,// Bundle dependencies
