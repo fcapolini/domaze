@@ -13,7 +13,7 @@ export const GROUP_DIRECTIVE_TAG = DIRECTIVE_TAG_PREFIX + 'GROUP';
 export const MAX_NESTING = 100;
 
 /*
-  Add support for:
+  Adds support for:
   - <:include>
   - <:group>
   - <!--- (triple) comments removal

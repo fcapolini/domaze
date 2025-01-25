@@ -1,3 +1,1 @@
-import { Context } from "./core/context";
-
-const ctx = new Context({ root: {} });
+console.log('index');

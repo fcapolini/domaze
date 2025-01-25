@@ -23,9 +23,10 @@ export function parse(s: string, fname: string, ret?: Source, sanitize = true): 
     // nop: errors are added to returned doc, throws are used
     // to abort parsing when an irrecoverable error is found
   }
+  const doc = ret.doc as dom.ServerDocument;
+  doc.childNodes.forEach(n => n.parentElement = null);
   if (sanitize) {
     // sanitize doc
-    const doc = ret.doc as dom.ServerDocument;
     doc.documentElement || doc.childNodes.push(new dom.ServerElement(doc, 'HTML', doc.loc));
     let head, body;
     doc.documentElement!.childNodes.forEach(n => {
