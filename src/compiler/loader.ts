@@ -1,16 +1,22 @@
 import * as acorn from 'acorn';
 import * as dom from "../html/dom";
 import { Source } from '../html/parser';
-import { ServerAttribute, ServerElement } from "../html/server-dom";
+import { ServerAttribute, ServerElement, SourceLocation } from "../html/server-dom";
 import * as k from "./const";
 
 const ID_RE = /^[a-zA-Z_]\w*$/;
+const DEF_NAMES: any = {
+  'HTML': 'page',
+  'HEAD': 'head',
+  'BODY': 'body',
+}
 
 export interface CompilerScope {
   id: number;
   name?: string;
   values?: CompilerValue[];
   children: CompilerScope[];
+  loc: SourceLocation;
 }
 
 export interface CompilerValue {
@@ -25,11 +31,12 @@ export function load(source: Source): CompilerScope {
     //TODO
   }
 
-  const load = (e: dom.Element, p: CompilerScope) => {
+  const load = (e: ServerElement, p: CompilerScope) => {
     if (needsScope(e)) {
       const scope: CompilerScope = {
         id: id++,
         children: [],
+        loc: e.loc,
       };
       e.setAttribute(k.OUT_OBJ_ID_ATTR, `${scope.id}`);
       p.children.push(scope);
@@ -63,7 +70,7 @@ export function load(source: Source): CompilerScope {
     }
     e.childNodes.forEach(n => {
       if (n.nodeType === dom.NodeType.ELEMENT) {
-        load(n as dom.Element, p);
+        load(n as ServerElement, p);
       }
     });
   }
@@ -71,15 +78,17 @@ export function load(source: Source): CompilerScope {
   const root = {
     id: id++,
     children: [],
+    loc: source.doc.loc,
   };
   load(source.doc.documentElement!, root);
   return root;
 }
 
 function needsScope(e: dom.Element): boolean {
-  if (['HTML', 'HEAD', 'BODY'].includes(e.tagName)) {
+  const defName = DEF_NAMES[e.tagName];
+  if (defName) {
     if (!e.getAttribute(k.IN_VALUE_ATTR_PREFIX + 'name')) {
-      e.setAttribute(k.IN_VALUE_ATTR_PREFIX + 'name', e.tagName.toLowerCase());
+      e.setAttribute(k.IN_VALUE_ATTR_PREFIX + 'name', defName);
     }
     return true;
   }

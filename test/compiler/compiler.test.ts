@@ -3,6 +3,9 @@ import { assert, describe, it } from 'vitest';
 import path from 'path';
 import { Compiler } from '../../src/compiler/compiler';
 import { normalizeText } from '../../src/html/parser';
+import { CompilerScope } from '../../src/compiler/loader';
+import * as acorn from 'acorn';
+import { generate } from 'escodegen';
 
 const docroot = path.join(__dirname, 'compiler');
 
@@ -52,8 +55,22 @@ fs.readdirSync(docroot).forEach(dir => {
             if (fs.existsSync(jsonpname)) {
               const text = await fs.promises.readFile(jsonpname, { encoding: 'utf8' });
               const root = JSON.parse(text);
+              const cleanup = (scope: CompilerScope) => {
+                delete (scope as any).loc;
+                scope.children.forEach(s => cleanup(s));
+              };
+              page.root && cleanup(page.root);
               assert.deepEqual(page.root, root);
             }
+            // check generated code
+            // const jspname = path.join(docroot, dir, file.replace('-in.html', '-out.js'));
+            // if (fs.existsSync(jspname)) {
+            //   const text = await fs.promises.readFile(jspname, { encoding: 'utf8' });
+            //   const ast = acorn.parse(text, { ecmaVersion: 'latest' });
+            //   const expected = generate(ast);
+            //   const actual = generate(page.code);
+            //   assert.equal(actual, expected);
+            // }
           });
 
         }
