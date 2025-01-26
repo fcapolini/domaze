@@ -1,17 +1,36 @@
 import * as acorn from 'acorn';
 import { Source } from "../html/parser";
 import { Preprocessor } from "../html/preprocessor";
-import { CompilerScope, load } from "./loader";
+import { SourceLocation } from '../html/server-dom';
 import { generate } from './generator';
-import { validate } from './validator';
+import { load } from "./loader";
 import { qualify } from './qualifier';
 import { resolve } from './resolver';
 import { transform } from './transformer';
+import { validate } from './validator';
 
 export interface CompilerPage {
   source: Source;
   root?: CompilerScope;
   code?: acorn.ExpressionStatement;
+}
+
+export interface CompilerScope {
+  id: number;
+  name?: CompilerProp;
+  values?: { [key: string]: CompilerValue };
+  children: CompilerScope[];
+  loc: SourceLocation;
+}
+
+export interface CompilerValue {
+  val: string | acorn.Expression | null
+  keyLoc: SourceLocation;
+  valLoc?: SourceLocation;
+}
+
+export interface CompilerProp extends CompilerValue {
+  val: string;
 }
 
 export interface CompilerProps {

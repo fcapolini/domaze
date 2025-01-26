@@ -1,7 +1,7 @@
-import * as acorn from 'acorn';
 import * as dom from "../html/dom";
 import { Source } from '../html/parser';
-import { ServerAttribute, ServerElement, SourceLocation } from "../html/server-dom";
+import { ServerAttribute, ServerElement } from "../html/server-dom";
+import { CompilerScope } from './compiler';
 import * as k from "./const";
 
 const ID_RE = /^[a-zA-Z_]\w*$/;
@@ -9,19 +9,6 @@ const DEF_NAMES: any = {
   'HTML': 'page',
   'HEAD': 'head',
   'BODY': 'body',
-}
-
-export interface CompilerScope {
-  id: number;
-  name?: string;
-  values?: CompilerValue[];
-  children: CompilerScope[];
-  loc: SourceLocation;
-}
-
-export interface CompilerValue {
-  key: string;
-  val: string | acorn.Expression | null;
 }
 
 export function load(source: Source): CompilerScope {
@@ -40,7 +27,8 @@ export function load(source: Source): CompilerScope {
       };
       e.setAttribute(k.OUT_OBJ_ID_ATTR, `${scope.id}`);
       p.children.push(scope);
-      for (const attr of [...(e as ServerElement).attributes]) {
+      for (const a of [...(e as ServerElement).attributes]) {
+        const attr = a as ServerAttribute;
         if (attr.name.startsWith(k.IN_VALUE_ATTR_PREFIX)) {
           const name = attr.name.substring(k.IN_VALUE_ATTR_PREFIX.length);
           e.removeAttribute(attr.name);
@@ -50,7 +38,11 @@ export function load(source: Source): CompilerScope {
               error(attr, 'invalid object name');
               continue;
             }
-            scope.name = attr.value;
+            scope.name = {
+              val: attr.value,
+              keyLoc: attr.loc,
+              valLoc: attr.valueLoc,
+            }
             continue;
           }
           //TODO: special prefixes, e.g. 'on-'
@@ -59,11 +51,12 @@ export function load(source: Source): CompilerScope {
             continue;
           }
           // value attribute
-          scope.values || (scope.values = []);
-          scope.values.push({
-            key: name,
+          scope.values || (scope.values = {});
+          scope.values[name] = {
             val: (attr as ServerAttribute).value,
-          });
+            keyLoc: (attr as ServerAttribute).loc,
+            valLoc: (attr as ServerAttribute).valueLoc
+          };
         }
       }
       p = scope;

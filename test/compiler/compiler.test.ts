@@ -1,9 +1,8 @@
 import fs from 'fs';
 import { assert, describe, it } from 'vitest';
 import path from 'path';
-import { Compiler } from '../../src/compiler/compiler';
+import { Compiler, CompilerProp, CompilerScope, CompilerValue } from '../../src/compiler/compiler';
 import { normalizeText } from '../../src/html/parser';
-import { CompilerScope } from '../../src/compiler/loader';
 import * as acorn from 'acorn';
 import { generate } from 'escodegen';
 
@@ -55,22 +54,30 @@ fs.readdirSync(docroot).forEach(dir => {
             if (fs.existsSync(jsonpname)) {
               const text = await fs.promises.readFile(jsonpname, { encoding: 'utf8' });
               const root = JSON.parse(text);
-              const cleanup = (scope: CompilerScope) => {
+              const cleanupScopes = (scope: CompilerScope) => {
+                const cleanupValue = (value: CompilerValue) => {
+                  delete (value as any).keyLoc;
+                  delete (value as any).valLoc;
+                }
+                scope.name && cleanupValue(scope.name);
+                scope.values && Object.keys(scope.values).forEach((v) =>
+                  cleanupValue(scope.values![v])
+                );
                 delete (scope as any).loc;
-                scope.children.forEach(s => cleanup(s));
+                scope.children.forEach(s => cleanupScopes(s));
               };
-              page.root && cleanup(page.root);
+              page.root && cleanupScopes(page.root);
               assert.deepEqual(page.root, root);
             }
             // check generated code
-            // const jspname = path.join(docroot, dir, file.replace('-in.html', '-out.js'));
-            // if (fs.existsSync(jspname)) {
-            //   const text = await fs.promises.readFile(jspname, { encoding: 'utf8' });
-            //   const ast = acorn.parse(text, { ecmaVersion: 'latest' });
-            //   const expected = generate(ast);
-            //   const actual = generate(page.code);
-            //   assert.equal(actual, expected);
-            // }
+            const jspname = path.join(docroot, dir, file.replace('-in.html', '-out.js'));
+            if (fs.existsSync(jspname)) {
+              const text = await fs.promises.readFile(jspname, { encoding: 'utf8' });
+              const ast = acorn.parse(text, { ecmaVersion: 'latest' });
+              const expected = generate(ast);
+              const actual = generate(page.code);
+              assert.equal(actual, expected);
+            }
           });
 
         }

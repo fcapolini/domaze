@@ -3,26 +3,23 @@
   "children": [
     {
       "id": 1,
-      "name": "page",
+      "name": { "val": "page" },
       "children": [
         {
           "id": 2,
-          "name": "head",
+          "name": { "val": "head" },
           "children": []
         },
         {
           "id": 3,
-          "name": "body",
+          "name": { "val": "body" },
           "children": [
             {
               "id": 4,
-              "name": "title",
-              "values": [
-                {
-                  "key": "v",
-                  "val": "1"
-                }
-              ],
+              "name": { "val": "title" },
+              "values": {
+                "v": { "val": "1" }
+              },
               "children": []
             }
           ]
