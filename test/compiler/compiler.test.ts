@@ -63,6 +63,7 @@ fs.readdirSync(docroot).forEach(dir => {
                 scope.values && Object.keys(scope.values).forEach((v) =>
                   cleanupValue(scope.values![v])
                 );
+                delete (scope as any).parent;
                 delete (scope as any).loc;
                 scope.children.forEach(s => cleanupScopes(s));
               };

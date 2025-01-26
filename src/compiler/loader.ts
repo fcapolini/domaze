@@ -21,6 +21,7 @@ export function load(source: Source): CompilerScope {
   const load = (e: ServerElement, p: CompilerScope) => {
     if (needsScope(e)) {
       const scope: CompilerScope = {
+        parent: p,
         id: id++,
         children: [],
         loc: e.loc,

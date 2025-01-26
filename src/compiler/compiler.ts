@@ -19,6 +19,7 @@ export interface CompilerScope {
   id: number;
   name?: CompilerProp;
   values?: { [key: string]: CompilerValue };
+  parent?: CompilerScope;
   children: CompilerScope[];
   loc: SourceLocation;
 }
