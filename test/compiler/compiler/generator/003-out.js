@@ -19,7 +19,7 @@
               name: 'title',
               values: {
                 v: {
-                  e: function() { return '1'; }
+                  e: function() { return 0; }
                 }
               },
               children: []
