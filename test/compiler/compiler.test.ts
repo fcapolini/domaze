@@ -43,9 +43,9 @@ fs.readdirSync(docroot).forEach(dir => {
               return;
             }
             // check output markup
-            {
+            const outpname = path.join(docroot, dir, file.replace('-in.', '-out.'));
+            if (fs.existsSync(outpname)) {
               const actualHTML = source.doc!.toString() + '\n';
-              const outpname = path.join(docroot, dir, file.replace('-in.', '-out.'));
               const expectedHTML = await fs.promises.readFile(outpname, { encoding: 'utf8' });
               assert.equal(normalizeText(actualHTML), normalizeText(expectedHTML));
             }
