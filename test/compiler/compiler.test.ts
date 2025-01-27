@@ -28,13 +28,12 @@ fs.readdirSync(docroot).forEach(dir => {
             const page = await compiler.compile(file);
             const source = page.source;
             // check errors
-            if (source.errors.length) {
-              const errpname = file.replace('-in.html', '-err.json');
-              const pname = path.join(dirPath, errpname);
-              const aerrs = source.errors.map(e => e.msg);
+            const errpname = path.join(dirPath, file.replace('-in.html', '-err.json'));
+            if (source.errors.length || fs.existsSync(errpname)) {
+              const aerrs = JSON.parse(JSON.stringify(source.errors));
               let eerrs = [];
               try {
-                const etext = (await fs.promises.readFile(pname)).toString();
+                const etext = (await fs.promises.readFile(errpname)).toString();
                 eerrs = JSON.parse(etext);
                 assert.deepEqual(aerrs, eerrs);
               } catch (e) {

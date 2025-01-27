@@ -1,20 +1,14 @@
 import * as dom from "../html/dom";
-import { Source } from '../html/parser';
-import { ServerAttribute, ServerElement } from "../html/server-dom";
+import { PageError, Source } from '../html/parser';
+import { ServerAttribute, ServerElement, ServerNode, SourceLocation } from "../html/server-dom";
 import { CompilerScope } from './compiler';
 import * as k from "./const";
-
-const ID_RE = /^[a-zA-Z_]\w*$/;
-const DEF_NAMES: any = {
-  'HTML': 'page',
-  'HEAD': 'head',
-  'BODY': 'body',
-}
 
 export function load(source: Source): CompilerScope {
   let id = 0;
 
-  const error = (n: dom.Node, msg: string) => {
+  const error = (loc: SourceLocation, msg: string) => {
+    source.errors.push(new PageError('error', msg, loc))
     //TODO
   }
 
@@ -35,8 +29,8 @@ export function load(source: Source): CompilerScope {
           e.removeAttribute(attr.name);
           // system attribute 'name'
           if (name === 'name') {
-            if (typeof attr.value !== 'string' || !ID_RE.test(attr.value)) {
-              error(attr, 'invalid object name');
+            if (typeof attr.value !== 'string' || !k.ID_RE.test(attr.value)) {
+              error(attr.valueLoc ?? attr.loc, 'invalid name');
               continue;
             }
             scope.name = {
@@ -47,8 +41,8 @@ export function load(source: Source): CompilerScope {
             continue;
           }
           //TODO: special prefixes, e.g. 'on-'
-          if (!ID_RE.test(name)) {
-            error(attr, 'invalid value name');
+          if (!k.ID_RE.test(name)) {
+            error(attr.loc, 'invalid value name');
             continue;
           }
           // value attribute
@@ -79,7 +73,7 @@ export function load(source: Source): CompilerScope {
 }
 
 function needsScope(e: dom.Element): boolean {
-  const defName = DEF_NAMES[e.tagName];
+  const defName = k.DEF_SCOPE_NAMES[e.tagName];
   if (defName) {
     if (!e.getAttribute(k.IN_VALUE_ATTR_PREFIX + 'name')) {
       e.setAttribute(k.IN_VALUE_ATTR_PREFIX + 'name', defName);

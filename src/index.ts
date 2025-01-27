@@ -1,1 +1,3 @@
-console.log('index');
+import { Compiler } from "./compiler/compiler";
+
+new Compiler({ docroot: './' });
