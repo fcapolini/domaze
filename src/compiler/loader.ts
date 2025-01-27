@@ -27,6 +27,11 @@ export function load(source: Source): CompilerScope {
         if (attr.name.startsWith(k.IN_VALUE_ATTR_PREFIX)) {
           const name = attr.name.substring(k.IN_VALUE_ATTR_PREFIX.length);
           e.removeAttribute(attr.name);
+          // test attributes
+          if (name.startsWith(k.TEST_ATTR)) {
+            handleTestAttr(scope, name);
+            continue;
+          }
           // system attribute 'name'
           if (name === 'name') {
             if (typeof attr.value !== 'string' || !k.ID_RE.test(attr.value)) {
@@ -70,6 +75,13 @@ export function load(source: Source): CompilerScope {
   };
   load(source.doc.documentElement!, root);
   return root;
+}
+
+function handleTestAttr(scope: CompilerScope, name: string) {
+  if (name === k.TEST_CLOSED_ATTR) {
+    scope.closed = true;
+    return;
+  }
 }
 
 function needsScope(e: dom.Element): boolean {

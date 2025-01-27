@@ -18,6 +18,7 @@ export interface CompilerPage {
 export interface CompilerScope {
   id: number;
   name?: CompilerProp;
+  closed?: boolean;
   values?: { [key: string]: CompilerValue };
   parent?: CompilerScope;
   children: CompilerScope[];

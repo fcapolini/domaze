@@ -123,7 +123,7 @@ function lookup(scope: CompilerScope, name: string): Target | null {
       return { scope: child };
     }
   }
-  if (scope.parent) {
+  if (!scope.closed && scope.parent) {
     return lookup(scope.parent, name);
   }
   return null;
