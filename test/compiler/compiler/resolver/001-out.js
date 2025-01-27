@@ -1,32 +1,26 @@
 ({
-  id: 0,
-  children: [
+  __id: 0,
+  __children: [
     {
-      id: 1,
-      name: 'page',
-      children: [
+      __id: 1,
+      __name: 'page',
+      __children: [
         {
-          id: 2,
-          name: 'head',
-          values: {
-            y: {
-              e: function() { return 1; }
-            },
+          __id: 2,
+          __name: 'head',
+          y: {
+            e: function() { return 1; }
           },
-          children: []
+          __children: []
         },
         {
-          id: 3,
-          name: 'body',
-          values: {
-            x: {
-              e: function() { return this.head.y; },
-              r: [
-                function() { return this.head.__value('y'); },
-              ]
-            },
+          __id: 3,
+          __name: 'body',
+          x: {
+            e: function() { return this.head.y; },
+            r: [function() { return this.head.__value('y'); }]
           },
-          children: []
+          __children: []
         },
       ]
     }

@@ -5,6 +5,16 @@ import { CompilerScope, CompilerValue } from "./compiler";
 
 // https://astexplorer.net
 
+/**
+ * @see ScopeProps
+ */
+const ID_PROP = '__id';
+const TYPE_PROP = '__type';
+const PROTO_PROP = '__proto';
+const NAME_PROP = '__name';
+const SLOT_PROP = '__slot';
+const CHILDREN_PROP = '__children';
+
 export function generate(root: CompilerScope): acorn.ExpressionStatement {
   return {
     type: 'ExpressionStatement',
@@ -27,25 +37,17 @@ function genScope(scope: CompilerScope): acorn.ObjectExpression {
 
 function genScopeProps(scope: CompilerScope): acorn.Property[] {
   const ret: acorn.Property[] = [];
-  ret.push(genProperty(scope.loc, 'id', genLiteral(scope.loc, scope.id)));
+  ret.push(genProperty(scope.loc, ID_PROP, genLiteral(scope.loc, scope.id)));
   scope.name && ret.push(genProperty(
       scope.name.keyLoc,
-      'name',
+      NAME_PROP,
       genLiteral(scope.name.valLoc ?? scope.name.keyLoc, scope.name.val)
   ));
-  scope.values && ret.push(genProperty(scope.loc, 'values', genValues(scope)));
-  ret.push(genProperty(scope.loc, 'children', genArray(scope.loc, genScopeChildren(scope))));
+  scope.values && Object.keys(scope.values).forEach(key => {
+    ret.push(genValue(scope.loc, key, scope.values![key]));
+  });
+  ret.push(genProperty(scope.loc, CHILDREN_PROP, genArray(scope.loc, genScopeChildren(scope))));
   return ret;
-}
-
-function genValues(scope: CompilerScope): acorn.ObjectExpression {
-  return {
-    type: 'ObjectExpression',
-    properties: Object.keys(scope.values!).map(key => {
-      return genValue(scope.loc, key, scope.values![key]);
-    }),
-    ...genLoc(scope.loc),
-  };
 }
 
 function genValue(loc: SourceLocation, key: string, value: CompilerValue): acorn.Property {

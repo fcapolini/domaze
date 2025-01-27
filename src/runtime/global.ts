@@ -7,7 +7,7 @@ export class GlobalFactory extends BaseFactory {
       //TODO: add global values
     ] });
     // write-protect global object
-    // ret.__handler.set = () => false;
+    ret.__handler.set = () => false;
     return ret;
   }
 }
