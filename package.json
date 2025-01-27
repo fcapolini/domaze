@@ -7,12 +7,15 @@
     "coverage": "vitest --run --coverage",
     "start": "node dist/index.js",
     "build": "node scripts/build.mjs",
-    "check": "tsc"
+    "check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "devDependencies": {
     "@types/acorn": "4.0.6",
     "@types/escodegen": "0.0.10",
