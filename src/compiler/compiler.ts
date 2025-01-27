@@ -7,6 +7,7 @@ import { load } from "./loader";
 import { qualify } from './qualifier';
 import { resolve } from './resolver';
 import { validate } from './validator';
+import { treeshake } from './treeshaker';
 
 export interface CompilerPage {
   source: Source;
@@ -65,6 +66,7 @@ export class Compiler {
     ) {
       return page;
     }
+    treeshake(page.root);
     page.code = generate(page.root);
     return page;
   }

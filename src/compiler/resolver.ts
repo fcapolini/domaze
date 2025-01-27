@@ -118,13 +118,13 @@ function lookup(scope: CompilerScope, name: string): Target | null {
       return { scope, value: scope.values![key] };
     }
   }
-  if (!scope.parent) {
-    return null;
-  }
-  for (const sibling of scope.parent.children) {
-    if (sibling.name?.val === name) {
-      return { scope: sibling };
+  for (const child of scope.children) {
+    if (child.name?.val === name) {
+      return { scope: child };
     }
   }
-  return lookup(scope.parent, name);
+  if (scope.parent) {
+    return lookup(scope.parent, name);
+  }
+  return null;
 }
