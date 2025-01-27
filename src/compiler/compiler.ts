@@ -6,7 +6,6 @@ import { generate } from './generator';
 import { load } from "./loader";
 import { qualify } from './qualifier';
 import { resolve } from './resolver';
-import { transform } from './transformer';
 import { validate } from './validator';
 
 export interface CompilerPage {
@@ -28,6 +27,7 @@ export interface CompilerValue {
   val: string | acorn.Expression | null
   keyLoc: SourceLocation;
   valLoc?: SourceLocation;
+  refs?: Set<string>;
 }
 
 export interface CompilerProp extends CompilerValue {
@@ -61,8 +61,7 @@ export class Compiler {
     if (
       !validate(page.source, page.root) ||
       !qualify(page.source, page.root) ||
-      !resolve(page.source, page.root) ||
-      !transform(page.source, page.root)
+      !resolve(page.source, page.root)
     ) {
       return page;
     }

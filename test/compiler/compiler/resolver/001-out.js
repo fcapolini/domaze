@@ -8,6 +8,11 @@
         {
           id: 2,
           name: 'head',
+          values: {
+            y: {
+              e: function() { return 1; }
+            },
+          },
           children: []
         },
         {
@@ -15,13 +20,10 @@
           name: 'body',
           values: {
             x: {
-              e: function() { return this.y; },
+              e: function() { return this.head.y; },
               r: [
-                function() { return this.__value('y'); },
+                function() { return this.head.__value('y'); },
               ]
-            },
-            y: {
-              e: function() { return 1; }
             },
           },
           children: []

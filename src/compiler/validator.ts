@@ -1,6 +1,7 @@
 import { Source } from "../html/parser";
 import { CompilerScope } from "./compiler";
 
+//TODO: prevent classic functions in ${} expressions (error if there are)
 export function validate(source: Source, root: CompilerScope): boolean {
   let ret = true;
   const validate = (scope: CompilerScope) => {

@@ -1,6 +1,7 @@
 import * as acorn from 'acorn';
 import { SourceLocation } from '../html/server-dom';
-import { CompilerProp, CompilerScope, CompilerValue } from "./compiler";
+import { RT_VALUE_FN_KEY } from '../runtime/const';
+import { CompilerScope, CompilerValue } from "./compiler";
 
 // https://astexplorer.net
 
@@ -54,6 +55,7 @@ function genValue(loc: SourceLocation, key: string, value: CompilerValue): acorn
 function genValueProps(value: CompilerValue): acorn.Property[] {
   const ret: acorn.Property[] = [];
   ret.push(genValueExp(value));
+  value.refs && ret.push(genValueRefs(value));
   return ret;
 }
 
@@ -65,6 +67,42 @@ function genValueExp(value: CompilerValue): acorn.Property {
       ? genLiteral(loc, value.val)
       : value.val
   ))
+}
+
+function genValueRefs(value: CompilerValue): acorn.Property {
+  const loc = value.valLoc ?? value.keyLoc;
+  return genProperty(loc, 'r', genArray(loc, [...value.refs!].map(ref =>
+    genFunction(loc, genValueRefCall(loc, ref))
+  )));
+}
+
+function genValueRefCall(loc: SourceLocation, ref: string): acorn.Expression {
+  return {
+    type: 'CallExpression',
+    callee: genValueRefCallee(loc, ref),
+    arguments: [genLiteral(loc, ref.split('.').pop()!)],
+    optional: false,
+    ...genLoc(loc)
+  }
+}
+
+function genValueRefCallee(loc: SourceLocation, ref: string): acorn.Expression {
+  const slices = ref.split('.');
+  slices.pop();
+  slices.push(RT_VALUE_FN_KEY);
+  slices.shift();
+  let ret: acorn.Expression = genThis(loc);
+  while (slices.length) {
+    ret = {
+      type: 'MemberExpression',
+      object: ret,
+      property: genIdentifier(loc, slices.shift()!),
+      computed: false,
+      optional: false,
+      ...genLoc(loc)
+    }
+  }
+  return ret;
 }
 
 function genScopeChildren(scope: CompilerScope): acorn.ObjectExpression[] {
@@ -106,7 +144,7 @@ function genObject(loc: SourceLocation, properties: acorn.Property[]): acorn.Obj
   }
 }
 
-function genArray(loc: SourceLocation, elements: acorn.ObjectExpression[]): acorn.ArrayExpression {
+function genArray(loc: SourceLocation, elements: acorn.Expression[]): acorn.ArrayExpression {
   return {
     type: 'ArrayExpression',
     elements,
@@ -143,6 +181,13 @@ function genLiteral(loc: SourceLocation, val: string | number | null): acorn.Lit
   return {
     type: 'Literal',
     value: val,
+    ...genLoc(loc),
+  }
+}
+
+function genThis(loc: SourceLocation): acorn.ThisExpression {
+  return {
+    type: 'ThisExpression',
     ...genLoc(loc),
   }
 }
