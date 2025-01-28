@@ -8,6 +8,7 @@ import { qualify } from './qualifier';
 import { resolve } from './resolver';
 import { validate } from './validator';
 import { treeshake } from './treeshaker';
+import { comptime } from './comptime';
 
 export interface CompilerPage {
   source: Source;
@@ -19,6 +20,7 @@ export interface CompilerScope {
   id: number;
   name?: CompilerProp;
   closed?: boolean;
+  comptime?: boolean; //TODO
   values?: { [key: string]: CompilerValue };
   parent?: CompilerScope;
   children: CompilerScope[];
@@ -63,7 +65,8 @@ export class Compiler {
     if (
       !validate(page.source, page.root) ||
       !qualify(page.source, page.root) ||
-      !resolve(page.source, page.root)
+      !resolve(page.source, page.root) ||
+      !comptime(page.source, page.root)
     ) {
       return page;
     }

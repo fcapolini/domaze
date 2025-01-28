@@ -23,8 +23,8 @@ export class Context {
     this.refresh();
   }
 
-  newScope(props: ScopeProps, parent: Scope) {
-    return this.factories.get('base')!.create(props, parent);
+  newScope(props: ScopeProps, parent: Scope, before?: Scope) {
+    return this.factories.get('base')!.create(props, parent, before);
   }
 
   // ===========================================================================

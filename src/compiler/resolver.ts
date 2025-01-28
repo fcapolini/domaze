@@ -3,6 +3,12 @@ import * as es from 'estree';
 import { PageError, Source } from "../html/parser";
 import { CompilerScope, CompilerValue } from "./compiler";
 
+//TODO: in order to support comptime:
+// * scope property 'comptime'
+// * references from non-comptime to comptime scopes cause error
+// * a comptime scope makes all its neted scopes comptime too
+// * all traces of comptime stuff will be removed by the treeshaker
+
 export function resolve(source: Source, root: CompilerScope): boolean {
   const resolve = (scope: CompilerScope) => {
     scope.values && Object.keys(scope.values).forEach(key => {
