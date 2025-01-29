@@ -28,7 +28,6 @@ fs.readdirSync(docroot).forEach(dir => {
           it(file, async () => {
             // actual page
             const page = await compiler.compile(file);
-            page.source.doc.toString();//tempdebug
             const code = eval(generate(page.code));
             const ctx = new Context({
               doc: page.source.doc,
