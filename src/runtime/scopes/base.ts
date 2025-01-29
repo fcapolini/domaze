@@ -165,7 +165,6 @@ export class BaseFactory implements ScopeFactory {
     }
 
     this.addValues(self, proxy, props);
-    // this.delegate?.didInit(self, proxy);
 
     this.addChildren(self, proxy, props.__children);
 
@@ -205,6 +204,7 @@ export class BaseFactory implements ScopeFactory {
       const name = key.substring(RT_ATTR_VAL_PREFIX.length);
       ret.cb = (s, v) => {
         s.__view.setAttribute(name, v ? `${v}` : '');
+        return v;
       }
     }
     return ret;
