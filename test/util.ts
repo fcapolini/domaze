@@ -6,6 +6,7 @@ import { normalizeText, parse } from '../src/html/parser';
 import { generate } from 'escodegen';
 import { Context } from '../src/runtime/context';
 import * as dom from '../src/html/dom';
+import * as happy from 'happy-dom';
 
 export function cleanupScopes(scope: CompilerScope) {
   const cleanupExpression = (exp: acorn.Node) => {
@@ -39,7 +40,7 @@ export function dumpScopes(scope: Scope, tab = '') {
   scope.__children.forEach(child => dumpScopes(child, tab + '\t'));
 }
 
-export async function runPage(html: string): Promise<Context> {
+export async function runPage(client: boolean, html: string): Promise<Context> {
   const page: CompilerPage = { source: parse(html, 'test') };
   Compiler.compilePage(page);
   if (page.source.errors.length) {
@@ -48,13 +49,24 @@ export async function runPage(html: string): Promise<Context> {
   const code = eval(generate(page.code));
   const ctx = new Context({
     doc: page.source.doc,
-    root: code
+    root: code,
   });
-  return ctx;
+  if (!client) {
+    return ctx;
+  }
+
+  const clientDoc = new happy.Window().document;
+  clientDoc.write(page.source.doc.toString());
+  const clientCtx = new Context({
+    doc: clientDoc as unknown as dom.Document,
+    root: code,
+  });
+
+  return clientCtx;
 }
 
-export function cleanMarkup(doc: dom.Document): string {
-  let act = doc.toString();
+export function cleanMarkup(doc: dom.Document | happy.Document): string {
+  let act = doc instanceof happy.Document ? doc.documentElement.outerHTML : doc.toString();
   act = act.replace(/ data-domaze="\d+"/g, '');
   act = act.replace(/<!---.*?-->/g, '');
   act = normalizeText(act)!;
