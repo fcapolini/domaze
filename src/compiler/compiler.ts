@@ -55,6 +55,10 @@ export class Compiler {
     const page: CompilerPage = {
       source: await this.preprocessor.load(fname),
     };
+    return Compiler.compilePage(page);
+  }
+
+  static compilePage(page: CompilerPage): CompilerPage {
     if (page.source.errors.length) {
       return page;
     }

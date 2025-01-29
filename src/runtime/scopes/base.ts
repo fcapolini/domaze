@@ -149,7 +149,11 @@ export class BaseFactory implements ScopeFactory {
           if (n.nodeType === dom.NodeType.ELEMENT) {
             const v = (n as Element).getAttribute(OUT_OBJ_ID_ATTR);
             if (v) {
-              return v === id ? n as Element : null;
+              if (v === id) {
+                return n as Element;
+              } else {
+                continue;
+              }
             }
             const ret = lookup(n as Element);
             if (ret) {
