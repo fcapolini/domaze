@@ -84,4 +84,17 @@ it('should reflect class attribute value (4)', async () => {
   );
 });
 
+it('should reflect class attribute value (5)', async () => {
+  const ctx = await runPage('<html><body :class_app=${true} class="base"></body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body class="base app"></body></html>'
+  );
+  ctx.root['body']['class_app'] = false;
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body class="base"></body></html>'
+  );
+});
+
 //TODO: same for style

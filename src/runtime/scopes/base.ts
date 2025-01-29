@@ -121,11 +121,6 @@ export class BaseFactory implements ScopeFactory {
     }
 
     self.__updateValues = function (recur = true) {
-      // make sure "class" attribute value is updated before any possible "class_" value
-      // since it resets element's classList
-      // the validator will make sure it's a literal if there are "class_" attributes
-      // so this will impact only initial update
-      (self as any)['attr_class']?.get();
       Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].get());
       recur && self.__children.forEach((scope: Scope) => scope.__updateValues())
     }
