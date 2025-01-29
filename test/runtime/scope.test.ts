@@ -7,8 +7,8 @@ it('should create a named root scope', () => {
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: '0', __children: [{
-        __id: '1', __name: 'root', __children: []
+      __id: 0, __children: [{
+        __id: 1, __name: 'root', __children: []
       }]
     }
   });
@@ -22,9 +22,9 @@ it('should create a nested scope', () => {
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: '0', __children: [{
-        __id: '1', __children: [{
-          __id: '2', __children: []
+      __id: 0, __children: [{
+        __id: 1, __children: [{
+          __id: 2, __children: []
         }],
       }]
     }
@@ -40,9 +40,9 @@ it('should create a nested named scope', () => {
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: '0', __children: [{
-        __id: '1', __name: rootName, __children: [{
-          __id: '2', __name: bodyName, __children: []
+      __id: 0, __children: [{
+        __id: 1, __name: rootName, __children: [{
+          __id: 2, __name: bodyName, __children: []
         }],
       }]
     }
@@ -59,9 +59,9 @@ it('should insert a scope before another', () => {
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: '0', __children: [{
-        __id: '1', __children: [{
-          __id: '2', __name: bodyName, __children: []
+      __id: 0, __children: [{
+        __id: 1, __children: [{
+          __id: 2, __name: bodyName, __children: []
         }],
       }]
     }

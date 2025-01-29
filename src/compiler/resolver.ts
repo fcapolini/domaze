@@ -1,6 +1,7 @@
 import estraverse from 'estraverse';
 import * as es from 'estree';
 import { PageError, Source } from "../html/parser";
+import { RT_PARENT_VAL_KEY } from '../runtime/const';
 import { CompilerScope, CompilerValue } from "./compiler";
 
 //TODO: in order to support comptime:
@@ -130,6 +131,9 @@ function lookup(scope: CompilerScope, name: string): Target | null {
     }
   }
   if (!scope.closed && scope.parent) {
+    if (name === RT_PARENT_VAL_KEY) {
+      return { scope: scope.parent }
+    }
     return lookup(scope.parent, name);
   }
   return null;

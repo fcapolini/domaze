@@ -1,9 +1,9 @@
 import { OUT_OBJ_ID_ATTR } from "../../compiler/const";
-import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX, RT_TEXT_MARKER1_PREFIX, RT_TEXT_VAL_PREFIX } from "../const";
+import * as dom from "../../html/dom";
+import * as k from "../const";
 import { Context } from "../context";
 import { Scope, ScopeFactory, ScopeProps } from "../scope";
 import { Value, ValueProps } from "../value";
-import * as dom from "../../html/dom";
 
 export class BaseFactory implements ScopeFactory {
   ctx: Context;
@@ -12,7 +12,7 @@ export class BaseFactory implements ScopeFactory {
     this.ctx = ctx;
   }
 
-  create(props: ScopeProps, parent?: Scope, before?: Scope): Scope {
+  create(props: ScopeProps, parentSelf?: Scope, before?: Scope): Scope {
     const self = Object.create(null) as Scope;
 
     //
@@ -137,7 +137,7 @@ export class BaseFactory implements ScopeFactory {
     self.__children = [];
     self.__cache = new Map();
 
-    parent && proxy.__link(parent, before);
+    parentSelf && proxy.__link(parentSelf, before);
 
     // props.__proto && this.inherit(props.__proto, proxy);
     // const proto = props.__proto
@@ -145,7 +145,7 @@ export class BaseFactory implements ScopeFactory {
     //   : null;
     // proto && proto.__apply(proxy);
 
-    if (parent) {
+    if (parentSelf) {
       const id = `${props.__id}`;
       const lookup = (p: dom.Element): dom.Element | null => {
         for (const n of p.childNodes) {
@@ -166,7 +166,7 @@ export class BaseFactory implements ScopeFactory {
         }
         return null;
       }
-      self.__view = lookup(parent.__view)!;
+      self.__view = lookup(parentSelf.__view)!;
     } else {
       self.__view = this.ctx.props.doc as any;
     }
@@ -208,8 +208,8 @@ export class BaseFactory implements ScopeFactory {
   static newValue(scope: Scope, key: string, props: ValueProps): Value {
     const ret = new Value(scope, props);
 
-    if (key.startsWith(RT_ATTR_VAL_PREFIX)) {
-      const name = key.substring(RT_ATTR_VAL_PREFIX.length);
+    if (key.startsWith(k.RT_ATTR_VAL_PREFIX)) {
+      const name = key.substring(k.RT_ATTR_VAL_PREFIX.length);
       if (name === 'class') {
         ret.cb = (s, v) => {
           s.__view.className = (v ? `${v}` : '');
@@ -217,15 +217,19 @@ export class BaseFactory implements ScopeFactory {
         }
       } else {
         ret.cb = (s, v) => {
-          s.__view.setAttribute(name, v ? `${v}` : '');
+          if (v != null) {
+            s.__view.setAttribute(name, `${v}`);
+          } else {
+            s.__view.removeAttribute(name);
+          }
           return v;
         }
       }
       return ret;
     }
 
-    if (key.startsWith(RT_CLASS_VAL_PREFIX)) {
-      const name = key.substring(RT_CLASS_VAL_PREFIX.length);
+    if (key.startsWith(k.RT_CLASS_VAL_PREFIX)) {
+      const name = key.substring(k.RT_CLASS_VAL_PREFIX.length);
       ret.cb = (s, v) => {
         if (v) {
           s.__view.classList.add(name);
@@ -237,8 +241,8 @@ export class BaseFactory implements ScopeFactory {
       return ret;
     }
 
-    if (key.startsWith(RT_STYLE_VAL_PREFIX)) {
-      const name = key.substring(RT_STYLE_VAL_PREFIX.length);
+    if (key.startsWith(k.RT_STYLE_VAL_PREFIX)) {
+      const name = key.substring(k.RT_STYLE_VAL_PREFIX.length);
       ret.cb = (s, v) => {
         s.__view.style.setProperty(name, v ? `${v}` : null);
         return v;
@@ -246,8 +250,8 @@ export class BaseFactory implements ScopeFactory {
       return ret;
     }
 
-    if (key.startsWith(RT_TEXT_VAL_PREFIX)) {
-      const nr = key.substring(RT_TEXT_VAL_PREFIX.length);
+    if (key.startsWith(k.RT_TEXT_VAL_PREFIX)) {
+      const nr = key.substring(k.RT_TEXT_VAL_PREFIX.length);
       if (nr.length) {
         // normal dynamic texts are marked with comments
         const text = BaseFactory.lookupTextNode(scope.__view, nr)!;
@@ -267,7 +271,7 @@ export class BaseFactory implements ScopeFactory {
   }
 
   static lookupTextNode(e: dom.Element, nr: string): dom.Text | null {
-    const marker = RT_TEXT_MARKER1_PREFIX + nr;
+    const marker = k.RT_TEXT_MARKER1_PREFIX + nr;
     const lookup = (e: dom.Element): dom.Text | null => {
       for (let i = 0; i < e.childNodes.length; i++) {
         const n = e.childNodes[i];
