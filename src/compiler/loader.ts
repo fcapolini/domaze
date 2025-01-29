@@ -1,7 +1,8 @@
+import * as acorn from "acorn";
 import * as dom from "../html/dom";
-import { PageError, Source } from '../html/parser';
-import { ServerAttribute, ServerElement, ServerNode, SourceLocation } from "../html/server-dom";
-import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX } from "../runtime/const";
+import { ATOMIC_TEXT_TAGS, PageError, Source } from '../html/parser';
+import { ServerAttribute, ServerComment, ServerElement, ServerNode, ServerText, SourceLocation } from "../html/server-dom";
+import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX, RT_TEXT_MARKER1_PREFIX, RT_TEXT_MARKER2, RT_TEXT_VAL_PREFIX } from "../runtime/const";
 import { CompilerScope } from './compiler';
 import * as k from "./const";
 
@@ -22,6 +23,8 @@ export function load(source: Source): CompilerScope {
       };
       e.setAttribute(k.OUT_OBJ_ID_ATTR, `${scope.id}`);
       p.children.push(scope);
+
+      // attributes
       for (const a of [...(e as ServerElement).attributes]) {
         const attr = a as ServerAttribute;
         if (attr.name.startsWith(k.IN_VALUE_ATTR_PREFIX)) {
@@ -90,6 +93,37 @@ export function load(source: Source): CompilerScope {
           };
         }
       }
+
+      // texts
+      const texts = lookupDynamicTexts(e);
+      if (ATOMIC_TEXT_TAGS.has(e.tagName) && texts.length === 1 && texts[0].parentElement === e) {
+        const text = texts[0];
+        scope.values || (scope.values = {});
+        scope.values[RT_TEXT_VAL_PREFIX] = {
+          val: text.textContent as acorn.Expression,
+          keyLoc: (text as ServerText).loc,
+          valLoc: (text as ServerText).loc
+        };
+      } else {
+        texts.forEach((text, index) => {
+          scope.values || (scope.values = {});
+          scope.values[RT_TEXT_VAL_PREFIX + index] = {
+            val: text.textContent as acorn.Expression,
+            keyLoc: (text as ServerText).loc,
+            valLoc: (text as ServerText).loc
+          };
+          const t = text as ServerText;
+          const p = t.parentElement!;
+          const m1 = `${RT_TEXT_MARKER1_PREFIX}${index}`;
+          const m2 = RT_TEXT_MARKER2;
+          const c1 = new ServerComment(e.ownerDocument, m1, t.loc);
+          const c2 = new ServerComment(e.ownerDocument, m2, t.loc);
+          p.insertBefore(c1, t);
+          p.insertBefore(c2, t);
+          p.removeChild(t);
+        });
+      }
+
       p = scope;
     }
     e.childNodes.forEach(n => {
@@ -116,6 +150,7 @@ function handleTestAttr(scope: CompilerScope, name: string) {
 }
 
 function needsScope(e: dom.Element): boolean {
+  // has a name
   const defName = k.DEF_SCOPE_NAMES[e.tagName];
   if (defName) {
     if (!e.getAttribute(k.IN_VALUE_ATTR_PREFIX + 'name')) {
@@ -123,9 +158,13 @@ function needsScope(e: dom.Element): boolean {
     }
     return true;
   }
+
+  // is root
   if (!e.parentElement) {
     return true;
   }
+
+  // has dynamic attributes
   for (const attr of (e as ServerElement).attributes) {
     if (
       attr.name.startsWith(k.IN_VALUE_ATTR_PREFIX) ||
@@ -134,5 +173,36 @@ function needsScope(e: dom.Element): boolean {
       return true;
     }
   }
+
+  // is an "atomic text tag" and has dynamic content
+  if (ATOMIC_TEXT_TAGS.has(e.tagName)) {
+    const t = e.childNodes.length === 1 ? e.childNodes[0] as ServerText : null;
+    if (t?.nodeType === dom.NodeType.TEXT && typeof t.textContent === 'object') {
+      return true;
+    }
+  }
+
+  // none of the above
   return false;
+}
+
+function lookupDynamicTexts(e: dom.Element) {
+  const ret: dom.Text[] = [];
+
+  const lookup = (e: dom.Element) => {
+    for (const n of e.childNodes) {
+      if (n.nodeType === dom.NodeType.ELEMENT) {
+        if (!needsScope(n as dom.Element)) {
+          lookup(n as dom.Element);
+        }
+      } else if (n.nodeType === dom.NodeType.TEXT) {
+        if (typeof (n as dom.Text).textContent === 'object') {
+          ret.push(n as dom.Text);
+        }
+      }
+    }
+  }
+  lookup(e);
+
+  return ret;
 }

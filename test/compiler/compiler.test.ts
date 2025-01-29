@@ -55,7 +55,7 @@ fs.readdirSync(docroot).forEach(dir => {
               const text = await fs.promises.readFile(jsonpname, { encoding: 'utf8' });
               const root = JSON.parse(text);
               page.root && cleanupScopes(page.root);
-              assert.deepEqual(page.root, root);
+              assert.deepEqual(JSON.parse(JSON.stringify(page.root)), root);
             }
             // check generated code
             const jspname = path.join(docroot, dir, file.replace('-in.html', '-out.js'));
