@@ -202,6 +202,12 @@ function parseAttributes(e: dom.ServerElement, src: Source, i2: number, errors: 
       e.className = a.value ?? '';
       e.delAttributeNode(a);
     }
+
+    // patch "style" attribute behavior
+    if (name.toLowerCase() === 'style' && typeof a.value !== 'object') {
+      e.style = a.value ?? '';
+      e.delAttributeNode(a);
+    }
   }
   return i1;
 }

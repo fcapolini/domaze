@@ -207,7 +207,7 @@ class ServerStyleProp implements StyleProp {
   }
 
   set cssText(s: string) {
-    const parts = s.split(/\s*;\s*/);
+    // const parts = s.split(/\s*;\s*/);
     this.list.clear();
     s.split(/\s*;\s*/).forEach(s => {
       const parts = s.split(/\s*:\s*/);

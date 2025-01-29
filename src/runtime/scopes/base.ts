@@ -1,5 +1,5 @@
 import { OUT_OBJ_ID_ATTR } from "../../compiler/const";
-import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX } from "../const";
+import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX } from "../const";
 import { Context } from "../context";
 import { Scope, ScopeFactory, ScopeProps } from "../scope";
 import { Value, ValueProps } from "../value";
@@ -227,6 +227,14 @@ export class BaseFactory implements ScopeFactory {
         } else {
           s.__view.classList.remove(name);
         }
+        return v;
+      }
+      return ret;
+    }
+    if (key.startsWith(RT_STYLE_VAL_PREFIX)) {
+      const name = key.substring(RT_STYLE_VAL_PREFIX.length);
+      ret.cb = (s, v) => {
+        (s.__view as HTMLElement).style.setProperty(name, v ? `${v}` : null);
         return v;
       }
       return ret;
