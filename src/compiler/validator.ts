@@ -2,20 +2,47 @@ import estraverse from 'estraverse';
 import * as es from 'estree';
 import { PageError, Source } from "../html/parser";
 import { CompilerScope, CompilerValue } from "./compiler";
-
-//TODO: either dynamic "class" attr and no "class_" attributes, or static "class" attr and possibly "class_" attributes
-//TODO: same for "style" and "style_"
+import { CLASS_ATTR_PREFIX, STYLE_ATTR_PREFIX } from './const';
 
 export function validate(source: Source, root: CompilerScope): boolean {
-  const validate = (scope: CompilerScope) => {
-    scope.values && Object.keys(scope.values).forEach(key => {
-      const value = scope.values![key];
-      validateValue(source, value);
-    });
-    scope.children.forEach(child => validate(child));
-  }
-  validate(root);
+  validateScope(source, root);
   return (source.errors.length === 0);
+}
+
+function validateScope(source: Source, scope: CompilerScope) {
+  let hasClassAttr = false;
+  let hasStyleAttr = false;
+
+  scope.values && Object.keys(scope.values).forEach(key => {
+    hasClassAttr ||= (key.startsWith(CLASS_ATTR_PREFIX));
+    hasStyleAttr ||= (key.startsWith(STYLE_ATTR_PREFIX));
+    const value = scope.values![key];
+    validateValue(source, value);
+  });
+
+  if (hasClassAttr && scope.values!['attr_class']) {
+    const attr = scope.values!['attr_class'];
+    addError(
+      source,
+      attr,
+      'dynamic "class" attribute and "class_" attributes cannot be used'
+      + ' at the same time',
+      attr.valLoc || attr.keyLoc
+    );
+  }
+
+  if (hasStyleAttr && scope.values!['attr_style']) {
+    const attr = scope.values!['attr_style'];
+    addError(
+      source,
+      attr,
+      'dynamic "style" attribute and "style_" attributes cannot be used'
+      + ' at the same time',
+      attr.valLoc || attr.keyLoc
+    );
+  }
+
+  scope.children.forEach(child => validateScope(source, child));
 }
 
 function validateValue(source: Source, value: CompilerValue) {

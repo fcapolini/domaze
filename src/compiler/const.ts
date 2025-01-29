@@ -9,3 +9,4 @@ export const DEF_SCOPE_NAMES: any = {
   'BODY': 'body',
 }
 export const CLASS_ATTR_PREFIX = 'class_';
+export const STYLE_ATTR_PREFIX = 'style_';
