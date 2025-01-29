@@ -6,7 +6,7 @@ it('should create a context', () => {
   const source = parse('<html data-domaze="1"></html>', 'test');
   const ctx = new Context({
     doc: source.doc,
-    root: { __id: '0', __children: [{ __id: '1', __children: [] }] }
+    root: { __id: 0, __children: [{ __id: 1, __children: [] }] }
   });
   assert.exists(ctx.global);
   assert.exists(ctx.root);
@@ -20,8 +20,8 @@ it('should write-protect the global object', () => {
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: '0', __children: [{
-        __id: '1', __children: [],
+      __id: 0, __children: [{
+        __id: 1, __children: [],
         v1: { e: function () { return 1; } },
       }]
     }

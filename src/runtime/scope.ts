@@ -1,5 +1,6 @@
 import { Context } from "./context";
 import { Value } from "./value";
+import * as dom from "../html/dom";
 
 /**
  * - '__'-prefixed keys are reserved to implementation details
@@ -20,7 +21,7 @@ export interface Scope {
   __parent?: Scope;
   __props: ScopeProps;
   __children: Scope[];
-  __view: Element;
+  __view: dom.Element;
   __slots?: Map<string, Scope>;
   __cache: Map<string, Value>;
 
@@ -39,6 +40,8 @@ export interface Scope {
 
   __target: Scope;
   __handler: Handler;
+  __proxy: Scope;
+  __parentSelf?: Scope;
 }
 
 export interface Handler {

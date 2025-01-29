@@ -39,7 +39,7 @@ export function dumpScopes(scope: Scope, tab = '') {
   scope.__children.forEach(child => dumpScopes(child, tab + '\t'));
 }
 
-export async function loadPage(html: string): Promise<Context> {
+export async function runPage(html: string): Promise<Context> {
   const page: CompilerPage = { source: parse(html, 'test') };
   Compiler.compilePage(page);
   const code = eval(generate(page.code));

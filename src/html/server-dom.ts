@@ -407,6 +407,10 @@ export class ServerDocument extends ServerElement implements Document {
     this.nodeType = NodeType.DOCUMENT;
   }
 
+  createTextNode(text: string): ServerText {
+    return new ServerText(this, text, this.loc);
+  }
+
   get documentElement(): ServerElement | null {
     for (const e of this.childNodes) {
       if (e.nodeType === NodeType.ELEMENT) {

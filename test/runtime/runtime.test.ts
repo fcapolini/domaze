@@ -1,5 +1,5 @@
 import { assert, it } from 'vitest';
-import { cleanMarkup, loadPage as runPage } from '../util';
+import { cleanMarkup, runPage } from '../util';
 
 // =============================================================================
 // attributes
@@ -176,5 +176,113 @@ it('should reflect style attribute value (5)', async () => {
   assert.equal(
     cleanMarkup(ctx.props.doc),
     '<html><head></head><body style="background: blue;"></body></html>'
+  );
+});
+
+// =============================================================================
+// texts
+// =============================================================================
+
+it('should reflect dynamic text (1)', async () => {
+  const ctx = await runPage('<html :msg="hi"><body>${msg}</body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>hi</body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>ciao</body></html>'
+  );
+});
+
+it('should reflect dynamic text (2)', async () => {
+  const ctx = await runPage('<html :msg="hi"><body>greeting: ${msg}</body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>greeting: hi</body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>greeting: ciao</body></html>'
+  );
+});
+
+it('should reflect dynamic text (3)', async () => {
+  const ctx = await runPage('<html :msg="hi"><body>${msg} :-)</body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>hi :-)</body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>ciao :-)</body></html>'
+  );
+});
+
+it('should reflect dynamic text (4)', async () => {
+  const ctx = await runPage('<html :msg="hi"><body>greeting: ${msg} :-)</body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>greeting: hi :-)</body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head></head><body>greeting: ciao :-)</body></html>'
+  );
+});
+
+it('should reflect dynamic atomic text (1)', async () => {
+  const ctx = await runPage('<html :msg="hi"><head><style>${msg}</style></head><body></body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>hi</style></head><body></body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>ciao</style></head><body></body></html>'
+  );
+});
+
+it('should reflect dynamic atomic text (2)', async () => {
+  const ctx = await runPage('<html :msg="hi"><head><style>greeting: ${msg}</style></head><body></body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>greeting: hi</style></head><body></body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>greeting: ciao</style></head><body></body></html>'
+  );
+});
+
+it('should reflect dynamic atomic text (3)', async () => {
+  const ctx = await runPage('<html :msg="hi"><head><style>${msg} :-)</style></head><body></body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>hi :-)</style></head><body></body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>ciao :-)</style></head><body></body></html>'
+  );
+});
+
+it('should reflect dynamic atomic text (4)', async () => {
+  const ctx = await runPage('<html :msg="hi"><head><style>greeting: ${msg} :-)</style></head><body></body></html>');
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>greeting: hi :-)</style></head><body></body></html>'
+  );
+  ctx.root['msg'] = 'ciao';
+  assert.equal(
+    cleanMarkup(ctx.props.doc),
+    '<html><head><style>greeting: ciao :-)</style></head><body></body></html>'
   );
 });

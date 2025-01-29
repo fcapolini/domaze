@@ -1,5 +1,5 @@
 import { OUT_OBJ_ID_ATTR } from "../../compiler/const";
-import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX } from "../const";
+import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX, RT_TEXT_MARKER1_PREFIX, RT_TEXT_VAL_PREFIX } from "../const";
 import { Context } from "../context";
 import { Scope, ScopeFactory, ScopeProps } from "../scope";
 import { Value, ValueProps } from "../value";
@@ -25,14 +25,16 @@ export class BaseFactory implements ScopeFactory {
       set: (_: any, key: string, val: any) => self.__set(key, val),
     };
     const proxy = new Proxy(self, self.__handler);
+    // @ts-ignore
+    self.__proxy = proxy;
 
     //
     // methods
     //
 
     self.__dispose = function() {
-      const i = self.__parent ? self.__parent.__children.indexOf(this) : -1;
-      i < 0 || self.__parent!.__children.splice(i, 1);
+      const i = self.__parentSelf ? self.__parentSelf.__children.indexOf(this) : -1;
+      i < 0 || self.__parentSelf!.__children.splice(i, 1);
       this.__unlinkValues();
     }
 
@@ -41,11 +43,12 @@ export class BaseFactory implements ScopeFactory {
       if (self.__props.__slot && parent.__slots) {
         const slot = parent.__slots.get(self.__props.__slot);
         if (slot) {
-          parent = slot.__parent!;
+          parent = slot.__parentSelf!;
           before ??= slot;
         }
       }
-      this.__parent = parent;
+      this.__parentSelf = parent;
+      this.__parent = parent.__proxy;
       const i = before ? parent.__children.indexOf(before) : -1;
       i < 0 ? parent.__children.push(this) : parent.__children.splice(i, 0, this);
       if (this.__props.__name && this.__props.__type !== 'slot') {
@@ -58,7 +61,7 @@ export class BaseFactory implements ScopeFactory {
         const name = self.__props.__name!;
         let instance: Scope | undefined = self;
         while (instance && !instance.__slots) {
-          instance = instance.__parent;
+          instance = instance.__parentSelf;
         }
         const slots = instance?.__slots;
         if (slots) {
@@ -101,7 +104,7 @@ export class BaseFactory implements ScopeFactory {
           t!.__cache.set(key, v);
           return v;
         }
-      } while ((t = t!.__parent));
+      } while ((t = t!.__parentSelf));
       return undefined;
     }
 
@@ -144,18 +147,18 @@ export class BaseFactory implements ScopeFactory {
 
     if (parent) {
       const id = `${props.__id}`;
-      const lookup = (p: Element): Element | null => {
+      const lookup = (p: dom.Element): dom.Element | null => {
         for (const n of p.childNodes) {
           if (n.nodeType === dom.NodeType.ELEMENT) {
-            const v = (n as Element).getAttribute(OUT_OBJ_ID_ATTR);
+            const v = (n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR);
             if (v) {
               if (v === id) {
-                return n as Element;
+                return n as dom.Element;
               } else {
                 continue;
               }
             }
-            const ret = lookup(n as Element);
+            const ret = lookup(n as dom.Element);
             if (ret) {
               return ret;
             }
@@ -199,11 +202,12 @@ export class BaseFactory implements ScopeFactory {
     proxy: Scope,
     children?: { [key: string]: ValueProps }[]
   ) {
-    children?.forEach(props => this.ctx.newScope(props, proxy));
+    children?.forEach(props => this.ctx.newScope(props, _self));
   }
 
   static newValue(scope: Scope, key: string, props: ValueProps): Value {
     const ret = new Value(scope, props);
+
     if (key.startsWith(RT_ATTR_VAL_PREFIX)) {
       const name = key.substring(RT_ATTR_VAL_PREFIX.length);
       if (name === 'class') {
@@ -219,6 +223,7 @@ export class BaseFactory implements ScopeFactory {
       }
       return ret;
     }
+
     if (key.startsWith(RT_CLASS_VAL_PREFIX)) {
       const name = key.substring(RT_CLASS_VAL_PREFIX.length);
       ret.cb = (s, v) => {
@@ -231,14 +236,61 @@ export class BaseFactory implements ScopeFactory {
       }
       return ret;
     }
+
     if (key.startsWith(RT_STYLE_VAL_PREFIX)) {
       const name = key.substring(RT_STYLE_VAL_PREFIX.length);
       ret.cb = (s, v) => {
-        (s.__view as HTMLElement).style.setProperty(name, v ? `${v}` : null);
+        s.__view.style.setProperty(name, v ? `${v}` : null);
         return v;
       }
       return ret;
     }
+
+    if (key.startsWith(RT_TEXT_VAL_PREFIX)) {
+      const nr = key.substring(RT_TEXT_VAL_PREFIX.length);
+      if (nr.length) {
+        // normal dynamic texts are marked with comments
+        const text = BaseFactory.lookupTextNode(scope.__view, nr)!;
+        ret.cb = (s, v) => {
+          text.textContent = v ? `${v}` : '';
+        }
+      } else {
+        // atomic dynamic texts use the single text child
+        const text = scope.__view.childNodes[0] as dom.Text;
+        ret.cb = (s, v) => {
+          text.textContent = v ? `${v}` : '';
+        }
+      }
+    }
+
     return ret;
+  }
+
+  static lookupTextNode(e: dom.Element, nr: string): dom.Text | null {
+    const marker = RT_TEXT_MARKER1_PREFIX + nr;
+    const lookup = (e: dom.Element): dom.Text | null => {
+      for (let i = 0; i < e.childNodes.length; i++) {
+        const n = e.childNodes[i];
+        if (n.nodeType === dom.NodeType.ELEMENT) {
+          if (!(n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR)) {
+            const ret = lookup(n as dom.Element);
+            if (ret) {
+              return ret;
+            }
+          }
+        } else if (n.nodeType === dom.NodeType.COMMENT) {
+          if ((n as dom.Comment).textContent === marker) {
+            if (e.childNodes[i + 1].nodeType === dom.NodeType.COMMENT) {
+              const ret = e.ownerDocument!.createTextNode('');
+              e.insertBefore(ret, e.childNodes[i + 1]);
+              return ret;
+            }
+            return n as dom.Text;
+          }
+        }
+      }
+      return null;
+    }
+    return lookup(e);
   }
 }
