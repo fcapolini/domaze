@@ -1,6 +1,9 @@
+import { OUT_OBJ_ID_ATTR } from "../../compiler/const";
+import { RT_ATTR_VAL_PREFIX } from "../const";
 import { Context } from "../context";
 import { Scope, ScopeFactory, ScopeProps } from "../scope";
 import { Value, ValueProps } from "../value";
+import * as dom from "../../html/dom";
 
 export class BaseFactory implements ScopeFactory {
   ctx: Context;
@@ -139,6 +142,28 @@ export class BaseFactory implements ScopeFactory {
     //   : null;
     // proto && proto.__apply(proxy);
 
+    if (parent) {
+      const id = `${props.__id}`;
+      const lookup = (p: Element): Element | null => {
+        for (const n of p.childNodes) {
+          if (n.nodeType === dom.NodeType.ELEMENT) {
+            const v = (n as Element).getAttribute(OUT_OBJ_ID_ATTR);
+            if (v) {
+              return v === id ? n as Element : null;
+            }
+            const ret = lookup(n as Element);
+            if (ret) {
+              return ret;
+            }
+          }
+        }
+        return null;
+      }
+      self.__view = lookup(parent.__view)!;
+    } else {
+      self.__view = this.ctx.props.doc as any;
+    }
+
     this.addValues(self, proxy, props);
     // this.delegate?.didInit(self, proxy);
 
@@ -174,7 +199,14 @@ export class BaseFactory implements ScopeFactory {
     children?.forEach(props => this.ctx.newScope(props, proxy));
   }
 
-  static newValue(scope: Scope, _key: string, props: ValueProps): Value {
-    return new Value(scope, props);
+  static newValue(scope: Scope, key: string, props: ValueProps): Value {
+    const ret = new Value(scope, props);
+    if (key.startsWith(RT_ATTR_VAL_PREFIX)) {
+      const name = key.substring(RT_ATTR_VAL_PREFIX.length);
+      ret.cb = (s, v) => {
+        s.__view.setAttribute(name, v ? `${v}` : '');
+      }
+    }
+    return ret;
   }
 }

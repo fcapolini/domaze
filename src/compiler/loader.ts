@@ -1,6 +1,7 @@
 import * as dom from "../html/dom";
 import { PageError, Source } from '../html/parser';
 import { ServerAttribute, ServerElement, ServerNode, SourceLocation } from "../html/server-dom";
+import { RT_ATTR_VAL_PREFIX } from "../runtime/const";
 import { CompilerScope } from './compiler';
 import * as k from "./const";
 
@@ -9,7 +10,6 @@ export function load(source: Source): CompilerScope {
 
   const error = (loc: SourceLocation, msg: string) => {
     source.errors.push(new PageError('error', msg, loc))
-    //TODO
   }
 
   const load = (e: ServerElement, p: CompilerScope) => {
@@ -57,6 +57,15 @@ export function load(source: Source): CompilerScope {
             keyLoc: (attr as ServerAttribute).loc,
             valLoc: (attr as ServerAttribute).valueLoc
           };
+        } else if (attr.value && typeof attr.value === 'object') {
+          // dynamic HTML attr
+          e.removeAttribute(attr.name);
+          scope.values || (scope.values = {});
+          scope.values[RT_ATTR_VAL_PREFIX + attr.name] = {
+            val: (attr as ServerAttribute).value,
+            keyLoc: (attr as ServerAttribute).loc,
+            valLoc: (attr as ServerAttribute).valueLoc
+          };
         }
       }
       p = scope;
@@ -96,7 +105,10 @@ function needsScope(e: dom.Element): boolean {
     return true;
   }
   for (const attr of (e as ServerElement).attributes) {
-    if (attr.name.startsWith(k.IN_VALUE_ATTR_PREFIX)) {
+    if (
+      attr.name.startsWith(k.IN_VALUE_ATTR_PREFIX) ||
+      typeof attr.value === 'object'
+    ) {
       return true;
     }
   }

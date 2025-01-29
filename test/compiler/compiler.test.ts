@@ -1,10 +1,11 @@
-import fs from 'fs';
-import { assert, describe, it } from 'vitest';
-import path from 'path';
-import { Compiler, CompilerProp, CompilerScope, CompilerValue } from '../../src/compiler/compiler';
-import { normalizeText } from '../../src/html/parser';
 import * as acorn from 'acorn';
 import { generate } from 'escodegen';
+import fs from 'fs';
+import path from 'path';
+import { assert, describe, it } from 'vitest';
+import { Compiler } from '../../src/compiler/compiler';
+import { normalizeText } from '../../src/html/parser';
+import { cleanupScopes } from '../util';
 
 const docroot = path.join(__dirname, 'compiler');
 
@@ -53,19 +54,6 @@ fs.readdirSync(docroot).forEach(dir => {
             if (fs.existsSync(jsonpname)) {
               const text = await fs.promises.readFile(jsonpname, { encoding: 'utf8' });
               const root = JSON.parse(text);
-              const cleanupScopes = (scope: CompilerScope) => {
-                const cleanupValue = (value: CompilerValue) => {
-                  delete (value as any).keyLoc;
-                  delete (value as any).valLoc;
-                }
-                scope.name && cleanupValue(scope.name);
-                scope.values && Object.keys(scope.values).forEach((v) =>
-                  cleanupValue(scope.values![v])
-                );
-                delete (scope as any).parent;
-                delete (scope as any).loc;
-                scope.children.forEach(s => cleanupScopes(s));
-              };
               page.root && cleanupScopes(page.root);
               assert.deepEqual(page.root, root);
             }

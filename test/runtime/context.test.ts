@@ -1,12 +1,12 @@
 import { assert, it } from 'vitest';
-import { Context } from '../../src/runtime/context';
 import { parse } from '../../src/html/parser';
+import { Context } from '../../src/runtime/context';
 
 it('should create a context', () => {
-  const source = parse('<html></html>', 'test');
+  const source = parse('<html data-domaze="1"></html>', 'test');
   const ctx = new Context({
     doc: source.doc,
-    root: {}
+    root: { __id: '0', __children: [{ __id: '1', __children: [] }] }
   });
   assert.exists(ctx.global);
   assert.exists(ctx.root);
@@ -16,10 +16,15 @@ it('should create a context', () => {
 });
 
 it('should write-protect the global object', () => {
-  const source = parse('<html></html>', 'test');
+  const source = parse('<html data-domaze="1"></html>', 'test');
   const ctx = new Context({
     doc: source.doc,
-    root: { v1: { e: function() { return 1; } } }
+    root: {
+      __id: '0', __children: [{
+        __id: '1', __children: [],
+        v1: { e: function () { return 1; } },
+      }]
+    }
   });
   let globalErr: any;
   let rootErr: any;

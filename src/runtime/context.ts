@@ -16,10 +16,11 @@ export class Context {
 
   constructor(props: ContextProps) {
     this.props = props;
-    this.global = new GlobalFactory(this).create({});
     this.factories = new Map();
     this.factories.set('base', new BaseFactory(this));
-    this.root = this.newScope(props.root, this.global);
+    this.global = new GlobalFactory(this).create(props.root);
+    this.root = this.global.__children[0];
+    // this.root = this.newScope(props.root, this.global);
     this.refresh();
   }
 

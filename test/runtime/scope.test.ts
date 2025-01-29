@@ -3,13 +3,14 @@ import { parse } from '../../src/html/parser';
 import { Context } from '../../src/runtime/context';
 
 it('should create a named root scope', () => {
-  const source = parse('<html></html>', 'test');
+  const source = parse('<html data-domaze="1"></html>', 'test');
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: "1",
-      __name: "root",
-    },
+      __id: '0', __children: [{
+        __id: '1', __name: 'root', __children: []
+      }]
+    }
   });
   assert.equal(ctx.global.__children.length, 1);
   assert.equal(ctx.root.__children.length, 0);
@@ -17,32 +18,34 @@ it('should create a named root scope', () => {
 });
 
 it('should create a nested scope', () => {
-  const source = parse('<html></html>', 'test');
+  const source = parse('<html data-domaze="1"></html>', 'test');
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __id: "1",
-      __children: [{}],
-    },
+      __id: '0', __children: [{
+        __id: '1', __children: [{
+          __id: '2', __children: []
+        }],
+      }]
+    }
   });
   assert.equal(ctx.global.__children.length, 1);
   assert.equal(ctx.root.__children.length, 1);
 });
 
 it('should create a nested named scope', () => {
-  const source = parse('<html></html>', 'test');
+  const source = parse('<html data-domaze="1"></html>', 'test');
   const rootName = 'page';
   const bodyName = 'body';
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __name: rootName,
-      __children: [
-        {
-          __name: bodyName,
-        },
-      ],
-    },
+      __id: '0', __children: [{
+        __id: '1', __name: rootName, __children: [{
+          __id: '2', __name: bodyName, __children: []
+        }],
+      }]
+    }
   });
   assert.equal(ctx.global.__children.length, 1);
   assert.equal(ctx.root.__children.length, 1);
@@ -50,18 +53,18 @@ it('should create a nested named scope', () => {
 });
 
 it('should insert a scope before another', () => {
-  const source = parse('<html></html>', 'test');
+  const source = parse('<html data-domaze="1"></html>', 'test');
   const headName = 'head';
   const bodyName = 'body';
   const ctx = new Context({
     doc: source.doc,
     root: {
-      __children: [
-        {
-          __name: bodyName,
-        },
-      ],
-    },
+      __id: '0', __children: [{
+        __id: '1', __children: [{
+          __id: '2', __name: bodyName, __children: []
+        }],
+      }]
+    }
   });
   assert.equal(ctx.root.__children.length, 1);
   assert.equal(ctx.root.__children[0].__props.__name, bodyName);
