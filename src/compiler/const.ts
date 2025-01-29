@@ -8,3 +8,4 @@ export const DEF_SCOPE_NAMES: any = {
   'HEAD': 'head',
   'BODY': 'body',
 }
+export const CLASS_ATTR_PREFIX = 'class_';

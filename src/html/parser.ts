@@ -196,6 +196,12 @@ function parseAttributes(e: dom.ServerElement, src: Source, i2: number, errors: 
       }
     }
     i1 = skipBlanksAndComments(s, i1);
+
+    // patch "class" attribute behavior
+    if (name.toLowerCase() === 'class' && typeof a.value !== 'object') {
+      e.className = a.value ?? '';
+      e.delAttributeNode(a);
+    }
   }
   return i1;
 }

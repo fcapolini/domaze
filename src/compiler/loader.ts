@@ -1,7 +1,7 @@
 import * as dom from "../html/dom";
 import { PageError, Source } from '../html/parser';
 import { ServerAttribute, ServerElement, ServerNode, SourceLocation } from "../html/server-dom";
-import { RT_ATTR_VAL_PREFIX } from "../runtime/const";
+import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX } from "../runtime/const";
 import { CompilerScope } from './compiler';
 import * as k from "./const";
 
@@ -48,6 +48,17 @@ export function load(source: Source): CompilerScope {
           //TODO: special prefixes, e.g. 'on-'
           if (!k.ID_RE.test(name)) {
             error(attr.loc, 'invalid value name');
+            continue;
+          }
+          // class attribute
+          if (name.startsWith(k.CLASS_ATTR_PREFIX)) {
+            const key = name.substring(k.CLASS_ATTR_PREFIX.length);
+            scope.values || (scope.values = {});
+            scope.values[RT_CLASS_VAL_PREFIX + key] = {
+              val: (attr as ServerAttribute).value,
+              keyLoc: (attr as ServerAttribute).loc,
+              valLoc: (attr as ServerAttribute).valueLoc
+            };
             continue;
           }
           // value attribute

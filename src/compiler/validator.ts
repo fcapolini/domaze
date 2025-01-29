@@ -3,6 +3,9 @@ import * as es from 'estree';
 import { PageError, Source } from "../html/parser";
 import { CompilerScope, CompilerValue } from "./compiler";
 
+//TODO: either dynamic "class" attr and no "class_" attributes, or static "class" attr and possibly "class_" attributes
+//TODO: same for "style" and "style_"
+
 export function validate(source: Source, root: CompilerScope): boolean {
   const validate = (scope: CompilerScope) => {
     scope.values && Object.keys(scope.values).forEach(key => {

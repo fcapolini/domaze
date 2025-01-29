@@ -1,5 +1,5 @@
 import { OUT_OBJ_ID_ATTR } from "../../compiler/const";
-import { RT_ATTR_VAL_PREFIX } from "../const";
+import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX } from "../const";
 import { Context } from "../context";
 import { Scope, ScopeFactory, ScopeProps } from "../scope";
 import { Value, ValueProps } from "../value";
@@ -121,6 +121,11 @@ export class BaseFactory implements ScopeFactory {
     }
 
     self.__updateValues = function (recur = true) {
+      // make sure "class" attribute value is updated before any possible "class_" value
+      // since it resets element's classList
+      // the validator will make sure it's a literal if there are "class_" attributes
+      // so this will impact only initial update
+      (self as any)['attr_class']?.get();
       Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].get());
       recur && self.__children.forEach((scope: Scope) => scope.__updateValues())
     }
@@ -206,10 +211,30 @@ export class BaseFactory implements ScopeFactory {
     const ret = new Value(scope, props);
     if (key.startsWith(RT_ATTR_VAL_PREFIX)) {
       const name = key.substring(RT_ATTR_VAL_PREFIX.length);
+      if (name === 'class') {
+        ret.cb = (s, v) => {
+          s.__view.className = (v ? `${v}` : '');
+          return v;
+        }
+      } else {
+        ret.cb = (s, v) => {
+          s.__view.setAttribute(name, v ? `${v}` : '');
+          return v;
+        }
+      }
+      return ret;
+    }
+    if (key.startsWith(RT_CLASS_VAL_PREFIX)) {
+      const name = key.substring(RT_CLASS_VAL_PREFIX.length);
       ret.cb = (s, v) => {
-        s.__view.setAttribute(name, v ? `${v}` : '');
+        if (v) {
+          s.__view.classList.add(name);
+        } else {
+          s.__view.classList.remove(name);
+        }
         return v;
       }
+      return ret;
     }
     return ret;
   }
