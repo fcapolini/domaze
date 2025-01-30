@@ -65,10 +65,12 @@ export async function runPage(client: boolean, html: string): Promise<Context> {
   return clientCtx;
 }
 
-export function cleanMarkup(doc: any): string {
+export function getMarkup(doc: any, cleanup = true): string {
   let act = doc instanceof ServerDocument ? doc.toString() : doc.documentElement.outerHTML;
-  act = act.replace(/ data-domaze="\d+"/g, '');
-  act = act.replace(/<!---.*?-->/g, '');
-  act = normalizeText(act)!;
+  if (cleanup) {
+    act = act.replace(/ data-domaze="\d+"/g, '');
+    act = act.replace(/<!---.*?-->/g, '');
+    act = normalizeText(act)!;
+  }
   return act;
 }

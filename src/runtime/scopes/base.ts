@@ -148,7 +148,10 @@ export class BaseFactory implements ScopeFactory {
     if (parentSelf) {
       const id = `${props.__id}`;
       const lookup = (p: dom.Element): dom.Element | null => {
-        for (const n of p.childNodes) {
+        const childNodes = p.tagName === 'TEMPLATE'
+          ? (p as dom.TemplateElement).content.childNodes
+          : p.childNodes;
+        for (const n of childNodes) {
           if (n.nodeType === dom.NodeType.ELEMENT) {
             const v = (n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR);
             if (v) {
@@ -273,8 +276,9 @@ export class BaseFactory implements ScopeFactory {
   static lookupTextNode(e: dom.Element, nr: string): dom.Text | null {
     const marker = k.RT_TEXT_MARKER1_PREFIX + nr;
     const lookup = (e: dom.Element): dom.Text | null => {
-      for (let i = 0; i < e.childNodes.length; i++) {
-        const n = e.childNodes[i];
+      const childNodes = e.childNodes;
+      for (let i = 0; i < childNodes.length; i++) {
+        const n = childNodes[i];
         if (n.nodeType === dom.NodeType.ELEMENT) {
           if (!(n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR)) {
             const ret = lookup(n as dom.Element);
@@ -284,17 +288,18 @@ export class BaseFactory implements ScopeFactory {
           }
         } else if (n.nodeType === dom.NodeType.COMMENT) {
           if ((n as dom.Comment).textContent === marker) {
-            if (e.childNodes[i + 1].nodeType === dom.NodeType.COMMENT) {
+            if (childNodes[i + 1].nodeType === dom.NodeType.COMMENT) {
               const ret = e.ownerDocument!.createTextNode('');
-              e.insertBefore(ret, e.childNodes[i + 1]);
+              e.insertBefore(ret, childNodes[i + 1]);
               return ret;
             }
-            return e.childNodes[i + 1] as dom.Text;
+            return childNodes[i + 1] as dom.Text;
           }
         }
       }
       return null;
     }
-    return lookup(e);
+    const ret = lookup(e);
+    return ret;
   }
 }

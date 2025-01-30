@@ -1,7 +1,8 @@
+import * as dom from "../html/dom";
 import { GlobalFactory } from "./global";
 import { Scope, ScopeFactory, ScopeProps } from "./scope";
 import { BaseFactory } from "./scopes/base";
-import * as dom from "../html/dom";
+import { ForeachFactory } from "./scopes/foreach";
 
 export interface ContextProps {
   doc: dom.Document;
@@ -18,13 +19,15 @@ export class Context {
     this.props = props;
     this.factories = new Map();
     this.factories.set('base', new BaseFactory(this));
+    this.factories.set('foreach', new ForeachFactory(this));
     this.global = new GlobalFactory(this).create(props.root);
     this.root = this.global.__children[0];
     this.refresh();
   }
 
   newScope(props: ScopeProps, parent: Scope, before?: Scope) {
-    return this.factories.get('base')!.create(props, parent, before);
+    const type = props.__type ?? 'base';
+    return this.factories.get(type)!.create(props, parent, before);
   }
 
   // ===========================================================================

@@ -1,6 +1,6 @@
 import { assert, it } from 'vitest';
-import { parse } from '../../src/html/parser';
-import { Context } from '../../src/runtime/context';
+import { parse } from '../../../src/html/parser';
+import { Context } from '../../../src/runtime/context';
 
 it('should create a named root scope', () => {
   const source = parse('<html data-domaze="1"></html>', 'test');
