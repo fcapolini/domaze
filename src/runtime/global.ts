@@ -3,8 +3,10 @@ import { BaseFactory } from "./scopes/base";
 
 export class GlobalFactory extends BaseFactory {
   override create(props: ScopeProps): Scope {
-    const ret = super.create(props);
-    // ret.__view = this.ctx.props.doc.documentElement as any;
+    const ret = super.create({
+      console: { e: function () { return console; } },
+      ...props,
+    });
     // write-protect global object
     ret.__handler.set = () => false;
     return ret;

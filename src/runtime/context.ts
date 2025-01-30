@@ -20,7 +20,6 @@ export class Context {
     this.factories.set('base', new BaseFactory(this));
     this.global = new GlobalFactory(this).create(props.root);
     this.root = this.global.__children[0];
-    // this.root = this.newScope(props.root, this.global);
     this.refresh();
   }
 

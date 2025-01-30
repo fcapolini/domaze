@@ -35,8 +35,8 @@ export function load(source: Source): CompilerScope {
             handleTestAttr(scope, name);
             continue;
           }
-          // system attribute 'name'
-          if (name === 'name') {
+          // scope name attribute
+          if (name === k.SYS_NAME_ATTR_PREFIX) {
             if (typeof attr.value !== 'string' || !k.ID_RE.test(attr.value)) {
               error(attr.valueLoc ?? attr.loc, 'invalid name');
               continue;
