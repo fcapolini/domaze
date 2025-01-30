@@ -31,6 +31,34 @@ export class ForeachFactory extends BaseFactory {
     self.__children.length && (self.__content = self.__children[0]);
     self.__clones = [];
 
+    const makeClone = (data: any) => {
+      const props = { ...self.__content!.__props };
+      props['data'] = { e: function() { return data; } };
+      delete props.__name;
+      const clone = self.__ctx.newScope(props, self.__parent!, scope);
+      return clone;
+    }
+
+    (() => {
+      const e = (self.__view as dom.TemplateElement).content?.firstElementChild;
+      const id = e?.getAttribute(OUT_OBJ_ID_ATTR) ?? '-';
+      const len = id.length + 1;
+      self.__view.parentElement?.childNodes.forEach(n => {
+        if (n.nodeType !== dom.NodeType.ELEMENT) {
+          return;
+        }
+        const e = n as dom.Element;
+        const s = e.getAttribute(OUT_OBJ_ID_ATTR);
+        if (s?.startsWith(id)) {
+          const index = parseInt(s.substring(len));
+          e.setAttribute(OUT_OBJ_ID_ATTR, id);
+          const clone = makeClone(null);
+          self.__clones[index] = clone;
+          e.setAttribute(OUT_OBJ_ID_ATTR, s);
+        }
+      });
+    })();
+
     const superDispose = self.__dispose;
     self.__dispose = function() {
       self.__clones.forEach(clone => clone.__dispose());
@@ -58,14 +86,12 @@ export class ForeachFactory extends BaseFactory {
         .content.firstElementChild!.cloneNode(true) as dom.Element;
       self.__view?.parentElement?.insertBefore(dom, self.__view);
       // clone Scope
-      const props = { ...self.__content!.__props };
-      props['data'] = { e: function() { return data; } };
-      delete props.__name;
-      const clone = self.__ctx.newScope(props, self.__parent!, this);
+      const clone = makeClone(data);
       self.__clones.push(clone);
       // patch DOM's id
+      const id = self.__content!.__props.__id;
       const index = self.__clones.length - 1;
-      dom.setAttribute(OUT_OBJ_ID_ATTR, `${props.__id}[${index}]`);
+      dom.setAttribute(OUT_OBJ_ID_ATTR, `${id}:${index}`);
       // refresh clone
       self.__ctx.refresh(clone, false);
     }
