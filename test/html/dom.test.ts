@@ -190,11 +190,9 @@ describe('template', () => {
     );
 
     // - this is the only usage pattern for template tags in the framework
-    // - it will work the same in both the client and the server, in spite of
-    //   clone being a DocumentFragment in the client and a simple node in the
-    //   server
+    // - it will work the same in both the client and the server
     // - however, this means we can include only a single node in a template
-    const clone = root.appendChild(tpl.content.cloneNode(true));
+    const clone = root.appendChild(tpl.content.firstElementChild!.cloneNode(true));
 
     assert.equal(
       root.toString(),

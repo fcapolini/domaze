@@ -63,6 +63,10 @@ export abstract class ServerNode implements Node {
 
   abstract toMarkup(ret: string[]): void;
   abstract clone(doc: ServerDocument | null, parent: ServerElement | null): ServerNode;
+
+  cloneNode() {
+    return this.clone(null, null)
+  }
 }
 
 export class ServerText extends ServerNode implements Text {
@@ -455,9 +459,8 @@ export class ServerDocument extends ServerElement implements Document {
 }
 
 export class ServerDocumentFragment extends ServerDocument implements DocumentFragment {
-  cloneNode(_deep?: boolean): Node {
-    const ret = this.documentElement!.clone(this, null);
-    return ret;
+  get firstElementChild() {
+    return this.documentElement;
   }
 }
 

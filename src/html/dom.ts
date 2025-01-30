@@ -15,6 +15,7 @@ export interface Node {
   loc: unknown;
 
   unlink(): void;
+  cloneNode(deep?: boolean): Node;
 }
 
 export interface Text extends Node {
@@ -71,5 +72,6 @@ export interface Document extends Element {
 }
 
 export interface DocumentFragment extends Document {
-  cloneNode(deep: true): Node;
+  // cloneNode(deep: true): Node;
+  firstElementChild: Element | null;
 }

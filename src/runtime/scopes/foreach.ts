@@ -54,7 +54,8 @@ export class ForeachFactory extends BaseFactory {
 
     self.__addClone = function(data: any) {
       // clone DOM
-      const dom = (self.__view as dom.TemplateElement).content.cloneNode(true) as dom.Element;
+      const dom = (self.__view as dom.TemplateElement)
+        .content.firstElementChild!.cloneNode(true) as dom.Element;
       self.__view?.parentElement?.insertBefore(dom, self.__view);
       // clone Scope
       const props = { ...self.__content!.__props };

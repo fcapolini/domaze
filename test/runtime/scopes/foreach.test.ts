@@ -2,7 +2,7 @@ import { assert, describe, it } from 'vitest';
 import { Context } from '../../../src/runtime/context';
 import { getDoc, getMarkup } from '../../util';
 
-[false].forEach(client => {
+[false, true].forEach(client => {
   describe(client ? 'client' : 'server', () => {
 
     it('should replicate foreach content', () => {
