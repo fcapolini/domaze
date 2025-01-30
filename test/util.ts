@@ -74,3 +74,12 @@ export function getMarkup(doc: any, cleanup = true): string {
   }
   return act;
 }
+
+export function getDoc(html: string, client = false) {
+  if (client) {
+    const jsdom = new JSDOM(html);
+    return jsdom.window.document as unknown as dom.Document;
+  }
+  const source = parse(html, 'test');
+  return source.doc;
+}
