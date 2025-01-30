@@ -6,7 +6,8 @@ import { normalizeText, parse } from '../src/html/parser';
 import { generate } from 'escodegen';
 import { Context } from '../src/runtime/context';
 import * as dom from '../src/html/dom';
-import * as happy from 'happy-dom';
+import { JSDOM } from 'jsdom';
+import { ServerDocument } from '../src/html/server-dom';
 
 export function cleanupScopes(scope: CompilerScope) {
   const cleanupExpression = (exp: acorn.Node) => {
@@ -55,18 +56,17 @@ export async function runPage(client: boolean, html: string): Promise<Context> {
     return ctx;
   }
 
-  const clientDoc = new happy.Window().document;
-  clientDoc.write(page.source.doc.toString());
+  const jsdom = new JSDOM(page.source.doc.toString());
   const clientCtx = new Context({
-    doc: clientDoc as unknown as dom.Document,
+    doc: jsdom.window.document as unknown as dom.Document,
     root: code,
   });
 
   return clientCtx;
 }
 
-export function cleanMarkup(doc: dom.Document | happy.Document): string {
-  let act = doc instanceof happy.Document ? doc.documentElement.outerHTML : doc.toString();
+export function cleanMarkup(doc: any): string {
+  let act = doc instanceof ServerDocument ? doc.toString() : doc.documentElement.outerHTML;
   act = act.replace(/ data-domaze="\d+"/g, '');
   act = act.replace(/<!---.*?-->/g, '');
   act = normalizeText(act)!;

@@ -289,7 +289,7 @@ export class BaseFactory implements ScopeFactory {
               e.insertBefore(ret, e.childNodes[i + 1]);
               return ret;
             }
-            return n as dom.Text;
+            return e.childNodes[i + 1] as dom.Text;
           }
         }
       }

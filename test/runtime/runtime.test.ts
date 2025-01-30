@@ -1,7 +1,7 @@
 import { assert, describe, it } from 'vitest';
 import { cleanMarkup, runPage } from '../util';
 
-[false/*, true*/].forEach(client => describe(client ? 'client' : 'server', () => {
+[false, true].forEach(client => describe(client ? 'client' : 'server', () => {
 
   // ===========================================================================
   // attributes
