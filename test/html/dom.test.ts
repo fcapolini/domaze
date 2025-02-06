@@ -1,7 +1,6 @@
 import { assert, describe, it } from 'vitest';
 import { ServerComment, ServerDocument, ServerElement, ServerNode, ServerTemplateElement, ServerText, SourceLocation } from '../../src/html/server-dom';
 import { Element, Node, NodeType, TemplateElement, Text } from '../../src/html/dom';
-import { JSDOM } from 'jsdom';
 
 const LOC: SourceLocation = {
   start: { line: 0, column: 0 },
@@ -194,7 +193,7 @@ describe('template', () => {
 
     const tpl2 = tpl.cloneNode(true);
     assert.isTrue(compareNode(tpl, tpl2));
-    assert.deepEqual(
+    assert.equal(
       tpl2.toString(),
       `<template id="tpl"><p a="1">text<slot name="slot1"></slot></p></template>`
     );
@@ -213,77 +212,138 @@ describe('template', () => {
 
     const cnt2 = tpl.content.cloneNode(true);
     assert.isTrue(compareNode(tpl.content, cnt2));
-    assert.deepEqual(
+    assert.equal(
       cnt2.toString(),
       `<#document-fragment><p a="1">text<slot name="slot1"></slot></p></#document-fragment>`
     );
+
+    root.appendChild(cnt2);
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl"><p a="1">text<slot name="slot1"></slot></p></template>`
+      + `<p a="1">text<slot name="slot1"></slot></p>`
+      + `</html>`
+    );
   });
 
-  // it('should support template tags', () => {
-  //   const doc = new ServerDocument('test');
-  //   const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
-  //   const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
-  //   const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
-  //   p1.setAttribute('a', '1');
-  //   p1.appendChild(new ServerText(doc, 'text', LOC));
-  //   const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
-  //   slot.setAttribute('name', 'slot1');
-  //   assert.equal(
-  //     root.toString(),
-  //     `<html>`
-  //     + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
-  //     + `</html>`
-  //   );
+  it('should support cloning nested template content', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
 
-  //   // - this is the only usage pattern for template tags in the framework
-  //   // - it will work the same in both the client and the server
-  //   // - however, this means we can include only a single node in a template
-  //   const clone = root.appendChild(tpl.content.firstElementChild!.cloneNode(true));
+    const tpl1 = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl1.setAttribute('id', 'tpl1');
+    const p1 = tpl1.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p1.setAttribute('a', '1');
+    p1.appendChild(new ServerText(doc, 'text1', LOC));
+    const slot1 = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot1.setAttribute('name', 'slot1');
 
-  //   assert.equal(
-  //     root.toString(),
-  //     `<html>`
-  //     + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
-  //     + `<p a="1">text<slot name="slot1"></slot></p>`
-  //     + `</html>`
-  //   );
-  // });
+    const tpl2 = tpl1.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl2.setAttribute('id', 'tpl2');
+    const p2 = tpl2.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p2.setAttribute('a', '2');
+    p2.appendChild(new ServerText(doc, 'text2', LOC));
+    const slot2 = p2.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot2.setAttribute('name', 'slot2');
 
-  // it('should support nested template tags (ServerDOM)', () => {
-  //   const doc = new ServerDocument('test');
-  //   const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
-  //   const tpl1 = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
-  //   const p1 = tpl1.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
-  //   p1.appendChild(new ServerText(doc, 'text1', LOC));
-  //   const tpl2 = tpl1.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
-  //   const p2 = tpl2.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
-  //   p2.appendChild(new ServerText(doc, 'text2', LOC));
-  //   assert.equal(
-  //     root.toString(),
-  //     `<html>`
-  //     + `<template><p>text1</p><template><p>text2</p></template></template>`
-  //     + `</html>`
-  //   );
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl1">`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `</template>`
+      + `</html>`
+    );
 
-  //   const clone1 = root.appendChild(tpl1.content.cloneNode(true));
-  //   console.log();
-  //   // assert.equal(
-  //   //   clone1.toString(),
+    const clone1 = tpl1.cloneNode(true);
+    assert.isTrue(compareNode(tpl1, clone1));
+    assert.equal(
+      clone1.toString(),
+      `<template id="tpl1">`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `</template>`
+    );
+  });
 
-  //   // )
-  // });
+  it('should support cloning nested template content', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
 
-  // it('should support nested template tags (JSDOM)', () => {
-  //   const jsdom = new JSDOM(`<html><head></head><body>`
-  //     + `<template><p>text1</p><template><p>text2</p></template></template>`
-  //     + `</body></html>`);
-  //   assert.equal(
-  //     jsdom.window.document.documentElement.outerHTML,
-  //     `<html><head></head><body>`
-  //     + `<template><p>text1</p><template><p>text2</p></template></template>`
-  //     + `</body></html>`
-  //   );
-  // });
+    const tpl1 = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl1.setAttribute('id', 'tpl1');
+    const p1 = tpl1.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p1.setAttribute('a', '1');
+    p1.appendChild(new ServerText(doc, 'text1', LOC));
+    const slot1 = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot1.setAttribute('name', 'slot1');
+
+    const tpl2 = tpl1.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl2.setAttribute('id', 'tpl2');
+    const p2 = tpl2.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p2.setAttribute('a', '2');
+    p2.appendChild(new ServerText(doc, 'text2', LOC));
+    const slot2 = p2.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot2.setAttribute('name', 'slot2');
+
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl1">`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `</template>`
+      + `</html>`
+    );
+
+    const clone1 = tpl1.content.cloneNode(true);
+    assert.equal(
+      clone1.toString(),
+      '<#document-fragment>'
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + '</#document-fragment>'
+    );
+    root.appendChild(clone1);
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl1">`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `</template>`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `</html>`
+    );
+
+    const tpl2b = root.childNodes.find(n =>
+        n.nodeType === NodeType.ELEMENT &&
+        (n as Element).getAttribute('id') === 'tpl2'
+    ) as TemplateElement;
+    const clone2 = tpl2b.content.cloneNode(true);
+    assert.equal(
+      clone2.toString(),
+      '<#document-fragment>'
+      + `<p a="2">text2<slot name="slot2"></slot></p>`
+      + '</#document-fragment>'
+    );
+    root.appendChild(clone2);
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl1">`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `</template>`
+      + `<p a="1">text1<slot name="slot1"></slot></p>`
+      + `<template id="tpl2"><p a="2">text2<slot name="slot2"></slot></p></template>`
+      + `<p a="2">text2<slot name="slot2"></slot></p>`
+      + `</html>`
+    );
+  });
 
 });
 
