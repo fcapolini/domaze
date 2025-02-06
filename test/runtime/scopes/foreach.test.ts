@@ -71,8 +71,36 @@ import { flatCtx, nestedCtx } from './foreach-util';
 
     describe.skip('nested', () => {
 
-      it('should replicate foreach content', () => {
-        const { ctx } = nestedCtx(client);
+      it('should replicate nested foreach content', () => {
+        const { ctx } = nestedCtx(client, [1], ['a']);
+        assert.equal(
+          getMarkup(ctx.props.doc, false),
+          '<html data-domaze="1">'
+          + '<head data-domaze="2"></head>'
+          + '<body data-domaze="3">'
+
+          + '<div data-domaze="5:0">'
+          + '<span data-domaze="7:0"><!---t0-->a<!---/t--></span>'
+          + '<template data-domaze="6">'
+          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
+          + '</template>'
+          + '</div>'
+
+          + '<template data-domaze="4">'
+          + '<div data-domaze="5">'
+          + '<template data-domaze="7">'
+          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
+          + '</template>'
+          + '</div>'
+          + '</template>'
+
+          + '</body>'
+          + '</html>'
+        )
+      });
+
+      it.skip('should replicate foreach content', () => {
+        const { ctx } = nestedCtx(client, [1, 2, 3], ['a', 'b']);
         const body = ctx.root.__children[1];
         console.log(body.__view.toString());//tempdebug
         assert.equal(body.__children.length, 4);
@@ -131,7 +159,7 @@ import { flatCtx, nestedCtx } from './foreach-util';
       });
 
       it.skip('should reuse existing clones in the DOM', () => {
-        const { props } = nestedCtx(client);
+        const { props } = nestedCtx(client, [1, 2, 3], ['a', 'b']);
         const ctx = new Context(props);
         assert.equal(
           getMarkup(ctx.props.doc, false),

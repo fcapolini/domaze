@@ -263,6 +263,10 @@ export class ServerElement extends ServerNode implements Element {
   }
 
   insertBefore(n: Node, ref: Node | null): Node {
+    if (n.nodeType === NodeType.DOCUMENT_FRAGMENT) {
+      (n as ServerElement).childNodes.forEach(n => this.insertBefore(n, ref));
+      return n;
+    }
     this.removeChild(n);
     let i = ref ? this.childNodes.indexOf(ref) : -1;
     i = i < 0 ? this.childNodes.length : i;
@@ -390,6 +394,19 @@ export class ServerTemplateElement extends ServerElement implements TemplateElem
       this.content.toMarkup(ret);
     })
   }
+
+  //TODO: check cloning, and nested templates cloning
+  override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
+    const ret = new ServerTemplateElement(doc, this.loc);
+    parent?.appendChild(ret);
+    this.attributes.forEach(a => {
+      (a as ServerAttribute).clone(doc, ret);
+    });
+    this.content.childNodes.forEach(n => {
+      (n as ServerNode).clone(doc, ret.content);
+    });
+    return ret;
+  }
 }
 
 export class ServerDocument extends ServerElement implements Document {
@@ -456,11 +473,37 @@ export class ServerDocument extends ServerElement implements Document {
       }
     }
   }
+
+  override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
+    const ret = super.clone(doc, parent);
+    ret.nodeType = NodeType.DOCUMENT;
+    ret.tagName = '#document';
+    return ret;
+  }
 }
 
 export class ServerDocumentFragment extends ServerDocument implements DocumentFragment {
+  constructor(loc: string | SourceLocation) {
+    super(loc);
+    this.nodeType = NodeType.DOCUMENT_FRAGMENT;
+    this.tagName = '#document-fragment';
+  }
+
   get firstElementChild() {
     return this.documentElement;
+  }
+
+  toMarkup(ret: string[]): void {
+    for (const n of this.childNodes) {
+      (n as ServerNode).toMarkup(ret);
+    }
+  }
+
+  override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
+    const ret = super.clone(doc, parent);
+    ret.nodeType = NodeType.DOCUMENT_FRAGMENT;
+    ret.tagName = '#document-fragment';
+    return ret;
   }
 }
 

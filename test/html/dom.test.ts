@@ -1,6 +1,7 @@
 import { assert, describe, it } from 'vitest';
-import { ServerComment, ServerDocument, ServerElement, ServerTemplateElement, ServerText, SourceLocation } from '../../src/html/server-dom';
-import { Element, TemplateElement, Text } from '../../src/html/dom';
+import { ServerComment, ServerDocument, ServerElement, ServerNode, ServerTemplateElement, ServerText, SourceLocation } from '../../src/html/server-dom';
+import { Element, Node, NodeType, TemplateElement, Text } from '../../src/html/dom';
+import { JSDOM } from 'jsdom';
 
 const LOC: SourceLocation = {
   start: { line: 0, column: 0 },
@@ -173,34 +174,158 @@ describe('style', () => {
 
 describe('template', () => {
 
-  it('should support template tags', () => {
+  it('should support cloning template tag', () => {
     const doc = new ServerDocument('test');
     const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
     const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl.setAttribute('id', 'tpl');
     const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
     p1.setAttribute('a', '1');
     p1.appendChild(new ServerText(doc, 'text', LOC));
     const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
     slot.setAttribute('name', 'slot1');
+
     assert.equal(
       root.toString(),
       `<html>`
-      + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
+      + `<template id="tpl"><p a="1">text<slot name="slot1"></slot></p></template>`
       + `</html>`
     );
 
-    // - this is the only usage pattern for template tags in the framework
-    // - it will work the same in both the client and the server
-    // - however, this means we can include only a single node in a template
-    const clone = root.appendChild(tpl.content.firstElementChild!.cloneNode(true));
-
-    assert.equal(
-      root.toString(),
-      `<html>`
-      + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
-      + `<p a="1">text<slot name="slot1"></slot></p>`
-      + `</html>`
+    const tpl2 = tpl.cloneNode(true);
+    assert.isTrue(compareNode(tpl, tpl2));
+    assert.deepEqual(
+      tpl2.toString(),
+      `<template id="tpl"><p a="1">text<slot name="slot1"></slot></p></template>`
     );
   });
 
+  it('should support cloning template content', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl.setAttribute('id', 'tpl');
+    const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p1.setAttribute('a', '1');
+    p1.appendChild(new ServerText(doc, 'text', LOC));
+    const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot.setAttribute('name', 'slot1');
+
+    const cnt2 = tpl.content.cloneNode(true);
+    assert.isTrue(compareNode(tpl.content, cnt2));
+    assert.deepEqual(
+      cnt2.toString(),
+      `<#document-fragment><p a="1">text<slot name="slot1"></slot></p></#document-fragment>`
+    );
+  });
+
+  // it('should support template tags', () => {
+  //   const doc = new ServerDocument('test');
+  //   const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+  //   const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+  //   const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+  //   p1.setAttribute('a', '1');
+  //   p1.appendChild(new ServerText(doc, 'text', LOC));
+  //   const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+  //   slot.setAttribute('name', 'slot1');
+  //   assert.equal(
+  //     root.toString(),
+  //     `<html>`
+  //     + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
+  //     + `</html>`
+  //   );
+
+  //   // - this is the only usage pattern for template tags in the framework
+  //   // - it will work the same in both the client and the server
+  //   // - however, this means we can include only a single node in a template
+  //   const clone = root.appendChild(tpl.content.firstElementChild!.cloneNode(true));
+
+  //   assert.equal(
+  //     root.toString(),
+  //     `<html>`
+  //     + `<template><p a="1">text<slot name="slot1"></slot></p></template>`
+  //     + `<p a="1">text<slot name="slot1"></slot></p>`
+  //     + `</html>`
+  //   );
+  // });
+
+  // it('should support nested template tags (ServerDOM)', () => {
+  //   const doc = new ServerDocument('test');
+  //   const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+  //   const tpl1 = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+  //   const p1 = tpl1.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+  //   p1.appendChild(new ServerText(doc, 'text1', LOC));
+  //   const tpl2 = tpl1.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+  //   const p2 = tpl2.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+  //   p2.appendChild(new ServerText(doc, 'text2', LOC));
+  //   assert.equal(
+  //     root.toString(),
+  //     `<html>`
+  //     + `<template><p>text1</p><template><p>text2</p></template></template>`
+  //     + `</html>`
+  //   );
+
+  //   const clone1 = root.appendChild(tpl1.content.cloneNode(true));
+  //   console.log();
+  //   // assert.equal(
+  //   //   clone1.toString(),
+
+  //   // )
+  // });
+
+  // it('should support nested template tags (JSDOM)', () => {
+  //   const jsdom = new JSDOM(`<html><head></head><body>`
+  //     + `<template><p>text1</p><template><p>text2</p></template></template>`
+  //     + `</body></html>`);
+  //   assert.equal(
+  //     jsdom.window.document.documentElement.outerHTML,
+  //     `<html><head></head><body>`
+  //     + `<template><p>text1</p><template><p>text2</p></template></template>`
+  //     + `</body></html>`
+  //   );
+  // });
+
 });
+
+function compareNode(na: Node, nb: Node) {
+  const a = na as unknown as ServerNode;
+  const b = nb as unknown as ServerNode;
+  if ((a != null) !== (a != null)) return false;
+  if (a === b) return false;
+  if (!a) return true;
+  if (a.nodeType !== b.nodeType) return false;
+  switch (a.nodeType) {
+    case NodeType.ELEMENT:
+    case NodeType.DOCUMENT:
+    case NodeType.DOCUMENT_FRAGMENT:
+      return compareElement(a as ServerElement, b as ServerElement);
+    case NodeType.TEXT:
+    case NodeType.COMMENT:
+      return compareText(a as ServerText, b as ServerText);
+    default:
+      return false;
+  }
+}
+
+function compareElement(a: ServerElement, b: ServerElement) {
+  if (a.tagName !== b.tagName) return false;
+  // attributes
+  if (a.attributes.length !== b.attributes.length) return false;
+  for (const aa of a.attributes) {
+    const ba = b.getAttributeNode(aa.name);
+    if (!ba || aa === ba) return false;
+    if (aa.value !== ba.value) return false;
+  }
+  // children
+  if (a.childNodes.length !== b.childNodes.length) return false;
+  for (let i = 0; i < a.childNodes.length; i++) {
+    const an = a.childNodes[i] as ServerNode;
+    const bn = b.childNodes[i] as ServerNode;
+    if (!compareNode(an, bn)) return false;
+  }
+  return true;
+}
+
+function compareText(a: Text, b: Text) {
+  return a.textContent === b.textContent;
+}

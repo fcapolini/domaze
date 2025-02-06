@@ -38,7 +38,7 @@ export function flatCtx(client: boolean) {
   return { doc, props, ctx, label: 'flat' };
 }
 
-export function nestedCtx(client: boolean) {
+export function nestedCtx(client: boolean, outerData = [1], innerData = ['a']) {
   const doc = getDoc('<html data-domaze="1">'
     + '<head data-domaze="2"></head>'
     + '<body data-domaze="3">'
@@ -62,19 +62,12 @@ export function nestedCtx(client: boolean) {
           __children: [{
             __id: 4,
             __type: 'foreach',
-            data: { e: function() { return [1, 2, 3]; } },
-            // __children: [{
-            //   __id: 5, __children: [],
-            //   text_0: {
-            //     e: function() { return this.data; },
-            //     r: [function() { return this.__value('data'); }]
-            //   }
-            // }],
+            data: { e: function() { return outerData; } },
             __children: [{
               __id: 5, __children: [{
                 __id: 6,
                 __type: 'foreach',
-                data: { e: function() { return ['a', 'b']; } },
+                data: { e: function() { return innerData; } },
                 __children: [{
                   __id: 7,
                   text_0: {

@@ -6,6 +6,8 @@ export const NodeType = {
   TEXT: 3,
   COMMENT: 8,
   DOCUMENT: 9,
+  DOCUMENT_TYPE: 10,
+  DOCUMENT_FRAGMENT: 11,
 };
 
 export interface Node {
