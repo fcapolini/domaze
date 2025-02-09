@@ -5,9 +5,9 @@ import fs from 'fs';
 import path from 'path';
 
 export const INCLUDE_DIRECTIVE_TAG = DIRECTIVE_TAG_PREFIX + 'INCLUDE';
+export const IMPORT_DIRECTIVE_TAG = DIRECTIVE_TAG_PREFIX + 'IMPORT';
 export const INCLUDE_SRC_ATTR = 'src';
 export const INCLUDE_AS_ATTR = 'as';
-export const INCLUDE_ALWAYS_ATTR = 'always';
 export const GROUP_DIRECTIVE_TAG = DIRECTIVE_TAG_PREFIX + 'GROUP';
 
 export const MAX_NESTING = 100;
@@ -130,7 +130,10 @@ export class Preprocessor {
       for (const n of p.childNodes) {
         if (n.nodeType === NodeType.ELEMENT) {
           const e = n as dom.ServerElement;
-          if (e.tagName === INCLUDE_DIRECTIVE_TAG) {
+          if (
+            e.tagName === IMPORT_DIRECTIVE_TAG ||
+            e.tagName === INCLUDE_DIRECTIVE_TAG
+          ) {
             includes.push({ name: e.tagName, parent: p, node: e });
           } else {
             collectIncludes(e);
@@ -187,8 +190,7 @@ export class Preprocessor {
     d: Include, i: number, src: string,
     currDir: string, source: Source, nesting: number
   ) {
-    const a = d.node.getAttributeNode(INCLUDE_ALWAYS_ATTR);
-    const once = !a || a.value === 'false';
+    const once = d.name === IMPORT_DIRECTIVE_TAG;
     const s = await this.loadSource(
       src, currDir, source, nesting + 1, once, d.node
     );
