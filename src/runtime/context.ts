@@ -1,8 +1,8 @@
 import * as dom from "../html/dom";
-import { GlobalFactory } from "./global";
 import { Scope, ScopeFactory, ScopeProps } from "./scope";
 import { BaseFactory } from "./scopes/base";
 import { ForeachFactory } from "./scopes/foreach";
+import { GlobalFactory } from "./scopes/global";
 
 export interface ContextProps {
   doc: dom.Document;

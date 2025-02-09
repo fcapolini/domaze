@@ -1,5 +1,5 @@
-import { Scope, ScopeProps } from "./scope";
-import { BaseFactory } from "./scopes/base";
+import { Scope, ScopeProps } from "../scope";
+import { BaseFactory } from "./base";
 
 export class GlobalFactory extends BaseFactory {
   override create(props: ScopeProps): Scope {
