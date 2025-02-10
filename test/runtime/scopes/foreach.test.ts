@@ -44,6 +44,27 @@ const docroot = path.join(__dirname, 'foreach');
         );
       });
 
+      it('should remove clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = null;
+        const expected = loadExpected(file, 4);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+      it('should recreate clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = null;
+        ctx.root['page']['data'] = [ 'a', 'b', 'c', 'd' ];
+        const expected = loadExpected(file, 3);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
     });
 
     describe('should support nested replications', () => {
@@ -52,6 +73,47 @@ const docroot = path.join(__dirname, 'foreach');
       it('should create nested clones', () => {
         const ctx = loadActual(file, client);
         const expected = loadExpected(file, 1);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+      it('should increase nested clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = [['a', 'b', 'c'], ['d', 'e']];
+        const expected = loadExpected(file, 2);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+      it('should decrease nested clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = [['a']];
+        const expected = loadExpected(file, 3);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+      it('should remove nested clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = null;
+        const expected = loadExpected(file, 4);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+      it('should recreate nested clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = null;
+        ctx.root['page']['data'] = [['a', 'b', 'c'], ['d', 'e']];
+        const expected = loadExpected(file, 2);
         assert.equal(
           normalizeText(markup(ctx.props.doc)),
           normalizeText(markup(expected)),
