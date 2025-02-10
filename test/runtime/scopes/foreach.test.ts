@@ -1,191 +1,68 @@
 import { assert, describe, it } from 'vitest';
-import { Context } from '../../../src/runtime/context';
-import { getMarkup } from '../../util';
-import { flatCtx, nestedCtx } from './foreach-util';
+import fs from 'fs';
+import path from 'path';
+import { JSDOM } from 'jsdom';
+import { normalizeText, parse } from '../../../src/html/parser';
+import { Context, ContextProps } from '../../../src/runtime/context';
+import * as dom from '../../../src/html/dom';
+import { ServerDocument } from '../../../src/html/server-dom';
+
+const docroot = path.join(__dirname, 'foreach');
 
 [false, true].forEach(client => {
   describe(client ? 'client' : 'server', () => {
-    describe('flat', () => {
+    fs.readdirSync(docroot).forEach(file => {
+      const pathname = fs.statSync(path.join(docroot, file));
+      if (pathname.isFile() && file.endsWith('-in.html')) {
 
-      it('should replicate foreach content', () => {
-        const { ctx } = flatCtx(client);
-        const body = ctx.root.__children[1];
-        assert.equal(body.__children.length, 4);
-        assert.equal(body.__children[0]['data'], 1);
-        assert.equal(body.__children[1]['data'], 2);
-        assert.equal(body.__children[2]['data'], 3);
-        assert.deepEqual(body.__children[3]['data'], [1, 2, 3]);
-        assert.equal(
-          getMarkup(ctx.props.doc, false),
-          '<html data-domaze="1">'
-          + '<head data-domaze="2"></head>'
-          + '<body data-domaze="3">'
-          + '<div data-domaze="5:0"><!---t0-->1<!---/t--></div>'
-          + '<div data-domaze="5:1"><!---t0-->2<!---/t--></div>'
-          + '<div data-domaze="5:2"><!---t0-->3<!---/t--></div>'
-          + '<template data-domaze="4">'
-          + '<div data-domaze="5"><!---t0--><!---/t--></div>'
-          + '</template>'
-          + '</body>'
-          + '</html>'
-        )
-        const foreach = body.__children[3];
-        foreach['data'] = ['a', 'b'];
-        assert.equal(body.__children.length, 3);
-        assert.equal(body.__children[0]['data'], 'a');
-        assert.equal(body.__children[1]['data'], 'b');
-        assert.deepEqual(body.__children[2]['data'], ['a', 'b']);
-        foreach['data'] = null;
-        assert.equal(body.__children.length, 1);
-      });
+        it('should replicate scope', () => {
+          const actual = loadActual(file, client);
+          const expected = loadExpected(file);
+          assert.equal(
+            normalizeText(markup(actual.props.doc)),
+            normalizeText(markup(expected)),
+          );
+        });
 
-      it.skip('should reuse existing clones in the DOM', () => {
-        const { props } = flatCtx(client);
-        const ctx = new Context(props);
-        assert.equal(
-          getMarkup(ctx.props.doc, false),
-          '<html data-domaze="1">'
-          + '<head data-domaze="2"></head>'
-          + '<body data-domaze="3">'
-          + '<div data-domaze="5:0"><!---t0-->1<!---/t--></div>'
-          + '<div data-domaze="5:1"><!---t0-->2<!---/t--></div>'
-          + '<div data-domaze="5:2"><!---t0-->3<!---/t--></div>'
-          + '<template data-domaze="4">'
-          + '<div data-domaze="5"><!---t0--><!---/t--></div>'
-          + '</template>'
-          + '</body>'
-          + '</html>'
-        )
-        const body = ctx.root.__children[1];
-        const foreach = body.__children[3];
-        foreach['data'] = ['a', 'b'];
-        assert.equal(body.__children.length, 3);
-        assert.equal(body.__children[0]['data'], 'a');
-        assert.equal(body.__children[1]['data'], 'b');
-        assert.deepEqual(body.__children[2]['data'], ['a', 'b']);
-        foreach['data'] = null;
-        assert.equal(body.__children.length, 1);
-      });
-
-    });
-
-    describe.skip('nested', () => {
-
-      it('should replicate nested foreach content', () => {
-        const { ctx } = nestedCtx(client, [1], ['a']);
-        assert.equal(
-          getMarkup(ctx.props.doc, false),
-          '<html data-domaze="1">'
-          + '<head data-domaze="2"></head>'
-          + '<body data-domaze="3">'
-
-          + '<div data-domaze="5:0">'
-          + '<span data-domaze="7:0"><!---t0-->a<!---/t--></span>'
-          + '<template data-domaze="6">'
-          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
-          + '</template>'
-          + '</div>'
-
-          + '<template data-domaze="4">'
-          + '<div data-domaze="5">'
-          + '<template data-domaze="7">'
-          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
-          + '</template>'
-          + '</div>'
-          + '</template>'
-
-          + '</body>'
-          + '</html>'
-        )
-      });
-
-      it.skip('should replicate foreach content', () => {
-        const { ctx } = nestedCtx(client, [1, 2, 3], ['a', 'b']);
-        const body = ctx.root.__children[1];
-        console.log(body.__view.toString());//tempdebug
-        assert.equal(body.__children.length, 4);
-        assert.equal(body.__children[0]['data'], 1);
-        assert.equal(body.__children[1]['data'], 2);
-        assert.equal(body.__children[2]['data'], 3);
-        assert.deepEqual(body.__children[3]['data'], [1, 2, 3]);
-        assert.equal(
-          getMarkup(ctx.props.doc, false),
-          '<html data-domaze="1">'
-          + '<head data-domaze="2"></head>'
-          + '<body data-domaze="3">'
-
-          + '<div data-domaze="5:0">'
-          + '<span data-domaze="7:0"><!---t0-->a<!---/t--></span>'
-          + '<span data-domaze="7:1"><!---t0-->b<!---/t--></span>'
-          + '<template data-domaze="6">'
-          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
-          + '</template>'
-          + '</div>'
-
-          + '<div data-domaze="5:1">'
-          + '<span data-domaze="7:0"><!---t0-->a<!---/t--></span>'
-          + '<span data-domaze="7:1"><!---t0-->b<!---/t--></span>'
-          + '<template data-domaze="6">'
-          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
-          + '</template>'
-          + '</div>'
-
-          + '<div data-domaze="5:2">'
-          + '<span data-domaze="7:0"><!---t0-->a<!---/t--></span>'
-          + '<span data-domaze="7:1"><!---t0-->b<!---/t--></span>'
-          + '<template data-domaze="6">'
-          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
-          + '</template>'
-          + '</div>'
-
-          + '<template data-domaze="4">'
-          + '<div data-domaze="5">'
-          + '<template data-domaze="7">'
-          + '<span data-domaze="7"><!---t0--><!---/t--></span>'
-          + '</template>'
-          + '</div>'
-          + '</template>'
-          + '</body>'
-          + '</html>'
-        )
-        const foreach = body.__children[3];
-        foreach['data'] = ['a', 'b'];
-        assert.equal(body.__children.length, 3);
-        assert.equal(body.__children[0]['data'], 'a');
-        assert.equal(body.__children[1]['data'], 'b');
-        assert.deepEqual(body.__children[2]['data'], ['a', 'b']);
-        foreach['data'] = null;
-        assert.equal(body.__children.length, 1);
-      });
-
-      it.skip('should reuse existing clones in the DOM', () => {
-        const { props } = nestedCtx(client, [1, 2, 3], ['a', 'b']);
-        const ctx = new Context(props);
-        assert.equal(
-          getMarkup(ctx.props.doc, false),
-          '<html data-domaze="1">'
-          + '<head data-domaze="2"></head>'
-          + '<body data-domaze="3">'
-          + '<div data-domaze="5:0"><!---t0-->1<!---/t--></div>'
-          + '<div data-domaze="5:1"><!---t0-->2<!---/t--></div>'
-          + '<div data-domaze="5:2"><!---t0-->3<!---/t--></div>'
-          + '<template data-domaze="4">'
-          + '<div data-domaze="5"><!---t0--><!---/t--></div>'
-          + '</template>'
-          + '</body>'
-          + '</html>'
-        )
-        const body = ctx.root.__children[1];
-        const foreach = body.__children[3];
-        foreach['data'] = ['a', 'b'];
-        assert.equal(body.__children.length, 3);
-        assert.equal(body.__children[0]['data'], 'a');
-        assert.equal(body.__children[1]['data'], 'b');
-        assert.deepEqual(body.__children[2]['data'], ['a', 'b']);
-        foreach['data'] = null;
-        assert.equal(body.__children.length, 1);
-      });
-
+      }
     });
   });
 });
+
+function loadActual(inHtmlFile: string, client: boolean): Context {
+  // -in.html
+  const inHtml = fs.readFileSync(path.join(docroot, inHtmlFile)).toString();
+  const inDoc = parse(inHtml, 'test').doc!;
+  // -in.js
+  const inJsFile = inHtmlFile.replace(/\.html$/, '.js');
+  const inJs = fs.readFileSync(path.join(docroot, inJsFile)).toString();
+  const inRoot = eval(inJs);
+  const props: ContextProps = { doc: inDoc, root: inRoot };
+  const ctx = new Context(props);
+  // client mode
+  if (client) {
+    const jsdom = new JSDOM(ctx.props.doc.toString());
+    const clientDoc = jsdom.window.document as unknown as dom.Document;
+    const clientProps = { doc: clientDoc, root: inRoot };
+    const clientCtx = new Context(clientProps);
+    return clientCtx;
+  }
+  return ctx;
+}
+
+function loadExpected(inHtmlFile: string): dom.Document {
+  // -out.html
+  const outHtmlFile = inHtmlFile.replace(/-in\.html$/, '-out.html');
+  const outHtml = fs.readFileSync(path.join(docroot, outHtmlFile)).toString();
+  const outDoc = parse(outHtml, 'test').doc!;
+  return outDoc;
+}
+
+function markup(doc: dom.Document | Document) {
+  let html = doc instanceof ServerDocument
+    ? doc.toString()
+    : (doc.documentElement as HTMLElement).outerHTML;
+  return html
+    .replace(/><head/g, '>\n<head')
+    .replace(/><\/html/g, '>\n</html');
+}

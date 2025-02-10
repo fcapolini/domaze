@@ -11,7 +11,7 @@ export interface ForeachProps extends ScopeProps {
 }
 
 export interface Foreach extends Scope {
-  __content?: Scope;
+  __model?: Scope;
   __clones: Scope[];
   __addClone(data: any): void;
   __updateClone(clone: Scope, data: any): void;
@@ -26,44 +26,30 @@ export class ForeachFactory extends BaseFactory {
     return ret;
   }
 
+  /**
+   * Foreach scopes expect:
+   * - a single child scope (the model for replicated clones)
+   * - a `data` value
+   */
   augment(scope: Scope) {
     const self = scope.__target as Foreach;
-    self.__children.length && (self.__content = self.__children[0]);
+
+    //
+    // foreach scopes have a model for clones and a clone list
+    //
+
+    self.__children.length && (self.__model = self.__children[0]);
     self.__clones = [];
-
-    const makeClone = (data: any) => {
-      const props = { ...self.__content!.__props };
-      props['data'] = { e: function() { return data; } };
-      delete props.__name;
-      const clone = self.__ctx.newScope(props, self.__parent!, scope);
-      return clone;
-    }
-
-    (() => {
-      const e = (self.__view as dom.TemplateElement).content?.firstElementChild;
-      const id = e?.getAttribute(OUT_OBJ_ID_ATTR) ?? '-';
-      const len = id.length + 1;
-      self.__view.parentElement?.childNodes.forEach(n => {
-        if (n.nodeType !== dom.NodeType.ELEMENT) {
-          return;
-        }
-        const e = n as dom.Element;
-        const s = e.getAttribute(OUT_OBJ_ID_ATTR);
-        if (s?.startsWith(id)) {
-          const index = parseInt(s.substring(len));
-          e.setAttribute(OUT_OBJ_ID_ATTR, id);
-          const clone = makeClone(null);
-          self.__clones[index] = clone;
-          e.setAttribute(OUT_OBJ_ID_ATTR, s);
-        }
-      });
-    })();
 
     const superDispose = self.__dispose;
     self.__dispose = function() {
       self.__clones.forEach(clone => clone.__dispose());
       superDispose();
     }
+
+    //
+    // hide child from reactivity: it's just a model for clones
+    //
 
     const superUnlinkValues = self.__unlinkValues;
     self.__unlinkValues = function(recur = true) {
@@ -80,35 +66,13 @@ export class ForeachFactory extends BaseFactory {
       superUpdateValues(false);
     }
 
-    self.__addClone = function(data: any) {
-      // clone DOM
-      const dom = (self.__view as dom.TemplateElement)
-        .content.firstElementChild!.cloneNode(true) as dom.Element;
-      self.__view?.parentElement?.insertBefore(dom, self.__view);
-      // clone Scope
-      const clone = makeClone(data);
-      self.__clones.push(clone);
-      // patch DOM's id
-      const id = self.__content!.__props.__id;
-      const index = self.__clones.length - 1;
-      dom.setAttribute(OUT_OBJ_ID_ATTR, `${id}:${index}`);
-      // refresh clone
-      self.__ctx.refresh(clone, false);
-    }
-
-    self.__updateClone = function(clone: Scope, data: any) {
-      // @ts-ignore
-      clone['data'] = data;
-    }
-
-    self.__removeClone = function(i: number) {
-      const clone = self.__clones.splice(i, 1)[0];
-      clone.__dispose();
-    }
+    //
+    // add callback for the `data` value
+    //
 
     // @ts-ignore
     self['data']?.setCB((scope: Foreach, data: any[]) => {
-      if (!self.__content) {
+      if (!self.__model) {
         return data;
       }
       if (!data || !Array.isArray(data)) {
@@ -132,5 +96,69 @@ export class ForeachFactory extends BaseFactory {
       }
       return data;
     })
+
+    //
+    // clones are added/removed/updated based on the `data` value
+    //
+
+    const makeClone = (data: any) => {
+      const props = { ...self.__model!.__props };
+      props['data'] = { e: function() { return data; } };
+      delete props.__name;
+      const clone = self.__ctx.newScope(props, self.__parent!, scope);
+      return clone;
+    }
+
+    self.__addClone = (data: any) => {
+      const i = self.__clones.length;
+      // console.log('__addClone', data);//tempdebug
+      // clone DOM
+      const dom = (self.__view as dom.TemplateElement);
+      const e = dom.content.firstElementChild?.cloneNode(true) as dom.Element;
+      dom.parentElement?.insertBefore(e, dom);
+      // clone scope
+      const clone = makeClone(data);
+      self.__clones.push(clone);
+      // patch clone id
+      e.setAttribute(OUT_OBJ_ID_ATTR, `${e.getAttribute(OUT_OBJ_ID_ATTR)}:${i}`);
+      // refresh clone
+      self.__ctx.refresh(clone, false);
+    }
+
+    self.__removeClone = (i: number) => {
+      // console.log('__removeClone', i);//tempdebug
+      const clone = self.__clones.splice(i, 1)[0];
+      clone.__dispose();
+    }
+
+    self.__updateClone = (clone: Scope, data: any) => {
+      // console.log('__updateClone', clone.__view.getAttribute(OUT_OBJ_ID_ATTR), data);//tempdebug
+      // @ts-ignore
+      clone['data'] = data;
+    }
+
+    //
+    // collect existing clones
+    //
+
+    {
+      const e = (self.__view as dom.TemplateElement).content?.firstElementChild;
+      const id = e?.getAttribute(OUT_OBJ_ID_ATTR) ?? '-';
+      const len = id.length + 1;
+      self.__view.parentElement?.childNodes.forEach(n => {
+        if (n.nodeType !== dom.NodeType.ELEMENT) {
+          return;
+        }
+        const e = n as dom.Element;
+        const s = e.getAttribute(OUT_OBJ_ID_ATTR);
+        if (s?.startsWith(id)) {
+          const index = parseInt(s.substring(len));
+          e.setAttribute(OUT_OBJ_ID_ATTR, id);
+          const clone = makeClone(null);
+          self.__clones[index] = clone;
+          e.setAttribute(OUT_OBJ_ID_ATTR, s);
+        }
+      });
+    }
   }
 }
