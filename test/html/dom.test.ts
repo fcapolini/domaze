@@ -31,6 +31,15 @@ describe('node', () => {
     root.addEventListener('dummy', () => {});
   });
 
+  it('should remove a child node', () => {
+    const doc = new ServerDocument('test');
+    assert.equal(doc.childNodes.length, 0);
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    assert.equal(doc.childNodes.length, 1);
+    doc.removeChild(root);
+    assert.equal(doc.childNodes.length, 0);
+  });
+
   it('should implement dummy removeEventListener()', () => {
     const doc = new ServerDocument('test');
     const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;

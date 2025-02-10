@@ -15,11 +15,21 @@ const docroot = path.join(__dirname, 'foreach');
       const pathname = fs.statSync(path.join(docroot, file));
       if (pathname.isFile() && file.endsWith('-in.html')) {
 
-        it('should replicate scope', () => {
-          const actual = loadActual(file, client);
-          const expected = loadExpected(file);
+        it('should replicate scope (1)', () => {
+          const ctx = loadActual(file, client);
+          const expected = loadExpected(file, 1);
           assert.equal(
-            normalizeText(markup(actual.props.doc)),
+            normalizeText(markup(ctx.props.doc)),
+            normalizeText(markup(expected)),
+          );
+        });
+
+        it('should replicate scope (2)', () => {
+          const ctx = loadActual(file, client);
+          ctx.root['page']['data'] = [ 'a', 'b' ];
+          const expected = loadExpected(file, 2);
+          assert.equal(
+            normalizeText(markup(ctx.props.doc)),
             normalizeText(markup(expected)),
           );
         });
@@ -50,9 +60,9 @@ function loadActual(inHtmlFile: string, client: boolean): Context {
   return ctx;
 }
 
-function loadExpected(inHtmlFile: string): dom.Document {
+function loadExpected(inHtmlFile: string, nr: number): dom.Document {
   // -out.html
-  const outHtmlFile = inHtmlFile.replace(/-in\.html$/, '-out.html');
+  const outHtmlFile = inHtmlFile.replace(/-in\.html$/, `-out-${nr}.html`);
   const outHtml = fs.readFileSync(path.join(docroot, outHtmlFile)).toString();
   const outDoc = parse(outHtml, 'test').doc!;
   return outDoc;

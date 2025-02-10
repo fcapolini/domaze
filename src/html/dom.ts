@@ -39,6 +39,7 @@ export interface Element extends Node {
 
   appendChild(n: Node): Node;
   insertBefore(n: Node, ref: Node | null): Node;
+  removeChild(n: Node): Node;
   setAttribute(name: string, value: string): void;
   getAttribute(name: string): string | null;
   removeAttribute(name: string): void;

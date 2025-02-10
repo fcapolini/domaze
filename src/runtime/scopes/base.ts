@@ -36,6 +36,8 @@ export class BaseFactory implements ScopeFactory {
       const i = self.__parentSelf ? self.__parentSelf.__children.indexOf(this) : -1;
       i < 0 || self.__parentSelf!.__children.splice(i, 1);
       this.__unlinkValues();
+      const e = self.__view;
+      e?.parentElement?.removeChild(e);
     }
 
     self.__link = function(parent: Scope, before?: Scope) {

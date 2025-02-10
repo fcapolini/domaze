@@ -275,10 +275,11 @@ export class ServerElement extends ServerNode implements Element {
     return n;
   }
 
-  removeChild(n: Node) {
+  removeChild(n: Node): Node {
     const i = this.childNodes.indexOf(n);
     i >= 0 && this.childNodes.splice(i, 1);
     n.parentElement = null;
+    return n;
   }
 
   getAttributeNames(): Set<string> {
