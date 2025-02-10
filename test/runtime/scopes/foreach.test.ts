@@ -11,31 +11,55 @@ const docroot = path.join(__dirname, 'foreach');
 
 [false, true].forEach(client => {
   describe(client ? 'client' : 'server', () => {
-    fs.readdirSync(docroot).forEach(file => {
-      const pathname = fs.statSync(path.join(docroot, file));
-      if (pathname.isFile() && file.endsWith('-in.html')) {
 
-        it('should replicate scope (1)', () => {
-          const ctx = loadActual(file, client);
-          const expected = loadExpected(file, 1);
-          assert.equal(
-            normalizeText(markup(ctx.props.doc)),
-            normalizeText(markup(expected)),
-          );
-        });
+    describe('should replicate scope', () => {
+      const file = '001-in.html';
 
-        it('should replicate scope (2)', () => {
-          const ctx = loadActual(file, client);
-          ctx.root['page']['data'] = [ 'a', 'b' ];
-          const expected = loadExpected(file, 2);
-          assert.equal(
-            normalizeText(markup(ctx.props.doc)),
-            normalizeText(markup(expected)),
-          );
-        });
+      it('should create clones', () => {
+        const ctx = loadActual(file, client);
+        const expected = loadExpected(file, 1);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
 
-      }
+      it('should decrease clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = [ 'a', 'b' ];
+        const expected = loadExpected(file, 2);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+      it('should increase clones', () => {
+        const ctx = loadActual(file, client);
+        ctx.root['page']['data'] = [ 'a', 'b', 'c', 'd' ];
+        const expected = loadExpected(file, 3);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
     });
+
+    describe('should support nested replications', () => {
+      const file = '002-in.html';
+
+      it('should create nested clones', () => {
+        const ctx = loadActual(file, client);
+        const expected = loadExpected(file, 1);
+        assert.equal(
+          normalizeText(markup(ctx.props.doc)),
+          normalizeText(markup(expected)),
+        );
+      });
+
+    });
+
   });
 });
 
