@@ -349,7 +349,9 @@ export class ServerElement extends ServerNode implements Element {
       // not both
       ret.push(` style="${this.style.cssText}"`);
     }
-    this.attributes.forEach(a => (a as ServerAttribute).toMarkup(ret));
+    this.attributes.forEach(a => {
+      (a as ServerAttribute).toMarkup(ret);
+    });
     ret.push('>');
     if (VOID_ELEMENTS.has(this.tagName)) {
       return;
@@ -387,7 +389,9 @@ export class ServerTemplateElement extends ServerElement implements TemplateElem
   }
 
   override appendChild(n: Node): Node {
-    return this.content.insertBefore(n, null);
+    const ret = this.content.insertBefore(n, null);
+    ret.parentElement = null;
+    return ret;
   }
 
   toMarkup(ret: string[]): void {

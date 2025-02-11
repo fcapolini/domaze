@@ -38,6 +38,9 @@ function genScope(scope: CompilerScope): acorn.ObjectExpression {
 function genScopeProps(scope: CompilerScope): acorn.Property[] {
   const ret: acorn.Property[] = [];
   ret.push(genProperty(scope.loc, ID_PROP, genLiteral(scope.loc, scope.id)));
+  scope.type && ret.push(genProperty(
+    scope.loc, TYPE_PROP, genLiteral(scope.loc, scope.type)
+  ));
   scope.name && ret.push(genProperty(
       scope.name.keyLoc,
       NAME_PROP,

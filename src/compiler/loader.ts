@@ -1,9 +1,9 @@
 import * as acorn from "acorn";
 import * as dom from "../html/dom";
-import { ATOMIC_TEXT_TAGS, PageError, Source } from '../html/parser';
-import { ServerAttribute, ServerComment, ServerElement, ServerNode, ServerText, SourceLocation } from "../html/server-dom";
+import { ATOMIC_TEXT_TAGS, PageError, parse, Source } from '../html/parser';
+import { ServerAttribute, ServerComment, ServerElement, ServerNode, ServerTemplateElement, ServerText, SourceLocation } from "../html/server-dom";
 import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX, RT_TEXT_MARKER1_PREFIX, RT_TEXT_MARKER2, RT_TEXT_VAL_PREFIX } from "../runtime/const";
-import { CompilerScope } from './compiler';
+import { CompilerScope, CompilerScopeType } from './compiler';
 import * as k from "./const";
 
 export function load(source: Source): CompilerScope {
@@ -15,9 +15,31 @@ export function load(source: Source): CompilerScope {
 
   const load = (e: ServerElement, p: CompilerScope) => {
     if (needsScope(e)) {
+      let type: CompilerScopeType;
+      const foreachAttr = e.getAttributeNode(k.IN_VALUE_ATTR_PREFIX + k.SYS_FOREACH_ATTR);
+      if (foreachAttr) {
+        type = 'foreach';
+        // create wrapper <template> tag
+        const t = new ServerTemplateElement(e.ownerDocument, e.loc);
+        e.parentElement!.insertBefore(t, e);
+        // move 'foreach' attr to template with name 'data'
+        e.delAttributeNode(foreachAttr);
+        foreachAttr.name = k.IN_VALUE_ATTR_PREFIX + k.SYS_DATA_ATTR;
+        t.attributes.push(foreachAttr);
+        foreachAttr.parentElement = t;
+        // move e into <template>
+        e.unlink();
+        t.appendChild(e);
+        // add 'data' attr to tag
+        e.setAttribute(k.IN_VALUE_ATTR_PREFIX + k.SYS_DATA_ATTR, '');
+        // replace current element with the wrapper
+        e = t;
+      }
+
       const scope: CompilerScope = {
         parent: p,
         id: id++,
+        type,
         children: [],
         loc: e.loc,
       };
@@ -36,7 +58,7 @@ export function load(source: Source): CompilerScope {
             continue;
           }
           // scope name attribute
-          if (name === k.SYS_NAME_ATTR_PREFIX) {
+          if (name === k.SYS_NAME_ATTR) {
             if (typeof attr.value !== 'string' || !k.ID_RE.test(attr.value)) {
               error(attr.valueLoc ?? attr.loc, 'invalid name');
               continue;
@@ -126,7 +148,10 @@ export function load(source: Source): CompilerScope {
 
       p = scope;
     }
-    e.childNodes.forEach(n => {
+    const childNodes = e.tagName === 'TEMPLATE'
+      ? (e as ServerTemplateElement).content.childNodes
+      : e.childNodes;
+    childNodes.forEach(n => {
       if (n.nodeType === dom.NodeType.ELEMENT) {
         load(n as ServerElement, p);
       }
@@ -135,6 +160,7 @@ export function load(source: Source): CompilerScope {
 
   const root = {
     id: id++,
+    type: undefined,
     children: [],
     loc: source.doc.loc,
   };

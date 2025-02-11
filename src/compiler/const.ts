@@ -9,6 +9,8 @@ export const DEF_SCOPE_NAMES: any = {
   'BODY': 'body',
 }
 export const SYS_ATTR_PREFIX = '';
-export const SYS_NAME_ATTR_PREFIX = SYS_ATTR_PREFIX + 'name';
+export const SYS_NAME_ATTR = SYS_ATTR_PREFIX + 'name';
+export const SYS_FOREACH_ATTR = SYS_ATTR_PREFIX + 'foreach';
+export const SYS_DATA_ATTR = SYS_ATTR_PREFIX + 'data';
 export const CLASS_ATTR_PREFIX = 'class_';
 export const STYLE_ATTR_PREFIX = 'style_';
