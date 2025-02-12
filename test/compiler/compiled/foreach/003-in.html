@@ -1,0 +1,13 @@
+<html>
+<head>
+</head>
+<body>
+  <ul>
+    <li :foreach=${[[[1, 2], [3, 4]], [['a'], ['b', 'c']]]}
+      ><div :foreach=${data}
+        ><p :foreach=${data}>${data}</p
+      ></div
+    ></li>
+  </ul>
+</body>
+</html>
