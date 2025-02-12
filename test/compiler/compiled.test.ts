@@ -1,6 +1,7 @@
 import { assert, describe, it } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import * as acorn from 'acorn';
 import { JSDOM } from 'jsdom';
 import { normalizeText, parse } from '../../src/html/parser';
 import { Context, ContextProps } from '../../src/runtime/context';
@@ -34,6 +35,12 @@ const docroot = path.join(__dirname, 'compiled');
         // console.log(js);
         // console.log(page.source.errors);
         // assert.fail();
+        // check loaded
+        const loadedDoc = loadDoc(filePath, 'loaded');
+        loadedDoc && assert.equal(
+          markup(page.source.doc),
+          markup(loadedDoc)
+        );
         // simulate server-side execution
         const props: ContextProps = { doc: page.source.doc, root };
         let ctx = new Context(props);
@@ -44,12 +51,23 @@ const docroot = path.join(__dirname, 'compiled');
           const doc = jsdom.window.document as unknown as dom.Document;
           const props = { doc, root };
           ctx = new Context(props);
+        } else {
+          // check generated JS
+          const text = loadText(filePath, '.js');
+          const ast = text && acorn.parse(text, {
+            ecmaVersion: 'latest',
+            sourceType: 'script',
+          });
+          text && assert.equal(
+            js,
+            generate(ast)
+          )
         }
-        // check results
-        const expected = loadExpected(filePath);
-        assert.equal(
+        // check out
+        const outDoc = loadDoc(filePath, 'out');
+        outDoc && assert.equal(
           markup(ctx.props.doc),
-          markup(expected)
+          markup(outDoc)
         );
       });
 
@@ -59,11 +77,30 @@ const docroot = path.join(__dirname, 'compiled');
 
 });
 
-function loadExpected(filePath: string, nr?: number) {
-  filePath = filePath.replace(/-in\.html$/, `-out${nr ?? ''}.html`);
-  const html = fs.readFileSync(filePath).toString();
-  const source = parse(html, 'test');
-  return source.doc;
+function loadText(
+  filePath: string,
+  type: string
+): string | null {
+  filePath = filePath.replace(/\.html$/, `${type}`);
+  try {
+    const text = fs.readFileSync(filePath).toString();
+    return text;
+  } catch (ignored) {}
+  return null;
+}
+
+function loadDoc(
+  filePath: string,
+  type: string,
+  nr?: number
+): ServerDocument | null {
+  filePath = filePath.replace(/-in\.html$/, `-${type}${nr ?? ""}.html`);
+  try {
+    const html = fs.readFileSync(filePath).toString();
+    const source = parse(html, "test");
+    return source.doc;
+  } catch (ignored) {}
+  return null;
 }
 
 function markup(doc: dom.Document | Document) {
