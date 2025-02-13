@@ -1,50 +1,145 @@
 import * as acorn from "acorn";
 import * as dom from "../html/dom";
-import { ATOMIC_TEXT_TAGS, PageError, parse, Source } from '../html/parser';
-import { ServerAttribute, ServerComment, ServerElement, ServerNode, ServerTemplateElement, ServerText, SourceLocation } from "../html/server-dom";
-import { RT_ATTR_VAL_PREFIX, RT_CLASS_VAL_PREFIX, RT_STYLE_VAL_PREFIX, RT_TEXT_MARKER1_PREFIX, RT_TEXT_MARKER2, RT_TEXT_VAL_PREFIX } from "../runtime/const";
+import { ATOMIC_TEXT_TAGS, PageError, Source } from '../html/parser';
+import {
+  ServerAttribute,
+  ServerComment,
+  ServerElement,
+  ServerTemplateElement,
+  ServerText,
+  SourceLocation,
+} from "../html/server-dom";
+import {
+  RT_ATTR_VAL_PREFIX,
+  RT_CLASS_VAL_PREFIX,
+  RT_STYLE_VAL_PREFIX,
+  RT_TEXT_MARKER1_PREFIX,
+  RT_TEXT_MARKER2,
+  RT_TEXT_VAL_PREFIX,
+} from "../runtime/const";
 import { CompilerScope, CompilerScopeType } from './compiler';
 import * as k from "./const";
 
 export function load(source: Source): CompilerScope {
   let id = 0;
+  const definitions = new Map<string, CompilerScope>;
 
   const error = (loc: SourceLocation, msg: string) => {
     source.errors.push(new PageError('error', msg, loc))
   }
 
+  const wrapSpecialTags = (e: ServerElement) => {
+    let type: CompilerScopeType;
+    let definesTag: string | undefined;
+    let extendsTag: string | undefined;
+    let extendsAttr: ServerAttribute | undefined;
+
+    // is it a `define` scope?
+    if (e.tagName === k.DEFINE_DIRECTIVE) {
+      type = 'define';
+      const tagAttr = e.getAttributeNode(k.DEFINE_TAG_ATTR) as ServerAttribute;
+      const extAttr = e.getAttributeNode(k.DEFINE_EXTENDS_ATTR);
+      if (!tagAttr) {
+        error(e.loc, `missing "${k.DEFINE_TAG_ATTR}" attribute`);
+        return { type, wrapper: null };
+      }
+      if (
+        typeof tagAttr.value !== 'string' ||
+        !k.DEFINE_TAG_RE.test(tagAttr.value)
+      ) {
+        error(tagAttr.valueLoc!, `invalid "${k.DEFINE_TAG_ATTR}" attribute`);
+        return { type, wrapper: null };
+      }
+      if (e.getAttributeNode(k.NAME_ATTR)) {
+        error(tagAttr.valueLoc!, `attribute "${k.NAME_ATTR}" now allowed in definitions`);
+        return { type, wrapper: null };
+      }
+      e.delAttributeNode(tagAttr);
+      if (extAttr) {
+        if (
+          typeof extAttr.value !== "string" ||
+          !k.DEFINE_EXTENDS_RE.test(extAttr.value)
+        ) {
+          error(e.loc, `invalid "${k.DEFINE_EXTENDS_ATTR}" attribute`);
+          return { type, wrapper: null };
+        }
+        e.delAttributeNode(extAttr);
+        extendsAttr = extAttr as ServerAttribute;
+      }
+      definesTag = tagAttr?.value as string;
+      extendsTag = extAttr?.value as string ?? 'div';
+      e.tagName = extendsTag;
+      // create wrapper <template> tag
+      const t = new ServerTemplateElement(e.ownerDocument, e.loc);
+      e.parentElement!.insertBefore(t, e);
+      e.unlink();
+      t.appendChild(e);
+      e = t;
+    }
+
+    // is it a `foreach` scope?
+    const foreachAttr = e.getAttributeNode(
+      k.IN_VALUE_ATTR_PREFIX + k.FOREACH_ATTR
+    );
+    if (foreachAttr) {
+      type = 'foreach';
+      // create wrapper <template> tag
+      const t = new ServerTemplateElement(e.ownerDocument, e.loc);
+      e.parentElement!.insertBefore(t, e);
+      // move 'foreach' attr to template with name 'data'
+      e.delAttributeNode(foreachAttr);
+      foreachAttr.name = k.IN_VALUE_ATTR_PREFIX + k.DATA_ATTR;
+      t.attributes.push(foreachAttr);
+      foreachAttr.parentElement = t;
+      // move e into <template>
+      e.unlink();
+      t.appendChild(e);
+      // add 'data' attr to tag
+      e.setAttribute(k.IN_VALUE_ATTR_PREFIX + k.DATA_ATTR, '');
+      // replace current element with the wrapper
+      e = t;
+    }
+
+    return { type, wrapper: type ? e : null, definesTag, extendsTag, extendsAttr };
+  }
+
   const load = (e: ServerElement, p: CompilerScope) => {
     if (needsScope(e)) {
-      let type: CompilerScopeType;
-      const foreachAttr = e.getAttributeNode(k.IN_VALUE_ATTR_PREFIX + k.SYS_FOREACH_ATTR);
-      if (foreachAttr) {
-        type = 'foreach';
-        // create wrapper <template> tag
-        const t = new ServerTemplateElement(e.ownerDocument, e.loc);
-        e.parentElement!.insertBefore(t, e);
-        // move 'foreach' attr to template with name 'data'
-        e.delAttributeNode(foreachAttr);
-        foreachAttr.name = k.IN_VALUE_ATTR_PREFIX + k.SYS_DATA_ATTR;
-        t.attributes.push(foreachAttr);
-        foreachAttr.parentElement = t;
-        // move e into <template>
-        e.unlink();
-        t.appendChild(e);
-        // add 'data' attr to tag
-        e.setAttribute(k.IN_VALUE_ATTR_PREFIX + k.SYS_DATA_ATTR, '');
-        // replace current element with the wrapper
-        e = t;
+      const { type, wrapper, definesTag, extendsTag, extendsAttr } = wrapSpecialTags(e);
+      if (wrapper) {
+        // adopt the wrapper as current element
+        e = wrapper;
       }
 
       const scope: CompilerScope = {
         parent: p,
         id: id++,
         type,
+        defines: definesTag,
         children: [],
         loc: e.loc,
       };
       e.setAttribute(k.OUT_OBJ_ID_ATTR, `${scope.id}`);
       p.children.push(scope);
+
+      if (definesTag) {
+        scope.xtends = extendsTag?.includes('-')
+          ? definitions.get(extendsTag)
+          : extendsTag;
+        if (!scope.xtends) {
+          error(extendsAttr?.valueLoc!, `"${extendsTag}" is not defined`);
+        }
+        definitions.set(definesTag.toUpperCase(), scope);
+      }
+
+      if (e.tagName.includes('-')) {
+        const definition = definitions.get(e.tagName);
+        if (!definition) {
+          error(e.loc, `"${e.tagName.toLowerCase()}" is not defined`);
+        }
+        scope.type = 'instance';
+        scope.uses = e.tagName.toLowerCase();
+      }
 
       // attributes
       for (const a of [...(e as ServerElement).attributes]) {
@@ -58,7 +153,7 @@ export function load(source: Source): CompilerScope {
             continue;
           }
           // scope name attribute
-          if (name === k.SYS_NAME_ATTR) {
+          if (name === k.NAME_ATTR) {
             if (typeof attr.value !== 'string' || !k.ID_RE.test(attr.value)) {
               error(attr.valueLoc ?? attr.loc, 'invalid name');
               continue;
@@ -118,13 +213,17 @@ export function load(source: Source): CompilerScope {
 
       // texts
       const texts = lookupDynamicTexts(e);
-      if (ATOMIC_TEXT_TAGS.has(e.tagName) && texts.length === 1 && texts[0].parentElement === e) {
+      if (
+        ATOMIC_TEXT_TAGS.has(e.tagName) &&
+        texts.length === 1 &&
+        texts[0].parentElement === e
+      ) {
         const text = texts[0];
         scope.values || (scope.values = {});
         scope.values[RT_TEXT_VAL_PREFIX] = {
           val: text.textContent as acorn.Expression,
           keyLoc: (text as ServerText).loc,
-          valLoc: (text as ServerText).loc
+          valLoc: (text as ServerText).loc,
         };
       } else {
         texts.forEach((text, index) => {
@@ -132,7 +231,7 @@ export function load(source: Source): CompilerScope {
           scope.values[RT_TEXT_VAL_PREFIX + index] = {
             val: text.textContent as acorn.Expression,
             keyLoc: (text as ServerText).loc,
-            valLoc: (text as ServerText).loc
+            valLoc: (text as ServerText).loc,
           };
           const t = text as ServerText;
           const p = t.parentElement!;
@@ -176,6 +275,16 @@ function handleTestAttr(scope: CompilerScope, name: string) {
 }
 
 function needsScope(e: dom.Element): boolean {
+  // is a <:define> directive
+  if (e.tagName === k.DEFINE_DIRECTIVE) {
+    return true;
+  }
+
+  // is a component instance
+  if (e.tagName.includes('-')) {
+    return true;
+  }
+
   // has a name
   const defName = k.DEF_SCOPE_NAMES[e.tagName];
   if (defName) {

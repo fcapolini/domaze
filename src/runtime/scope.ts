@@ -9,8 +9,8 @@ import * as dom from "../html/dom";
 export interface ScopeProps {
   [key: string]: any;
   __id?: number;
-  __type?: 'foreach' | 'define' | 'slot';
-  __proto?: string;
+  __type?: 'foreach' | 'define' | 'instance' | 'slot';
+  // __proto?: string;
   __name?: string;
   __slot?: string;
   __children?: ScopeProps[];

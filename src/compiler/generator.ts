@@ -10,7 +10,9 @@ import { CompilerScope, CompilerValue } from "./compiler";
  */
 const ID_PROP = '__id';
 const TYPE_PROP = '__type';
-const PROTO_PROP = '__proto';
+const DEFINES_PROP = '__defines';
+const EXTENDS_PROP = '__extends';
+const USES_PROP = '__uses';
 const NAME_PROP = '__name';
 const SLOT_PROP = '__slot';
 const CHILDREN_PROP = '__children';
@@ -40,6 +42,15 @@ function genScopeProps(scope: CompilerScope): acorn.Property[] {
   ret.push(genProperty(scope.loc, ID_PROP, genLiteral(scope.loc, scope.id)));
   scope.type && ret.push(genProperty(
     scope.loc, TYPE_PROP, genLiteral(scope.loc, scope.type)
+  ));
+  scope.defines && ret.push(genProperty(
+    scope.loc, DEFINES_PROP, genLiteral(scope.loc, scope.defines)
+  ));
+  typeof scope.xtends === 'object' && ret.push(genProperty(
+    scope.loc, EXTENDS_PROP, genLiteral(scope.loc, scope.xtends.defines!)
+  ));
+  scope.uses && ret.push(genProperty(
+    scope.loc, USES_PROP, genLiteral(scope.loc, scope.uses)
   ));
   scope.name && ret.push(genProperty(
       scope.name.keyLoc,

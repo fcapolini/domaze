@@ -29,6 +29,7 @@ const docroot = path.join(__dirname, 'compiled');
       it(file, async () => {
         // compile
         const page = await compiler.compile(file);
+        assert.deepEqual(page.source.errors, []);
         const js = page.code ? generate(page.code) : '';
         const root = eval(js);
         // console.log(page.source.doc.toString());

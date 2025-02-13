@@ -16,12 +16,15 @@ export interface CompilerPage {
   code?: acorn.ExpressionStatement;
 }
 
-export type CompilerScopeType = 'foreach' | undefined;
+export type CompilerScopeType = 'foreach' | 'define' | 'instance' | undefined;
 
 export interface CompilerScope {
   id: number;
   name?: CompilerProp;
   type: CompilerScopeType;
+  defines?: string;
+  xtends?: CompilerScope | string;
+  uses?: string;
   closed?: boolean;
   comptime?: boolean; //TODO
   values?: { [key: string]: CompilerValue };
