@@ -182,7 +182,7 @@ describe('style', () => {
 
 describe('template', () => {
 
-  it('should support cloning template tag', () => {
+  it('should support cloning template tag (1)', () => {
     const doc = new ServerDocument('test');
     const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
     const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
@@ -208,7 +208,34 @@ describe('template', () => {
     );
   });
 
-  it('should support cloning template content', () => {
+  it('should support cloning template tag (2)', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl.setAttribute('id', 'tpl');
+    const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p1.setAttribute('class', 'a');
+    p1.setAttribute('style', 'color: red');
+    p1.appendChild(new ServerText(doc, 'text', LOC));
+    const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot.setAttribute('name', 'slot1');
+
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl"><p class="a" style="color: red">text<slot name="slot1"></slot></p></template>`
+      + `</html>`
+    );
+
+    const tpl2 = tpl.cloneNode(true);
+    assert.isTrue(compareNode(tpl, tpl2));
+    assert.equal(
+      tpl2.toString(),
+      `<template id="tpl"><p class="a" style="color: red">text<slot name="slot1"></slot></p></template>`
+    );
+  });
+
+  it('should support cloning template content (1)', () => {
     const doc = new ServerDocument('test');
     const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
     const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
@@ -232,6 +259,35 @@ describe('template', () => {
       `<html>`
       + `<template id="tpl"><p a="1">text<slot name="slot1"></slot></p></template>`
       + `<p a="1">text<slot name="slot1"></slot></p>`
+      + `</html>`
+    );
+  });
+
+  it('should support cloning template content (2)', () => {
+    const doc = new ServerDocument('test');
+    const root = doc.appendChild(new ServerElement(doc, 'html', LOC)) as Element;
+    const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
+    tpl.setAttribute('id', 'tpl');
+    const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
+    p1.setAttribute('class', 'a');
+    p1.setAttribute('style', 'color: red');
+    p1.appendChild(new ServerText(doc, 'text', LOC));
+    const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
+    slot.setAttribute('name', 'slot1');
+
+    const cnt2 = tpl.content.cloneNode(true);
+    assert.isTrue(compareNode(tpl.content, cnt2));
+    assert.equal(
+      cnt2.toString(),
+      `<#document-fragment><p class="a" style="color: red">text<slot name="slot1"></slot></p></#document-fragment>`
+    );
+
+    root.appendChild(cnt2);
+    assert.equal(
+      root.toString(),
+      `<html>`
+      + `<template id="tpl"><p class="a" style="color: red">text<slot name="slot1"></slot></p></template>`
+      + `<p class="a" style="color: red">text<slot name="slot1"></slot></p>`
       + `</html>`
     );
   });
