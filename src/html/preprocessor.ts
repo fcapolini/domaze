@@ -221,7 +221,7 @@ export class Preprocessor {
     const existing = directive.parent.getAttributeNames();
     for (const attr of rootElement.attributes) {
       const name = attr.name;
-      if (!existing.has(name)) {
+      if (!existing.includes(name)) {
         directive.parent.attributes.push(rootElement.getAttributeNode(name)!);
       }
     }

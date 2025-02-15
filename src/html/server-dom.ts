@@ -282,9 +282,9 @@ export class ServerElement extends ServerNode implements Element {
     return n;
   }
 
-  getAttributeNames(): Set<string> {
-    const ret = new Set<string>();
-    this.attributes.forEach(a => ret.add(a.name));
+  getAttributeNames(): string[] {
+    const ret: string[] = [];
+    this.attributes.forEach(a => ret.includes(a.name) || ret.push(a.name));
     return ret;
   }
 

@@ -27,6 +27,24 @@ export class DefineFactory extends BaseFactory {
     self.__extends = ext.includes('-') ? this.ctx.defines.get(ext) : ext;
     this.ctx.defines.set(props.__defines, scope);
     // console.log('DefineFactory', 'defines:', props.__defines, 'extends:', ext);//tempdebug
-    //TODO
+
+    //
+    // hide child from reactivity: it's just a model for clones
+    //
+
+    const superUnlinkValues = self.__unlinkValues;
+    self.__unlinkValues = function(recur = true) {
+      superUnlinkValues(false);
+    }
+
+    const superLinkValues = self.__linkValues;
+    self.__linkValues = function(recur = true) {
+      superLinkValues(false);
+    }
+
+    const superUpdateValues = self.__updateValues;
+    self.__updateValues = function(recur = true) {
+      superUpdateValues(false);
+    }
   }
 }

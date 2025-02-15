@@ -42,6 +42,7 @@ export interface Element extends Node {
   removeChild(n: Node): Node;
   setAttribute(name: string, value: string): void;
   getAttribute(name: string): string | null;
+  getAttributeNames(): string[];
   removeAttribute(name: string): void;
   addEventListener(evname: string, listener: unknown): void;
   removeEventListener(evname: string, listener: unknown): void;
