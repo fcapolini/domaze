@@ -19,24 +19,8 @@ export class InstanceFactory extends BaseFactory {
   }
 
   augment(scope: Scope) {
-    const self = scope.__target as Instance;
     const props = scope.__props as InstanceProps;
-    const def = this.ctx.defines.get(props.__uses);
-    const defProps = def?.__props as DefineProps;
-    const defTemplate = def?.__view as TemplateElement;
-    const newView = defTemplate.content.documentElement!.cloneNode(true) as Element;
-
-    const oldView = self.__view;
-    const domParent = oldView.parentElement!;
-
-    console.log('' + oldView);
-    console.log('' + newView);
-    oldView.getAttributeNames().forEach(key => {
-      newView.setAttribute(key, oldView.getAttribute(key) ?? '');
-    });
-
-    domParent.insertBefore(newView, oldView);
-    domParent.removeChild(oldView);
-    self.__view = newView;
+    const define = this.ctx.defines.get(props.__uses);
+    define?.__instantiate(scope);
   }
 }

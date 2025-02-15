@@ -188,8 +188,9 @@ class ServerClassProp implements ClassProp {
     return [...this.list].join(' ');
   }
 
-  fromString(s: string) {
+  fromString(s: string): this {
     this.list = new Set(s.split(/\s+/));
+    return this;
   }
 }
 
@@ -367,6 +368,15 @@ export class ServerElement extends ServerNode implements Element {
   override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
     const ret = new ServerElement(doc, this.tagName, this.loc);
     parent?.appendChild(ret);
+    if (this._classList) {
+      ret._classList = new ServerClassProp().fromString(
+        (this._classList as ServerClassProp).toString()
+      );
+    }
+    if (this._style) {
+      ret._style = new ServerStyleProp();
+      ret._style.cssText = this._style.cssText;
+    }
     this.attributes.forEach(a => {
       (a as ServerAttribute).clone(doc, ret);
     });

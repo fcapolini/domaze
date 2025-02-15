@@ -1,6 +1,7 @@
-import { TemplateElement } from "../../html/dom";
+import { Element, TemplateElement } from "../../html/dom";
 import { Scope, ScopeProps } from "../scope";
 import { BaseFactory } from "./base";
+import { Instance } from "./instance";
 
 export interface DefineProps extends ScopeProps {
   __defines: string;
@@ -8,6 +9,7 @@ export interface DefineProps extends ScopeProps {
 
 export interface Define extends Scope {
   __extends?: Define | string;
+  __instantiate(instance: Instance): void;
 }
 
 export class DefineFactory extends BaseFactory {
@@ -25,8 +27,7 @@ export class DefineFactory extends BaseFactory {
     const props = scope.__props as DefineProps;
     const ext = model.tagName.toLocaleLowerCase();
     self.__extends = ext.includes('-') ? this.ctx.defines.get(ext) : ext;
-    this.ctx.defines.set(props.__defines, scope);
-    // console.log('DefineFactory', 'defines:', props.__defines, 'extends:', ext);//tempdebug
+    this.ctx.defines.set(props.__defines, self);
 
     //
     // hide child from reactivity: it's just a model for clones
@@ -45,6 +46,25 @@ export class DefineFactory extends BaseFactory {
     const superUpdateValues = self.__updateValues;
     self.__updateValues = function(recur = true) {
       superUpdateValues(false);
+    }
+
+    //
+    // add Define methods
+    //
+
+    self.__instantiate = function(instance: Instance) {
+      const e = model.cloneNode(true) as Element;
+      const old = instance.__view;
+      const p = old.parentElement!;
+      p.insertBefore(e, old);
+      p.removeChild(old);
+      instance.__view = e;
+      // transfer DOM attributes
+      old.getAttributeNames().forEach(key => {
+        e.setAttribute(key, old.getAttribute(key) ?? '');
+      });
+      // transfer instance values
+      //TODO
     }
   }
 }

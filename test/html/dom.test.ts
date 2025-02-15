@@ -269,8 +269,10 @@ describe('template', () => {
     const tpl = root.appendChild(new ServerTemplateElement(doc, LOC)) as TemplateElement;
     tpl.setAttribute('id', 'tpl');
     const p1 = tpl.appendChild(new ServerElement(doc, 'p', LOC)) as Element;
-    p1.setAttribute('class', 'a');
-    p1.setAttribute('style', 'color: red');
+    // p1.setAttribute('class', 'a');
+    p1.classList.add('a');
+    // p1.setAttribute('style', 'color: red');
+    p1.style.setProperty('color', 'red');
     p1.appendChild(new ServerText(doc, 'text', LOC));
     const slot = p1.appendChild(new ServerElement(doc, 'slot', LOC)) as Element;
     slot.setAttribute('name', 'slot1');
@@ -279,15 +281,15 @@ describe('template', () => {
     assert.isTrue(compareNode(tpl.content, cnt2));
     assert.equal(
       cnt2.toString(),
-      `<#document-fragment><p class="a" style="color: red">text<slot name="slot1"></slot></p></#document-fragment>`
+      `<#document-fragment><p class="a" style="color: red;">text<slot name="slot1"></slot></p></#document-fragment>`
     );
 
     root.appendChild(cnt2);
     assert.equal(
       root.toString(),
       `<html>`
-      + `<template id="tpl"><p class="a" style="color: red">text<slot name="slot1"></slot></p></template>`
-      + `<p class="a" style="color: red">text<slot name="slot1"></slot></p>`
+      + `<template id="tpl"><p class="a" style="color: red;">text<slot name="slot1"></slot></p></template>`
+      + `<p class="a" style="color: red;">text<slot name="slot1"></slot></p>`
       + `</html>`
     );
   });
