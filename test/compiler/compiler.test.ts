@@ -7,7 +7,7 @@ import { Compiler } from '../../src/compiler/compiler';
 import { normalizeText } from '../../src/html/parser';
 import { cleanupScopes } from '../util';
 
-const docroot = path.join(__dirname, 'compiler');
+const docroot = __dirname;
 
 fs.readdirSync(docroot).forEach(dir => {
   const dirPath = path.join(docroot, dir);

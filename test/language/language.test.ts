@@ -10,7 +10,7 @@ import { ServerDocument } from '../../src/html/server-dom';
 import { Compiler } from '../../src/compiler/compiler';
 import { generate } from 'escodegen';
 
-const docroot = path.join(__dirname, 'compiled');
+const docroot = __dirname;
 
 [false, true].forEach(client => {
   const name = client ? 'client' : 'server';
