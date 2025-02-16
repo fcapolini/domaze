@@ -232,6 +232,21 @@ describe('style', () => {
     );
   });
 
+  it('should integrate `style` property and `style` attribute (1)', () => {
+    const doc = new ServerDocument('test');
+    const e = new ServerElement(doc, 'html', LOC);
+    assert.equal(e.toString(), '<html></html>');
+    assert.notExists(e.getAttribute('style'));
+    assert.isFalse(e.getAttributeNames().includes('style'));
+    assert.equal(e.style.cssText, '');
+    // e.style.cssText = 'color: red';
+    e.style.setProperty('color', 'red');
+    assert.equal(e.toString(), '<html style="color: red;"></html>');
+    assert.exists(e.getAttribute('style'));
+    assert.isTrue(e.getAttributeNames().includes('style'));
+    assert.equal(e.style.cssText, 'color: red;');
+  });
+
 });
 
 describe('template', () => {
@@ -277,7 +292,7 @@ describe('template', () => {
     assert.equal(
       root.toString(),
       `<html>`
-      + `<template id="tpl"><p class="a" style="color: red">text<slot name="slot1"></slot></p></template>`
+      + `<template id="tpl"><p class="a" style="color: red;">text<slot name="slot1"></slot></p></template>`
       + `</html>`
     );
 
@@ -285,7 +300,7 @@ describe('template', () => {
     assert.isTrue(compareNode(tpl, tpl2));
     assert.equal(
       tpl2.toString(),
-      `<template id="tpl"><p class="a" style="color: red">text<slot name="slot1"></slot></p></template>`
+      `<template id="tpl"><p class="a" style="color: red;">text<slot name="slot1"></slot></p></template>`
     );
   });
 
@@ -335,15 +350,15 @@ describe('template', () => {
     assert.isTrue(compareNode(tpl.content, cnt2));
     assert.equal(
       cnt2.toString(),
-      `<#document-fragment><p style="color: red;" class="a">text<slot name="slot1"></slot></p></#document-fragment>`
+      `<#document-fragment><p class="a" style="color: red;">text<slot name="slot1"></slot></p></#document-fragment>`
     );
 
     root.appendChild(cnt2);
     assert.equal(
       root.toString(),
       `<html>`
-      + `<template id="tpl"><p style="color: red;" class="a">text<slot name="slot1"></slot></p></template>`
-      + `<p style="color: red;" class="a">text<slot name="slot1"></slot></p>`
+      + `<template id="tpl"><p class="a" style="color: red;">text<slot name="slot1"></slot></p></template>`
+      + `<p class="a" style="color: red;">text<slot name="slot1"></slot></p>`
       + `</html>`
     );
   });

@@ -286,6 +286,9 @@ export class ServerElement extends ServerNode implements Element {
   getAttributeNames(): string[] {
     const ret: string[] = [];
     this.attributes.forEach(a => ret.includes(a.name) || ret.push(a.name));
+    if (this._style && !ret.includes('style')) {
+      ret.unshift('style');
+    }
     if (this._classList && !ret.includes('class')) {
       ret.unshift('class');
     }
@@ -301,6 +304,18 @@ export class ServerElement extends ServerNode implements Element {
         (this._classList as ServerClassProp).list.forEach(v => classes.add(v));
       }
       return attr || this._classList ? [...classes].join(' ') : null;
+    }
+
+    if (name === 'style') {
+      const attr = this.attributes.find(a => a.name === name ? a : null);
+      const attrVal = typeof attr?.value === 'string' ? attr.value : null;
+      // const classes = new Set([...attrVal?.split(/\s+/) ?? []]);
+      const styles = new ServerStyleProp();
+      attrVal && (styles.cssText = attrVal);
+      if (this._style) {
+        (this._style as ServerStyleProp).list.forEach((v, k) => styles.list.set(k, v));
+      }
+      return attr || this._style ? styles.cssText : null;
     }
 
     let ret: string | null = null;
@@ -363,11 +378,11 @@ export class ServerElement extends ServerNode implements Element {
     //   // not both
     //   ret.push(` class="${this.className}"`);
     // }
-    if (this._style) {
-      // either the style property or setAttribute('style') should be used,
-      // not both
-      ret.push(` style="${this.style.cssText}"`);
-    }
+    // if (this._style) {
+    //   // either the style property or setAttribute('style') should be used,
+    //   // not both
+    //   ret.push(` style="${this.style.cssText}"`);
+    // }
     // this.attributes.forEach(a => {
     //   (a as ServerAttribute).toMarkup(ret);
     // });

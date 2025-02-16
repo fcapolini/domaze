@@ -144,12 +144,12 @@ import { getMarkup, runPage } from '../util';
     const ctx = await runPage(client, '<html>'
       + '<body style=${"color: red"}></body></html>');
     assert.equal(
-      getMarkup(ctx.props.doc),
+      getMarkup(ctx.props.doc).replace(/;"/g, '"'),
       '<html><head></head><body style="color: red"></body></html>'
     );
     ctx.root['body']['attr_style'] = 'border: 0';
     assert.equal(
-      getMarkup(ctx.props.doc),
+      getMarkup(ctx.props.doc).replace(/;"/g, '"'),
       '<html><head></head><body style="border: 0"></body></html>'
     );
     ctx.root['body']['attr_style'] = '';
