@@ -145,6 +145,60 @@ describe('classList', () => {
     );
   });
 
+  it('should set w/ className and read w/ getAttribute', () => {
+    const doc = new ServerDocument('test');
+    const root = new ServerElement(doc, 'html', LOC);
+    assert.notExists(root.getAttribute('class'));
+    assert.isFalse(root.getAttributeNames().includes('class'));
+    root.className = 'class1';
+    assert.exists(root.getAttribute('class'));
+    assert.isTrue(root.getAttributeNames().includes('class'));
+    assert.equal(root.getAttribute('class'), 'class1');
+  });
+
+  it('should set w/ classList and read w/ getAttribute', () => {
+    const doc = new ServerDocument('test');
+    const root = new ServerElement(doc, 'html', LOC);
+    assert.notExists(root.getAttribute('class'));
+    assert.isFalse(root.getAttributeNames().includes('class'));
+    root.classList.add('class1');
+    assert.exists(root.getAttribute('class'));
+    assert.isTrue(root.getAttributeNames().includes('class'));
+    assert.equal(root.getAttribute('class'), 'class1');
+  });
+
+  it('should integrate className, classList and `class` attribute (1)', () => {
+    const doc = new ServerDocument('test');
+    const e = new ServerElement(doc, 'html', LOC);
+    assert.equal(e.toString(), '<html></html>');
+    assert.notExists(e.getAttribute('class'));
+    assert.isFalse(e.getAttributeNames().includes('class'));
+    assert.equal(e.className, '');
+    assert.equal(e.classList.length, 0);
+    e.className = 'a';
+    assert.equal(e.toString(), '<html class="a"></html>');
+    assert.exists(e.getAttribute('class'));
+    assert.isTrue(e.getAttributeNames().includes('class'));
+    assert.equal(e.className, 'a');
+    assert.equal(e.classList.length, 1);
+  });
+
+  it('should integrate className, classList and `class` attribute (1)', () => {
+    const doc = new ServerDocument('test');
+    const e = new ServerElement(doc, 'html', LOC);
+    assert.equal(e.toString(), '<html></html>');
+    assert.notExists(e.getAttribute('class'));
+    assert.isFalse(e.getAttributeNames().includes('class'));
+    assert.equal(e.className, '');
+    assert.equal(e.classList.length, 0);
+    e.setAttribute('class', 'a');
+    assert.equal(e.toString(), '<html class="a"></html>');
+    assert.exists(e.getAttribute('class'));
+    assert.isTrue(e.getAttributeNames().includes('class'));
+    assert.equal(e.className, 'a');
+    assert.equal(e.classList.length, 1);
+  });
+
 });
 
 describe('style', () => {
@@ -281,15 +335,15 @@ describe('template', () => {
     assert.isTrue(compareNode(tpl.content, cnt2));
     assert.equal(
       cnt2.toString(),
-      `<#document-fragment><p class="a" style="color: red;">text<slot name="slot1"></slot></p></#document-fragment>`
+      `<#document-fragment><p style="color: red;" class="a">text<slot name="slot1"></slot></p></#document-fragment>`
     );
 
     root.appendChild(cnt2);
     assert.equal(
       root.toString(),
       `<html>`
-      + `<template id="tpl"><p class="a" style="color: red;">text<slot name="slot1"></slot></p></template>`
-      + `<p class="a" style="color: red;">text<slot name="slot1"></slot></p>`
+      + `<template id="tpl"><p style="color: red;" class="a">text<slot name="slot1"></slot></p></template>`
+      + `<p style="color: red;" class="a">text<slot name="slot1"></slot></p>`
       + `</html>`
     );
   });

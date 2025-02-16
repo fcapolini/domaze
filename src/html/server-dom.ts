@@ -286,10 +286,23 @@ export class ServerElement extends ServerNode implements Element {
   getAttributeNames(): string[] {
     const ret: string[] = [];
     this.attributes.forEach(a => ret.includes(a.name) || ret.push(a.name));
+    if (this._classList && !ret.includes('class')) {
+      ret.unshift('class');
+    }
     return ret;
   }
 
   getAttribute(name: string): string | null {
+    if (name === 'class') {
+      const attr = this.attributes.find(a => a.name === name ? a : null);
+      const attrVal = typeof attr?.value === 'string' ? attr.value : null;
+      const classes = new Set([...attrVal?.split(/\s+/) ?? []]);
+      if (this._classList?.length) {
+        (this._classList as ServerClassProp).list.forEach(v => classes.add(v));
+      }
+      return attr || this._classList ? [...classes].join(' ') : null;
+    }
+
     let ret: string | null = null;
     for (const a of this.attributes) {
       if (a.name === name) {
@@ -317,6 +330,11 @@ export class ServerElement extends ServerNode implements Element {
   }
 
   setAttribute(name: string, value: string | null) {
+    if (name === 'class') {
+      this.className = value ?? '';
+      return;
+    }
+
     let a = this.getAttributeNode(name);
     if (a) {
       a.value = value;
@@ -340,18 +358,30 @@ export class ServerElement extends ServerNode implements Element {
     }
     ret.push('<');
     ret.push(this.tagName.toLowerCase());
-    if (this._classList) {
-      // either className/classList or setAttribute('class') should be used,
-      // not both
-      ret.push(` class="${this.className}"`);
-    }
+    // if (this._classList) {
+    //   // either className/classList or setAttribute('class') should be used,
+    //   // not both
+    //   ret.push(` class="${this.className}"`);
+    // }
     if (this._style) {
       // either the style property or setAttribute('style') should be used,
       // not both
       ret.push(` style="${this.style.cssText}"`);
     }
-    this.attributes.forEach(a => {
-      (a as ServerAttribute).toMarkup(ret);
+    // this.attributes.forEach(a => {
+    //   (a as ServerAttribute).toMarkup(ret);
+    // });
+    this.getAttributeNames().forEach(key => {
+      const val = this.getAttribute(key);
+      const q = '"';
+      ret.push(' ');
+      ret.push(key);
+      if (val !== null) {
+        ret.push('=');
+        ret.push(q);
+        ret.push(escape(val as string, '&<' + q));
+        ret.push(q);
+      }
     });
     ret.push('>');
     if (VOID_ELEMENTS.has(this.tagName)) {
