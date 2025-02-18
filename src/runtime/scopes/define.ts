@@ -65,6 +65,8 @@ export class DefineFactory extends BaseFactory {
       });
       // transfer instance values
       //TODO
+      // populate from instance contents
+      //TODO
     }
   }
 }

@@ -105,6 +105,20 @@ function loadDoc(
 }
 
 function markup(doc: dom.Document | Document) {
+  const sortAttrs = (e: dom.Element) => {
+    const keys = [...e.getAttributeNames()].sort();
+    keys.forEach(key => {
+      const v = e.getAttribute(key);
+      e.removeAttribute(key);
+      e.setAttribute(key, v ?? '');
+    });
+    e.childNodes.forEach(n => {
+      if (n.nodeType === dom.NodeType.ELEMENT) {
+        sortAttrs(n as dom.Element);
+      }
+    })
+  }
+  sortAttrs(doc.documentElement as dom.Element);
   let html = doc instanceof ServerDocument
     ? doc.toString()
     : (doc.documentElement as HTMLElement).outerHTML;
