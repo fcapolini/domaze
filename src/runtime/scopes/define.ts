@@ -59,13 +59,16 @@ export class DefineFactory extends BaseFactory {
       p.insertBefore(e, old);
       p.removeChild(old);
       instance.__view = e;
-      // transfer DOM attributes
+      // 0. DOM attributes
       old.getAttributeNames().forEach(key => {
         e.setAttribute(key, old.getAttribute(key) ?? '');
       });
-      // transfer instance values
+      // 1. values
+      const props = (self as any).__children[0].__props;
+      instance.__add(props);//TODO: shouldn't override namesake instance values
+      //TODO: possible conflict in value text naming (model vs instance texts)
       //TODO
-      // populate from instance contents
+      // 3. populate from instance contents
       //TODO
     }
   }
