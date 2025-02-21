@@ -257,7 +257,7 @@ export class BaseFactory implements ScopeFactory {
 
     if (key.startsWith(k.RT_TEXT_VAL_PREFIX)) {
       const nr = key.substring(k.RT_TEXT_VAL_PREFIX.length);
-      if (nr.length) {
+      if (nr.includes('_')) {
         // normal dynamic texts are marked with comments
         const text = BaseFactory.lookupTextNode(scope.__view, nr)!;
         ret.cb = (s, v) => {

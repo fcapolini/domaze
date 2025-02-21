@@ -220,7 +220,7 @@ export function load(source: Source): CompilerScope {
       ) {
         const text = texts[0];
         scope.values || (scope.values = {});
-        scope.values[RT_TEXT_VAL_PREFIX] = {
+        scope.values[RT_TEXT_VAL_PREFIX + scope.id] = {
           val: text.textContent as acorn.Expression,
           keyLoc: (text as ServerText).loc,
           valLoc: (text as ServerText).loc,
@@ -228,14 +228,14 @@ export function load(source: Source): CompilerScope {
       } else {
         texts.forEach((text, index) => {
           scope.values || (scope.values = {});
-          scope.values[RT_TEXT_VAL_PREFIX + index] = {
+          scope.values[RT_TEXT_VAL_PREFIX + scope.id + '_' + index] = {
             val: text.textContent as acorn.Expression,
             keyLoc: (text as ServerText).loc,
             valLoc: (text as ServerText).loc,
           };
           const t = text as ServerText;
           const p = t.parentElement!;
-          const m1 = `${RT_TEXT_MARKER1_PREFIX}${index}`;
+          const m1 = `${RT_TEXT_MARKER1_PREFIX}${scope.id}_${index}`;
           const m2 = RT_TEXT_MARKER2;
           const c1 = new ServerComment(e.ownerDocument, m1, t.loc);
           const c2 = new ServerComment(e.ownerDocument, m2, t.loc);

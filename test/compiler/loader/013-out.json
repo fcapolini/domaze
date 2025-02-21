@@ -12,7 +12,7 @@
             {
               "id": 3,
               "values": {
-                "text_": {
+                "text_3": {
                   "val": {
                     "type": "BinaryExpression",
                     "operator": "+",

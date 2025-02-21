@@ -17,7 +17,7 @@
         },
         __children: [{
           __id: 5,
-          text_0: {
+          text_5_0: {
             e: function() { return this.data; },
             r: [function() { return this.__value('data'); }]
           },
@@ -31,7 +31,7 @@
             },
             __children: [{
               __id: 7,
-              text_0: {
+              text_7_0: {
                 e: function() { return this.data; },
                 r: [function() { return this.__value('data'); }]
               },
@@ -45,7 +45,7 @@
                 },
                 __children: [{
                   __id: 9,
-                  text_0: {
+                  text_9_0: {
                     e: function() { return this.data; },
                     r: [function() { return this.__value('data'); }]
                   },

@@ -23,7 +23,7 @@
             data: {
               e: function () { return ''; }
             },
-            text_0: {
+            text_5_0: {
               e: function () { return this.data; },
               r: [function () { return this.__value('data'); }]
             },

@@ -20,7 +20,7 @@
                     return 'x';
                   }
                 },
-                text_0: {
+                text_4_0: {
                   e: function () {
                     return this.v;
                   },
