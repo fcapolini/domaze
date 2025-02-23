@@ -146,40 +146,6 @@ export class BaseFactory implements ScopeFactory {
 
     parentSelf && proxy.__link(parentSelf, before);
 
-    // props.__proto && this.inherit(props.__proto, proxy);
-    // const proto = props.__proto
-    //   ? this.ctx.protos.get(props.__proto)?.__target as Define
-    //   : null;
-    // proto && proto.__apply(proxy);
-
-    // if (parentSelf) {
-    //   const id = `${props.__id}`;
-    //   const lookup = (p: dom.Element): dom.Element | null => {
-    //     const childNodes = p.tagName === 'TEMPLATE'
-    //       ? (p as dom.TemplateElement).content.childNodes
-    //       : p.childNodes;
-    //     for (const n of childNodes) {
-    //       if (n.nodeType === dom.NodeType.ELEMENT) {
-    //         const v = (n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR);
-    //         if (v) {
-    //           if (v === id) {
-    //             return n as dom.Element;
-    //           } else {
-    //             continue;
-    //           }
-    //         }
-    //         const ret = lookup(n as dom.Element);
-    //         if (ret) {
-    //           return ret;
-    //         }
-    //       }
-    //     }
-    //     return null;
-    //   }
-    //   self.__view = lookup(parentSelf.__view)!;
-    // } else {
-    //   self.__view = this.ctx.props.doc as any;
-    // }
     if (!self.__view) {
       self.__view = this.lookupView(props, parentSelf?.__view)!;
     }

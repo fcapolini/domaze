@@ -9,7 +9,7 @@ export interface DefineProps extends ScopeProps {
 
 export interface Define extends Scope {
   __extends?: Define | string;
-  __instantiate(instance: Instance): void;
+  // __instantiate(instance: Instance): void;
 }
 
 export class DefineFactory extends BaseFactory {
@@ -48,39 +48,46 @@ export class DefineFactory extends BaseFactory {
       superUpdateValues(false);
     }
 
-    //
-    // add Define methods
-    //
+    // //
+    // // add Define methods
+    // //
 
-    self.__instantiate = function(instance: Instance) {
-      const e = model.cloneNode(true) as Element;
-      const old = instance.__view;
-      if (!old.tagName.includes('-')) {
-        // we're reloading an already instantiated scope
-        return;
-      }
-      const doc = old.ownerDocument!;
-      const p = old.parentElement!;
-      p.insertBefore(e, old);
-      p.removeChild(old);
-      instance.__view = e;
-      // transfer model's DOM attributes
-      old.getAttributeNames().forEach(key => {
-        e.setAttribute(key, old.getAttribute(key) ?? '');
-      });
-      // populate instance DOM
-      const { slotMap, slotList } = DefineFactory.collectSlots(e, doc);
-      DefineFactory.populateInstance(old, e, slotMap);
-      slotList.forEach(slot => slot.parentElement!.removeChild(slot));
-      // transfer model's values
-      // const modelProps = (self as any).__children[0].__props;
-      // const instanceProps = instance.__props;
-      // const props = {
-      //   ...modelProps,
-      //   ...instanceProps
-      // };
-      // instance.__add(props);
-    }
+    // self.__instantiate = function(instance: Instance) {
+    //   const e = model.cloneNode(true) as Element;
+    //   const old = instance.__view;
+    //   if (!old.tagName.includes('-')) {
+    //     // we're reloading an already instantiated scope
+    //     return;
+    //   }
+    //   const doc = old.ownerDocument!;
+    //   const p = old.parentElement!;
+    //   p.insertBefore(e, old);
+    //   p.removeChild(old);
+    //   instance.__view = e;
+    //   // transfer model's DOM attributes
+    //   old.getAttributeNames().forEach(key => {
+    //     e.setAttribute(key, old.getAttribute(key) ?? '');
+    //   });
+    //   // populate instance DOM
+    //   const { slotMap, slotList } = DefineFactory.collectSlots(e, doc);
+    //   DefineFactory.populateInstance(old, e, slotMap);
+    //   slotList.forEach(slot => slot.parentElement!.removeChild(slot));
+    //   // transfer model's values
+    //   // const modelProps = (self as any).__children[0].__props;
+    //   // const instanceProps = instance.__props;
+    //   // const props = {
+    //   //   ...modelProps,
+    //   //   ...instanceProps
+    //   // };
+    //   // instance.__add(props);
+    // }
+  }
+
+  static cloneDOM(self: Define): Element {
+    const template = self.__view as TemplateElement;
+    const content = template.content.firstElementChild!;
+    const clonedDOM = content.cloneNode(true) as Element;
+    return clonedDOM;
   }
 
   static collectSlots(e: Element, doc: Document) {
