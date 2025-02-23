@@ -73,6 +73,7 @@ export interface Attribute extends Node {
 export interface Document extends Element {
   documentElement: Element | null;
   createTextNode(text: string): Text;
+  createElement(tagName: string): Element;
 }
 
 export interface DocumentFragment extends Document {

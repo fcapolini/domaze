@@ -13,14 +13,15 @@ export interface Instance extends Scope {
 export class InstanceFactory extends BaseFactory {
 
   override create(props: ScopeProps, parentSelf?: Scope, before?: Scope): Scope {
-    const ret = super.create(props, parentSelf, before);
-    this.augment(ret);
-    return ret;
+    console.log('InstanceFactory.create()', props.__uses);
+    const model = this.ctx.defines.get(props.__uses)!;
+    const self = Object.create(model) as Scope;
+    this.inherit(self, model, props, parentSelf);
+    const proxy = this.init(self, props, parentSelf, before);
+    return proxy;
   }
 
-  augment(scope: Scope) {
-    const props = scope.__props as InstanceProps;
-    const define = this.ctx.defines.get(props.__uses);
-    define?.__instantiate(scope);
+  protected inherit(self: Scope, from: Scope, props: ScopeProps, parentSelf?: Scope) {
+    self.__view = this.lookupView(props, parentSelf?.__view)!;
   }
 }

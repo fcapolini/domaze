@@ -1,4 +1,4 @@
-import { Element, TemplateElement } from "../../html/dom";
+import { Document, Element, Node, NodeType, TemplateElement } from "../../html/dom";
 import { Scope, ScopeProps } from "../scope";
 import { BaseFactory } from "./base";
 import { Instance } from "./instance";
@@ -55,21 +55,68 @@ export class DefineFactory extends BaseFactory {
     self.__instantiate = function(instance: Instance) {
       const e = model.cloneNode(true) as Element;
       const old = instance.__view;
+      if (!old.tagName.includes('-')) {
+        // we're reloading an already instantiated scope
+        return;
+      }
+      const doc = old.ownerDocument!;
       const p = old.parentElement!;
       p.insertBefore(e, old);
       p.removeChild(old);
       instance.__view = e;
-      // 0. DOM attributes
+      // transfer model's DOM attributes
       old.getAttributeNames().forEach(key => {
         e.setAttribute(key, old.getAttribute(key) ?? '');
       });
-      // 1. values
-      const props = (self as any).__children[0].__props;
-      instance.__add(props);//TODO: shouldn't override namesake instance values
-      //TODO: possible conflict in value text naming (model vs instance texts)
-      //TODO
-      // 3. populate from instance contents
-      //TODO
+      // populate instance DOM
+      const { slotMap, slotList } = DefineFactory.collectSlots(e, doc);
+      DefineFactory.populateInstance(old, e, slotMap);
+      slotList.forEach(slot => slot.parentElement!.removeChild(slot));
+      // transfer model's values
+      // const modelProps = (self as any).__children[0].__props;
+      // const instanceProps = instance.__props;
+      // const props = {
+      //   ...modelProps,
+      //   ...instanceProps
+      // };
+      // instance.__add(props);
     }
+  }
+
+  static collectSlots(e: Element, doc: Document) {
+    const slotMap = new Map<string, Element>();
+    const slotList = new Array<Element>();
+    //TODO: use getElementsByTagName()
+    const f = (p: Element) => {
+      for (const n of p.childNodes) {
+        if (n.nodeType !== NodeType.ELEMENT) {
+          continue;
+        }
+        if ((n as Element).tagName === 'SLOT') {
+          const slot = n as Element;
+          const name = slot.getAttribute('name');
+          name && slotMap.set(name, slot);
+          slotList.push(slot);
+          continue;
+        }
+        f(n as Element);
+      }
+    };
+    f(e);
+    if (!slotMap.has('default')) {
+      const slot = doc.createElement('slot')!;
+      e.appendChild(slot);
+      slotMap.set('default', slot);
+      slotList.push(slot);
+    }
+    return { slotMap, slotList };
+  }
+
+  static populateInstance(old: Element, e: Element, slotMap: Map<string, Element>) {
+    [...old.childNodes].forEach(n => {
+      old.removeChild(n);
+      e.appendChild(n);
+      //TODO: link following slots
+    });
   }
 }

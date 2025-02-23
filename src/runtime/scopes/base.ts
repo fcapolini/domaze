@@ -14,6 +14,11 @@ export class BaseFactory implements ScopeFactory {
 
   create(props: ScopeProps, parentSelf?: Scope, before?: Scope): Scope {
     const self = Object.create(null) as Scope;
+    const proxy = this.init(self, props, parentSelf, before);
+    return proxy;
+  }
+
+  init(self: Scope, props: ScopeProps, parentSelf?: Scope, before?: Scope): Scope {
 
     //
     // proxy
@@ -147,7 +152,52 @@ export class BaseFactory implements ScopeFactory {
     //   : null;
     // proto && proto.__apply(proxy);
 
-    if (parentSelf) {
+    // if (parentSelf) {
+    //   const id = `${props.__id}`;
+    //   const lookup = (p: dom.Element): dom.Element | null => {
+    //     const childNodes = p.tagName === 'TEMPLATE'
+    //       ? (p as dom.TemplateElement).content.childNodes
+    //       : p.childNodes;
+    //     for (const n of childNodes) {
+    //       if (n.nodeType === dom.NodeType.ELEMENT) {
+    //         const v = (n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR);
+    //         if (v) {
+    //           if (v === id) {
+    //             return n as dom.Element;
+    //           } else {
+    //             continue;
+    //           }
+    //         }
+    //         const ret = lookup(n as dom.Element);
+    //         if (ret) {
+    //           return ret;
+    //         }
+    //       }
+    //     }
+    //     return null;
+    //   }
+    //   self.__view = lookup(parentSelf.__view)!;
+    // } else {
+    //   self.__view = this.ctx.props.doc as any;
+    // }
+    if (!self.__view) {
+      self.__view = this.lookupView(props, parentSelf?.__view)!;
+    }
+
+    this.addValues(self, proxy, props);
+
+    this.addChildren(self, proxy, props.__children);
+
+    if (self.__slots) {
+      self.__slots.forEach(slot => slot.__dispose());
+      delete self.__slots;
+    }
+
+    return proxy;
+  }
+
+  protected lookupView(props: ScopeProps, parentView?: dom.Element): dom.Element | null {
+    if (parentView) {
       const id = `${props.__id}`;
       const lookup = (p: dom.Element): dom.Element | null => {
         const childNodes = p.tagName === 'TEMPLATE'
@@ -171,28 +221,10 @@ export class BaseFactory implements ScopeFactory {
         }
         return null;
       }
-      self.__view = lookup(parentSelf.__view)!;
-    } else {
-      self.__view = this.ctx.props.doc as any;
+      return lookup(parentView)!;
     }
-
-    this.addValues(self, proxy, props);
-
-    this.addChildren(self, proxy, props.__children);
-
-    if (self.__slots) {
-      self.__slots.forEach(slot => slot.__dispose());
-      delete self.__slots;
-    }
-
-    return proxy;
+    return this.ctx.props.doc as any;
   }
-
-  // protected inherit(protoName: string, proxy: Scope): Define | undefined {
-  //   const proto = this.ctx.protos.get(protoName)?.__target as Define;
-  //   proto && proto.__apply(proxy);
-  //   return proto;
-  // }
 
   protected addValues(
     _self: Scope,

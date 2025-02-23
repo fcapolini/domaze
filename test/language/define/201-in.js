@@ -34,7 +34,7 @@
                 return 'x';
               }
             },
-            text_0: {
+            text_6_0: {
               e: function () {
                 return this.v;
               },
