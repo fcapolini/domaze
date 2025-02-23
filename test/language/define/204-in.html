@@ -1,0 +1,13 @@
+<html>
+<head>
+  <:define tag="app-card" class="app-card" :v="x">
+    <span>${v}</span>
+    <div :v2="y">${v2}</div>
+  </:define>
+</head>
+<body>
+  <app-card :v="z">
+    <p :v="a">${v}</p>
+  </app-card>
+</body>
+</html>

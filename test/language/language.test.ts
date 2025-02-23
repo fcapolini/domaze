@@ -32,10 +32,6 @@ const docroot = __dirname;
         assert.deepEqual(page.source.errors, []);
         const js = page.code ? generate(page.code) : '';
         const root = eval(js);
-        // console.log(page.source.doc.toString());
-        // console.log(js);
-        // console.log(page.source.errors);
-        // assert.fail();
         // check loaded
         const loadedDoc = loadDoc(filePath, 'loaded');
         loadedDoc && assert.equal(
@@ -45,6 +41,7 @@ const docroot = __dirname;
         // simulate server-side execution
         const props: ContextProps = { doc: page.source.doc, root };
         let ctx = new Context(props);
+        let outputType = 'out';
         // console.log(page.source.doc.toString());
         if (client) {
           // simulate client-side execution
@@ -52,6 +49,18 @@ const docroot = __dirname;
           const doc = jsdom.window.document as unknown as dom.Document;
           const props = { doc, root };
           ctx = new Context(props);
+          // simulate client-side interaction
+          if (ctx.root.__value('count')) {
+            // check pre-interaction output
+            const outDoc = loadDoc(filePath, outputType);
+            outDoc && assert.equal(
+              markup(ctx.props.doc),
+              markup(outDoc)
+            );
+            // simulate interaction
+            ctx.root['count']++;
+            outputType = 'out1';
+          }
         } else {
           // check generated JS
           const text = loadText(filePath, '.js');
@@ -64,8 +73,8 @@ const docroot = __dirname;
             generate(ast)
           )
         }
-        // check out
-        const outDoc = loadDoc(filePath, 'out');
+        // check output
+        const outDoc = loadDoc(filePath, outputType);
         outDoc && assert.equal(
           markup(ctx.props.doc),
           markup(outDoc)

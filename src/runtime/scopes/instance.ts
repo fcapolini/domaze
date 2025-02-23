@@ -1,7 +1,6 @@
-import { DocumentFragment, Element, TemplateElement } from "../../html/dom";
 import { Scope, ScopeProps } from "../scope";
 import { BaseFactory } from "./base";
-import { Define, DefineFactory, DefineProps } from "./define";
+import { Define, DefineFactory } from "./define";
 
 export interface InstanceProps extends ScopeProps {
   __uses: string;
@@ -16,7 +15,6 @@ export class InstanceFactory extends BaseFactory {
     parentSelf?: Scope,
     before?: Scope
   ): Scope {
-    console.log("InstanceFactory.create()", props.__uses);
     const define = this.ctx.defines.get(props.__uses) ?? null;
     const model = define?.__children[0]?.__target ?? null;
     const self = Object.create(null) as Scope;
@@ -37,15 +35,15 @@ export class InstanceFactory extends BaseFactory {
     const ret = {
       ...model.__props,
       ...props,
+      __children: [
+        ...(model.__props.__children ?? []),
+        ...(props.__children ?? [])
+      ]
     };
-    ret.__children = [
-      ...(model.__props.__children ?? []),
-      ...(props.__children ?? [])
-    ];
     const oldDOM = this.lookupView(props, parentSelf?.__view)!;
     if (oldDOM.tagName.toLowerCase() !== props.__uses) {
       // we're loading an already instantiated definition
-      // (this happens normally in the client)
+      // (this happens routinely in the client)
       return ret;
     }
     const newDOM = DefineFactory.cloneDOM(define);
