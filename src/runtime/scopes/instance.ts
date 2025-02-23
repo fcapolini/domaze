@@ -38,9 +38,14 @@ export class InstanceFactory extends BaseFactory {
       ...model.__props,
       ...props,
     };
+    ret.__children = [
+      ...(model.__props.__children ?? []),
+      ...(props.__children ?? [])
+    ];
     const oldDOM = this.lookupView(props, parentSelf?.__view)!;
     if (oldDOM.tagName.toLowerCase() !== props.__uses) {
-      // we're reloading an already instantiated definition
+      // we're loading an already instantiated definition
+      // (this happens normally in the client)
       return ret;
     }
     const newDOM = DefineFactory.cloneDOM(define);
