@@ -1,14 +1,14 @@
-import { assert, describe, it } from 'vitest';
-import fs from 'fs';
-import path from 'path';
 import * as acorn from 'acorn';
-import { JSDOM } from 'jsdom';
-import { normalizeText, parse } from '../../src/html/parser';
-import { Context, ContextProps } from '../../src/runtime/context';
-import * as dom from '../../src/html/dom';
-import { ServerDocument } from '../../src/html/server-dom';
-import { Compiler } from '../../src/compiler/compiler';
 import { generate } from 'escodegen';
+import fs from 'fs';
+import { JSDOM } from 'jsdom';
+import path from 'path';
+import { assert, describe, it } from 'vitest';
+import { Compiler } from '../../src/compiler/compiler';
+import * as dom from '../../src/html/dom';
+import { normalizeText, parse } from '../../src/html/parser';
+import { ServerDocument } from '../../src/html/server-dom';
+import { Context, ContextProps } from '../../src/runtime/context';
 
 const docroot = __dirname;
 
@@ -32,36 +32,42 @@ const docroot = __dirname;
         assert.deepEqual(page.source.errors, []);
         const js = page.code ? generate(page.code) : '';
         const root = eval(js);
+
         // check loaded
         const loadedDoc = loadDoc(filePath, 'loaded');
         loadedDoc && assert.equal(
           markup(page.source.doc),
           markup(loadedDoc)
         );
+
         // simulate server-side execution
         const props: ContextProps = { doc: page.source.doc, root };
         let ctx = new Context(props);
         let outputType = 'out';
-        // console.log(page.source.doc.toString());
         if (client) {
+
           // simulate client-side execution
           const jsdom = new JSDOM(ctx.props.doc.toString());
           const doc = jsdom.window.document as unknown as dom.Document;
           const props = { doc, root };
           ctx = new Context(props);
-          // simulate client-side interaction
+
+          // can we simulate a client-side update?
           if (ctx.root.__value('count')) {
-            // check pre-interaction output
+
+            // check pre-update output
             const outDoc = loadDoc(filePath, outputType);
             outDoc && assert.equal(
               markup(ctx.props.doc),
               markup(outDoc)
             );
-            // simulate interaction
+
+            // simulate update
             ctx.root['count']++;
             outputType = 'out1';
           }
         } else {
+
           // check generated JS
           const text = loadText(filePath, '.js');
           const ast = text && acorn.parse(text, {
@@ -73,6 +79,7 @@ const docroot = __dirname;
             generate(ast)
           )
         }
+
         // check output
         const outDoc = loadDoc(filePath, outputType);
         outDoc && assert.equal(
@@ -87,10 +94,7 @@ const docroot = __dirname;
 
 });
 
-function loadText(
-  filePath: string,
-  type: string
-): string | null {
+function loadText(filePath: string, type: string): string | null {
   filePath = filePath.replace(/\.html$/, `${type}`);
   try {
     const text = fs.readFileSync(filePath).toString();
