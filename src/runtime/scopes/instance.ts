@@ -1,3 +1,4 @@
+import { Element, NodeType } from "../../html/dom";
 import { Scope, ScopeProps } from "../scope";
 import { BaseFactory } from "./base";
 import { Define, DefineFactory } from "./define";
@@ -17,7 +18,7 @@ export class InstanceFactory extends BaseFactory {
   ): Scope {
     const define = this.ctx.defines.get(props.__uses) ?? null;
     const model = define?.__children[0]?.__target ?? null;
-    const self = Object.create(null) as Scope;
+    const self = Object.create(null) as Instance;
     if (model) {
       props = this.inherit(self, define!, model, props, parentSelf);
     }
@@ -26,7 +27,7 @@ export class InstanceFactory extends BaseFactory {
   }
 
   protected inherit(
-    self: Scope,
+    self: Instance,
     define: Define,
     model: Scope,
     props: InstanceProps,
@@ -41,6 +42,8 @@ export class InstanceFactory extends BaseFactory {
       ]
     };
     const oldDOM = this.lookupView(props, parentSelf?.__view)!;
+    const doc = oldDOM.ownerDocument!;
+    // const isReload = oldDOM.tagName.toLowerCase() !== props.__uses;
     if (oldDOM.tagName.toLowerCase() !== props.__uses) {
       // we're loading an already instantiated definition
       // (this happens routinely in the client)
@@ -58,11 +61,24 @@ export class InstanceFactory extends BaseFactory {
     });
 
     // instance DOM
+    // const scopeAnchors = new Map<string, Element>();
+    const { slotMap, slotList } = DefineFactory.collectSlots(newDOM, doc);
     [...oldDOM.childNodes].forEach(n => {
+      let scopeID, slotName = 'default';
       oldDOM.removeChild(n);
-      //TODO: slots
-      newDOM.appendChild(n);
+      if (n.nodeType === NodeType.ELEMENT) {
+        slotName = (n as Element).getAttribute('slot') ?? 'default';
+        // if ((scopeID = (n as Element).getAttribute(OUT_OBJ_ID_ATTR))) {
+        //   scopeAnchors.set(scopeID, n as Element);
+        // }
+      }
+      const slot = slotMap.get(slotName) ?? slotMap.get('default')!;
+      slot.parentElement!.insertBefore(n, slot);
     });
+    slotList.forEach(slot => slot.parentElement!.removeChild(slot));
+    // if (scopeAnchors.size) {
+    //   self.__scopeAnchors = scopeAnchors;
+    // }
 
     return ret;
   }

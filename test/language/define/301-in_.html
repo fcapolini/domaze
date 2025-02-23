@@ -1,0 +1,13 @@
+<html :count=${0}>
+<head>
+  <:define tag="app-card" class="app-card" :v="x">
+    <span>${v + count}</span>
+    <div :v2="y">${v2 + count}<slot name="default"/></div>
+  </:define>
+</head>
+<body>
+  <app-card :v="z">
+    <p :v="a">${v + count}</p>
+  </app-card>
+</body>
+</html>
