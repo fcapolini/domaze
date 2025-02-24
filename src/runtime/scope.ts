@@ -10,9 +10,7 @@ export interface ScopeProps {
   [key: string]: any;
   __id?: number;
   __type?: 'foreach' | 'define' | 'instance' | 'slot';
-  // __proto?: string;
   __name?: string;
-  __slot?: string;
   __children?: ScopeProps[];
 }
 
@@ -22,7 +20,6 @@ export interface Scope {
   __props: ScopeProps;
   __children: Scope[];
   __view: dom.Element;
-  __slots?: Map<string, Scope>;
   __cache: Map<string, Value>;
 
   __dispose(): void;

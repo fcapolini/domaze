@@ -25,25 +25,3 @@ test('use happy-dom in this test file', () => {
 ## MDN
 
 * [Using templates and slots](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_templates_and_slots)
-
-## Compiler requirements
-
-* [ ] prevent declaring '__'-prefixed values (they're reserved to implementation)
-* [ ] check foreach contains a single scope
-* [ ] tags w/ a __slot prop must have their own scope
-* [ ] slot tags must have a valid __name and no children/values/functions
-
-## TODO
-
-* [ ] page
-  * [x] server-side dom + parser and preprocessor
-  * [ ] server-side load
-    * [ ] scopes
-      * [x] logic values
-      * [x] attr values
-      * [x] class values
-      * [x] style values
-    * [ ] texts
-  * [ ] server-side replication
-  * [ ] client-side reload
-  * [ ] client-side replication

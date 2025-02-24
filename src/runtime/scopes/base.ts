@@ -46,14 +46,6 @@ export class BaseFactory implements ScopeFactory {
     }
 
     self.__link = function(parent: Scope, before?: Scope) {
-      // link scope
-      if (self.__props.__slot && parent.__slots) {
-        const slot = parent.__slots.get(self.__props.__slot);
-        if (slot) {
-          parent = slot.__parentSelf!;
-          before ??= slot;
-        }
-      }
       this.__parentSelf = parent;
       this.__parent = parent.__proxy;
       const i = before ? parent.__children.indexOf(before) : -1;
@@ -62,19 +54,6 @@ export class BaseFactory implements ScopeFactory {
         const props: { [key: string]: any } = {};
         props[this.__props.__name!] = { e: () => this };
         parent.__add(props);
-      }
-      // collect slot
-      if (self.__props.__type === 'slot') {
-        const name = self.__props.__name!;
-        let instance: Scope | undefined = self;
-        while (instance && !instance.__slots) {
-          instance = instance.__parentSelf;
-        }
-        const slots = instance?.__slots;
-        if (slots) {
-          slots.get(name)?.__dispose();
-          slots.set(name, proxy);
-        }
       }
       return this;
     }
@@ -153,11 +132,6 @@ export class BaseFactory implements ScopeFactory {
     this.addValues(self, proxy, props);
 
     this.addChildren(self, proxy, props.__children);
-
-    if (self.__slots) {
-      self.__slots.forEach(slot => slot.__dispose());
-      delete self.__slots;
-    }
 
     return proxy;
   }

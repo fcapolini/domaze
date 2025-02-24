@@ -8,9 +8,9 @@
 </head>
 <body>
   <app-card :v="z">
-    <!--- this scope will be logically a child of the instance -->
-    <!--- but its DOM element is in a nested scope because of slotting -->
-    <p :v="a">${v + count}</p>
+    <!--- this text will logically belong to the instance -->
+    <!--- but its DOM node is in a nested scope because of slotting -->
+    ${v + count}
   </app-card>
 </body>
 </html>

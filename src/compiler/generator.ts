@@ -14,7 +14,6 @@ const DEFINES_PROP = '__defines';
 const EXTENDS_PROP = '__extends';
 const USES_PROP = '__uses';
 const NAME_PROP = '__name';
-const SLOT_PROP = '__slot';
 const CHILDREN_PROP = '__children';
 
 export function generate(root: CompilerScope): acorn.ExpressionStatement {
