@@ -19,6 +19,7 @@ import {
 } from "../runtime/const";
 import { CompilerScope, CompilerScopeType } from './compiler';
 import * as k from "./const";
+import { ScopeProps } from "../runtime/scope";
 
 export function load(source: Source): CompilerScope {
   let id = 0;
@@ -104,6 +105,8 @@ export function load(source: Source): CompilerScope {
   }
 
   const load = (e: ServerElement, p: CompilerScope) => {
+    let definition: CompilerScope | undefined;
+
     if (needsScope(e)) {
       const { type, wrapper, definesTag, extendsTag, extendsAttr } = wrapSpecialTags(e);
       if (wrapper) {
@@ -129,7 +132,7 @@ export function load(source: Source): CompilerScope {
         if (!scope.xtends) {
           error(extendsAttr?.valueLoc!, `"${extendsTag}" is not defined`);
         }
-        definitions.set(definesTag.toUpperCase(), scope);
+        definition = scope;
       }
 
       if (e.tagName.includes('-')) {
@@ -255,6 +258,11 @@ export function load(source: Source): CompilerScope {
         load(n as ServerElement, p);
       }
     });
+
+    if (definition) {
+      addSlotMap(definition, e as ServerTemplateElement, source);
+      definitions.set(definition.defines!.toUpperCase(), definition);
+    }
   }
 
   const root = {
@@ -340,4 +348,52 @@ function lookupDynamicTexts(e: dom.Element) {
   lookup(e);
 
   return ret;
+}
+
+function addSlotMap(definition: CompilerScope, template: dom.TemplateElement, source: Source) {
+  const slots = new Array<dom.Element>();
+  const map: { [key: string]: number } = {};
+  const e = template.content.documentElement!;
+
+  const lookupSlots = (p: dom.Element) => {
+    for (const n of p.childNodes) {
+      if (n.nodeType !== dom.NodeType.ELEMENT) continue;
+      if ((n as dom.Element).tagName === 'SLOT') {
+        slots.push(n as dom.Element);
+      } else {
+        lookupSlots(n as dom.Element);
+      }
+    }
+  }
+
+  const lookupSlotScopeId = (s: dom.Element) => {
+    while (s !== e) {
+      s = s.parentElement!;
+      if (s.getAttribute(k.OUT_OBJ_ID_ATTR)) {
+        break;
+      }
+    }
+    return parseInt(s.getAttribute(k.OUT_OBJ_ID_ATTR) ?? '0');
+  }
+
+  lookupSlots(e);
+  slots.forEach(slot => {
+    const name = slot.getAttribute('name');
+    if (name && /^[\w_][\w0-9\-_]*$/.test(name)) {
+      const scopeId = lookupSlotScopeId(slot);
+      map[name] = scopeId;
+    } else {
+      source.errors.push(
+        new PageError(
+          "error",
+          'bad/missing "name" attribute in slot',
+          (slot as ServerElement).loc
+        )
+      );
+    }
+  });
+
+  if (Object.keys(map).length) {
+    definition.slotmap = map;
+  }
 }

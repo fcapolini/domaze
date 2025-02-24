@@ -24,6 +24,7 @@ export interface CompilerScope {
   type: CompilerScopeType;
   defines?: string;
   xtends?: CompilerScope | string;
+  slotmap?: { [key: string]: number };
   uses?: string;
   closed?: boolean;
   comptime?: boolean; //TODO

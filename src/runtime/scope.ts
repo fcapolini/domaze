@@ -11,6 +11,7 @@ export interface ScopeProps {
   __id?: number;
   __type?: 'foreach' | 'define' | 'instance' | 'slot';
   __name?: string;
+  __slotmap?: { [key: string]: number };
   __children?: ScopeProps[];
 }
 

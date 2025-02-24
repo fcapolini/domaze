@@ -12,6 +12,7 @@ const ID_PROP = '__id';
 const TYPE_PROP = '__type';
 const DEFINES_PROP = '__defines';
 const EXTENDS_PROP = '__extends';
+const SLOTMAP_PROP = '__slotmap';
 const USES_PROP = '__uses';
 const NAME_PROP = '__name';
 const CHILDREN_PROP = '__children';
@@ -47,6 +48,14 @@ function genScopeProps(scope: CompilerScope): acorn.Property[] {
   ));
   typeof scope.xtends === 'object' && ret.push(genProperty(
     scope.loc, EXTENDS_PROP, genLiteral(scope.loc, scope.xtends.defines!)
+  ));
+  scope.slotmap && ret.push(genProperty(
+    scope.loc, SLOTMAP_PROP, genObject(
+      scope.loc,
+      Object.keys(scope.slotmap).map(key => genProperty(
+        scope.loc, key, genLiteral(scope.loc, scope.slotmap![key]), true)
+      )
+    )
   ));
   scope.uses && ret.push(genProperty(
     scope.loc, USES_PROP, genLiteral(scope.loc, scope.uses)
@@ -170,11 +179,12 @@ function genArray(loc: SourceLocation, elements: acorn.Expression[]): acorn.Arra
 function genProperty(
   loc: SourceLocation,
   key: string,
-  val: acorn.Expression
+  val: acorn.Expression,
+  useLiteralId?: boolean
 ): acorn.Property {
   return {
     type: "Property",
-    key: genIdentifier(loc, key),
+    key: useLiteralId ? genLiteral(loc, key) : genIdentifier(loc, key),
     value: val,
     kind: "init",
     method: false,
