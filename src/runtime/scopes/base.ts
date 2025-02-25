@@ -152,9 +152,9 @@ export class BaseFactory implements ScopeFactory {
       self.__view = this.lookupView(props, parentSelf?.__view)!;
     }
 
-    this.addValues(self, proxy, props);
-
     this.addChildren(self, proxy, props.__children);
+
+    this.addValues(self, proxy, props);
 
     return proxy;
   }
@@ -198,24 +198,25 @@ export class BaseFactory implements ScopeFactory {
     parentSelf: Scope,
     slotScopeId: number
   ): dom.Element | null {
-    const lookup = (scope: Scope): Scope | null => {
-      scope.__props.__id
-      if (scope.__props.__id === slotScopeId) {
-        return scope;
-      }
-      for (const child of scope.__children) {
-        const res = lookup(child);
-        if (res) {
-          return res;
-        }
-      }
-      return null;
-    }
-    const scope = lookup(parentSelf);
+    const scope = BaseFactory.lookupSlotScope(parentSelf, slotScopeId);
     return scope?.__view
       ? this.lookupView(props, scope.__view)
       : null;
   }
+
+  static lookupSlotScope(scope: Scope, slotScopeId: number): Scope | null {
+    scope.__props.__id
+    if (scope.__props.__id === slotScopeId) {
+      return scope;
+    }
+    for (const child of scope.__children) {
+      const res = this.lookupSlotScope(child, slotScopeId);
+      if (res) {
+        return res;
+      }
+    }
+    return null;
+}
 
   protected addValues(
     _self: Scope,
@@ -282,7 +283,13 @@ export class BaseFactory implements ScopeFactory {
       const nr = key.substring(k.RT_TEXT_VAL_PREFIX.length);
       if (nr.includes("_")) {
         // normal dynamic texts are marked with comments
-        const text = BaseFactory.lookupTextNode(scope.__view, nr)!;
+        let text = BaseFactory.lookupTextNode(scope.__view, nr)!;
+        if (!text && scope.__props.__slotmap) {
+          // this text element was moved to the default slot
+          const id = scope.__props.__slotmap['default'];
+          const slotScope = BaseFactory.lookupSlotScope(scope, id);
+          text = BaseFactory.lookupTextNode(slotScope!.__view, nr)!;
+        }
         ret.cb = (s, v) => {
           text.textContent = v ? `${v}` : "";
         };
@@ -314,7 +321,13 @@ export class BaseFactory implements ScopeFactory {
         } else if (n.nodeType === dom.NodeType.COMMENT) {
           if ((n as dom.Comment).textContent === marker) {
             if (childNodes[i + 1].nodeType === dom.NodeType.COMMENT) {
-              const ret = e.ownerDocument!.createTextNode("");
+              let p = e.parentElement;
+              let doc = e.ownerDocument;
+              while (!doc && p) {
+                doc = p.ownerDocument;
+                p = p.parentElement;
+              }
+              const ret = doc!.createTextNode("");
               e.insertBefore(ret, childNodes[i + 1]);
               return ret;
             }
