@@ -23,9 +23,9 @@ export class DefineFactory extends BaseFactory {
   augment(scope: Scope) {
     const self = scope.__target as Define;
     const template = self.__view as TemplateElement;
-    const model = template.content.firstElementChild!;
+    const modelDOM = template.content.firstElementChild!;
     const props = scope.__props as DefineProps;
-    const ext = model.tagName.toLocaleLowerCase();
+    const ext = modelDOM.tagName.toLocaleLowerCase();
     self.__extends = ext.includes('-') ? this.ctx.defines.get(ext) : ext;
     this.ctx.defines.set(props.__defines, self);
 

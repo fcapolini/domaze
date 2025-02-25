@@ -111,7 +111,6 @@ export class ForeachFactory extends BaseFactory {
 
     self.__addClone = (data: any) => {
       const i = self.__clones.length;
-      // console.log('__addClone', data);//tempdebug
       // clone DOM
       const dom = (self.__view as dom.TemplateElement);
       const e = dom.content.firstElementChild?.cloneNode(true) as dom.Element;
@@ -126,13 +125,11 @@ export class ForeachFactory extends BaseFactory {
     }
 
     self.__removeClone = (i: number) => {
-      // console.log('__removeClone', i);//tempdebug
       const clone = self.__clones.splice(i, 1)[0];
       clone.__dispose();
     }
 
     self.__updateClone = (clone: Scope, data: any) => {
-      // console.log('__updateClone', clone.__view.getAttribute(OUT_OBJ_ID_ATTR), data);//tempdebug
       // @ts-ignore
       clone['data'] = data;
     }

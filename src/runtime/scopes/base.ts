@@ -18,8 +18,12 @@ export class BaseFactory implements ScopeFactory {
     return proxy;
   }
 
-  init(self: Scope, props: ScopeProps, parentSelf?: Scope, before?: Scope): Scope {
-
+  init(
+    self: Scope,
+    props: ScopeProps,
+    parentSelf?: Scope,
+    before?: Scope
+  ): Scope {
     //
     // proxy
     //
@@ -37,52 +41,56 @@ export class BaseFactory implements ScopeFactory {
     // methods
     //
 
-    self.__dispose = function() {
-      const i = self.__parentSelf ? self.__parentSelf.__children.indexOf(this) : -1;
+    self.__dispose = function () {
+      const i = self.__parentSelf
+        ? self.__parentSelf.__children.indexOf(this)
+        : -1;
       i < 0 || self.__parentSelf!.__children.splice(i, 1);
       this.__unlinkValues();
       const e = self.__view;
       e?.parentElement?.removeChild(e);
-    }
+    };
 
-    self.__link = function(parent: Scope, before?: Scope) {
+    self.__link = function (parent: Scope, before?: Scope) {
       this.__parentSelf = parent;
       this.__parent = parent.__proxy;
       const i = before ? parent.__children.indexOf(before) : -1;
-      i < 0 ? parent.__children.push(this) : parent.__children.splice(i, 0, this);
-      if (this.__props.__name && this.__props.__type !== 'slot') {
+      i < 0
+        ? parent.__children.push(this)
+        : parent.__children.splice(i, 0, this);
+      if (this.__props.__name && this.__props.__type !== "slot") {
         const props: { [key: string]: any } = {};
         props[this.__props.__name!] = { e: () => this };
         parent.__add(props);
       }
       return this;
-    }
+    };
 
-    self.__add = function(props: ScopeProps) {
-      Object.keys(props).forEach(key => {
-        if (!key.startsWith('__')) {
+    self.__add = function (props: ScopeProps) {
+      Object.keys(props).forEach((key) => {
+        if (!key.startsWith("__")) {
           (self as any)[key] = BaseFactory.newValue(this, key, props[key]);
         }
       });
-    }
+    };
 
-    self.__get = function(key: string) {
-      return key.startsWith('__')
+    self.__get = function (key: string) {
+      return key.startsWith("__")
         ? (self as any)[key]
         : (self.__cache.get(key) ?? self.__lookup(key))?.get();
-    }
+    };
 
-    self.__set = function(key: string, val: any) {
-      return key.startsWith('__')
-        ? (((self as any)[key] = val) ?? true)
-        : ((self.__cache.get(key) ?? self.__lookup(key))?.set(val) ?? false);
-    }
+    self.__set = function (key: string, val: any) {
+      return key.startsWith("__")
+        ? ((self as any)[key] = val) ?? true
+        : (self.__cache.get(key) ?? self.__lookup(key))?.set(val) ?? false;
+    };
 
-    self.__value = function(key: string) {
+    self.__value = function (key: string) {
       return self.__cache.get(key) ?? self.__lookup(key);
-    }
+    };
 
-    self.__lookup = function(key: string) {
+    self.__lookup = function (key: string) {
       let t: Scope | undefined = this;
       let v: Value;
       do {
@@ -92,27 +100,35 @@ export class BaseFactory implements ScopeFactory {
         }
       } while ((t = t!.__parentSelf));
       return undefined;
-    }
+    };
 
     //
     // reactivity
     //
 
-    self.__unlinkValues = function(recur = true) {
+    self.__unlinkValues = function (recur = true) {
       self.__cache.clear();
-      Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].unlink());
-      recur && self.__children.forEach((scope: Scope) => scope.__unlinkValues())
-    }
+      Object.keys(self).forEach(
+        (key) => key.startsWith("__") || (self as any)[key].unlink()
+      );
+      recur &&
+        self.__children.forEach((scope: Scope) => scope.__unlinkValues());
+    };
 
     self.__linkValues = function (recur = true) {
-      Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].link());
-      recur && self.__children.forEach((scope: Scope) => scope.__linkValues())
-    }
+      Object.keys(self).forEach(
+        (key) => key.startsWith("__") || (self as any)[key].link()
+      );
+      recur && self.__children.forEach((scope: Scope) => scope.__linkValues());
+    };
 
     self.__updateValues = function (recur = true) {
-      Object.keys(self).forEach(key => key.startsWith('__') || (self as any)[key].get());
-      recur && self.__children.forEach((scope: Scope) => scope.__updateValues())
-    }
+      Object.keys(self).forEach(
+        (key) => key.startsWith("__") || (self as any)[key].get()
+      );
+      recur &&
+        self.__children.forEach((scope: Scope) => scope.__updateValues());
+    };
 
     //
     // init
@@ -125,6 +141,13 @@ export class BaseFactory implements ScopeFactory {
 
     parentSelf && proxy.__link(parentSelf, before);
 
+    const slotmap = parentSelf?.__props.__slotmap;
+    const slot = props.__slot;
+    const slotScopeId = !self.__view && slot && slotmap && slotmap[slot];
+    if (slotScopeId) {
+      self.__view = this.lookupSlottedView(props, parentSelf, slotScopeId)!;
+    }
+
     if (!self.__view) {
       self.__view = this.lookupView(props, parentSelf?.__view)!;
     }
@@ -136,13 +159,17 @@ export class BaseFactory implements ScopeFactory {
     return proxy;
   }
 
-  protected lookupView(props: ScopeProps, parentView?: dom.Element): dom.Element | null {
+  protected lookupView(
+    props: ScopeProps,
+    parentView?: dom.Element
+  ): dom.Element | null {
     if (parentView) {
       const id = `${props.__id}`;
       const lookup = (p: dom.Element): dom.Element | null => {
-        const childNodes = p.tagName === 'TEMPLATE'
-          ? (p as dom.TemplateElement).content.childNodes
-          : p.childNodes;
+        const childNodes =
+          p.tagName === "TEMPLATE"
+            ? (p as dom.TemplateElement).content.childNodes
+            : p.childNodes;
         for (const n of childNodes) {
           if (n.nodeType === dom.NodeType.ELEMENT) {
             const v = (n as dom.Element).getAttribute(OUT_OBJ_ID_ATTR);
@@ -160,10 +187,34 @@ export class BaseFactory implements ScopeFactory {
           }
         }
         return null;
-      }
+      };
       return lookup(parentView)!;
     }
     return this.ctx.props.doc as any;
+  }
+
+  protected lookupSlottedView(
+    props: ScopeProps,
+    parentSelf: Scope,
+    slotScopeId: number
+  ): dom.Element | null {
+    const lookup = (scope: Scope): Scope | null => {
+      scope.__props.__id
+      if (scope.__props.__id === slotScopeId) {
+        return scope;
+      }
+      for (const child of scope.__children) {
+        const res = lookup(child);
+        if (res) {
+          return res;
+        }
+      }
+      return null;
+    }
+    const scope = lookup(parentSelf);
+    return scope?.__view
+      ? this.lookupView(props, scope.__view)
+      : null;
   }
 
   protected addValues(
@@ -179,7 +230,7 @@ export class BaseFactory implements ScopeFactory {
     proxy: Scope,
     children?: { [key: string]: ValueProps }[]
   ) {
-    children?.forEach(props => this.ctx.newScope(props, _self));
+    children?.forEach((props) => this.ctx.newScope(props, _self));
   }
 
   static newValue(scope: Scope, key: string, props: ValueProps): Value {
@@ -187,11 +238,11 @@ export class BaseFactory implements ScopeFactory {
 
     if (key.startsWith(k.RT_ATTR_VAL_PREFIX)) {
       const name = key.substring(k.RT_ATTR_VAL_PREFIX.length);
-      if (name === 'class') {
+      if (name === "class") {
         ret.cb = (s, v) => {
-          s.__view.className = (v ? `${v}` : '');
+          s.__view.className = v ? `${v}` : "";
           return v;
-        }
+        };
       } else {
         ret.cb = (s, v) => {
           if (v != null) {
@@ -200,7 +251,7 @@ export class BaseFactory implements ScopeFactory {
             s.__view.removeAttribute(name);
           }
           return v;
-        }
+        };
       }
       return ret;
     }
@@ -214,7 +265,7 @@ export class BaseFactory implements ScopeFactory {
           s.__view.classList.remove(name);
         }
         return v;
-      }
+      };
       return ret;
     }
 
@@ -223,24 +274,24 @@ export class BaseFactory implements ScopeFactory {
       ret.cb = (s, v) => {
         s.__view.style.setProperty(name, v ? `${v}` : null);
         return v;
-      }
+      };
       return ret;
     }
 
     if (key.startsWith(k.RT_TEXT_VAL_PREFIX)) {
       const nr = key.substring(k.RT_TEXT_VAL_PREFIX.length);
-      if (nr.includes('_')) {
+      if (nr.includes("_")) {
         // normal dynamic texts are marked with comments
         const text = BaseFactory.lookupTextNode(scope.__view, nr)!;
         ret.cb = (s, v) => {
-          text.textContent = v ? `${v}` : '';
-        }
+          text.textContent = v ? `${v}` : "";
+        };
       } else {
         // atomic dynamic texts use the single text child
         const text = scope.__view.childNodes[0] as dom.Text;
         ret.cb = (s, v) => {
-          text.textContent = v ? `${v}` : '';
-        }
+          text.textContent = v ? `${v}` : "";
+        };
       }
     }
 
@@ -263,7 +314,7 @@ export class BaseFactory implements ScopeFactory {
         } else if (n.nodeType === dom.NodeType.COMMENT) {
           if ((n as dom.Comment).textContent === marker) {
             if (childNodes[i + 1].nodeType === dom.NodeType.COMMENT) {
-              const ret = e.ownerDocument!.createTextNode('');
+              const ret = e.ownerDocument!.createTextNode("");
               e.insertBefore(ret, childNodes[i + 1]);
               return ret;
             }
@@ -272,7 +323,7 @@ export class BaseFactory implements ScopeFactory {
         }
       }
       return null;
-    }
+    };
     const ret = lookup(e);
     return ret;
   }

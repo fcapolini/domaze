@@ -20,7 +20,8 @@ export class InstanceFactory extends BaseFactory {
     const model = define?.__children[0]?.__target ?? null;
     const self = Object.create(null) as Instance;
     if (model) {
-      props = this.inherit(self, define!, model, props, parentSelf);
+      const slotmap = define!.__props.__slotmap ?? {};
+      props = this.inherit(self, define!, model, props, slotmap, parentSelf);
     }
     const proxy = this.init(self, props, parentSelf, before);
     return proxy;
@@ -31,11 +32,14 @@ export class InstanceFactory extends BaseFactory {
     define: Define,
     model: Scope,
     props: InstanceProps,
-    parentSelf?: Scope
+    slotmap: { [key: string]: number },
+    parentSelf?: Scope,
   ): InstanceProps {
+    props.__children?.forEach(child => child.__slot || (child.__slot = 'default'));
     const ret = {
       ...model.__props,
       ...props,
+      __slotmap: slotmap,
       __children: [
         ...(model.__props.__children ?? []),
         ...(props.__children ?? [])
@@ -43,7 +47,6 @@ export class InstanceFactory extends BaseFactory {
     };
     const oldDOM = this.lookupView(props, parentSelf?.__view)!;
     const doc = oldDOM.ownerDocument!;
-    // const isReload = oldDOM.tagName.toLowerCase() !== props.__uses;
     if (oldDOM.tagName.toLowerCase() !== props.__uses) {
       // we're loading an already instantiated definition
       // (this happens routinely in the client)
@@ -61,24 +64,17 @@ export class InstanceFactory extends BaseFactory {
     });
 
     // instance DOM
-    // const scopeAnchors = new Map<string, Element>();
     const { slotMap, slotList } = DefineFactory.collectSlots(newDOM, doc);
     [...oldDOM.childNodes].forEach(n => {
-      let scopeID, slotName = 'default';
+      let slotName = 'default';
       oldDOM.removeChild(n);
       if (n.nodeType === NodeType.ELEMENT) {
         slotName = (n as Element).getAttribute('slot') ?? 'default';
-        // if ((scopeID = (n as Element).getAttribute(OUT_OBJ_ID_ATTR))) {
-        //   scopeAnchors.set(scopeID, n as Element);
-        // }
       }
       const slot = slotMap.get(slotName) ?? slotMap.get('default')!;
       slot.parentElement!.insertBefore(n, slot);
     });
     slotList.forEach(slot => slot.parentElement!.removeChild(slot));
-    // if (scopeAnchors.size) {
-    //   self.__scopeAnchors = scopeAnchors;
-    // }
 
     return ret;
   }
