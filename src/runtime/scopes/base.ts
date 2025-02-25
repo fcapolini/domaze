@@ -290,8 +290,10 @@ export class BaseFactory implements ScopeFactory {
           const slotScope = BaseFactory.lookupSlotScope(scope, id);
           text = BaseFactory.lookupTextNode(slotScope!.__view, nr)!;
         }
-        ret.cb = (s, v) => {
-          text.textContent = v ? `${v}` : "";
+        if (text) {
+          ret.cb = (s, v) => {
+            text.textContent = v ? `${v}` : "";
+          }
         };
       } else {
         // atomic dynamic texts use the single text child

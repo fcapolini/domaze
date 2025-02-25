@@ -127,21 +127,26 @@ export function load(source: Source): CompilerScope {
 
       if (definesTag) {
         scope.xtends = extendsTag?.includes('-')
-          ? definitions.get(extendsTag)
+          ? definitions.get(extendsTag.toUpperCase())
           : extendsTag;
-        if (!scope.xtends) {
-          error(extendsAttr?.valueLoc!, `"${extendsTag}" is not defined`);
+        // if (!scope.xtends) {
+        //   error(extendsAttr?.valueLoc!, `"${extendsTag}" is not defined`);
+        // }
+        if (scope.xtends && typeof scope.xtends !== 'string') {
+          error(extendsAttr?.valueLoc!, `cannot extend another definition ("${extendsTag}")`);
         }
         definition = scope;
       }
 
       if (e.tagName.includes('-')) {
-        const definition = definitions.get(e.tagName);
-        if (!definition) {
-          error(e.loc, `"${e.tagName.toLowerCase()}" is not defined`);
+        const definition = definitions.get(e.tagName.toUpperCase());
+        // if (!definition) {
+        //   error(e.loc, `"${e.tagName.toLowerCase()}" is not defined`);
+        // }
+        if (definition) {
+          scope.type = 'instance';
+          scope.uses = e.tagName.toLowerCase();
         }
-        scope.type = 'instance';
-        scope.uses = e.tagName.toLowerCase();
       }
 
       // attributes
