@@ -1,0 +1,16 @@
+<html :count=${0}>
+<head>
+  <:define tag="app-card" extends="some-custom-tag" class="app-card" :v="x">
+    <span>${v + count}</span>
+    <!--- the default slot is inside a nested scope -->
+    <li :v2="y">${v2 + count}<slot name="default"/></li>
+  </:define>
+</head>
+<body>
+  <app-card :v="z">
+    <!--- this text will logically belong to the instance -->
+    <!--- but its DOM node is in a nested scope because of slotting -->
+    ${count ? (v + count) : ''}
+  </app-card>
+</body>
+</html>
