@@ -1,0 +1,25 @@
+<html>
+
+<head>
+  <:define tag="tag-1" class="tag-1">
+    <div class="tag-1-1">
+      <slot name="default"/>
+    </div>
+    tag-1
+  </:define>
+  <:define tag="tag-2" class="tag-2">
+    <tag-1>
+      tag-2-1
+      <slot name="default"/>
+    </tag-1>
+    tag-2
+  </:define>
+</head>
+
+<body>
+  <tag-2>
+    body
+  </tag-2>
+</body>
+
+</html>
