@@ -541,7 +541,7 @@ export class ServerDocument extends ServerElement implements Document {
   override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
     const ret = super.clone(doc, parent);
     ret.nodeType = NodeType.DOCUMENT;
-    ret.tagName = '#document';
+    ret.tagName = '#DOCUMENT';
     return ret;
   }
 }
@@ -550,7 +550,7 @@ export class ServerDocumentFragment extends ServerDocument implements DocumentFr
   constructor(loc: string | SourceLocation) {
     super(loc);
     this.nodeType = NodeType.DOCUMENT_FRAGMENT;
-    this.tagName = '#document-fragment';
+    this.tagName = '#DOCUMENT-FRAGMENT';
   }
 
   get firstElementChild() {
@@ -566,7 +566,7 @@ export class ServerDocumentFragment extends ServerDocument implements DocumentFr
   override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
     const ret = super.clone(doc, parent);
     ret.nodeType = NodeType.DOCUMENT_FRAGMENT;
-    ret.tagName = '#document-fragment';
+    ret.tagName = '#DOCUMENT-FRAGMENT';
     return ret;
   }
 }

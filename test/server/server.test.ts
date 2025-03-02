@@ -68,8 +68,8 @@ files.forEach(file => {
 
 function getActual(page: BrowserPage) {
   let ret = page.mainFrame.document.documentElement.outerHTML;
-  // ret = ret.replace('<html><head>', '<html>\n<head>');
-  // ret = ret.replace('</body></html>', '</body>\n</html>');
+  ret = ret.replace('><head', '>\n<head');
+  ret = ret.replace('></html>', '>\n</html>');
   ret = ret.trim();
   return ret;
 }

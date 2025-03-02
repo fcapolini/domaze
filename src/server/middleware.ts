@@ -5,6 +5,9 @@ import fs from 'fs';
 import { Compiler } from "../compiler/compiler";
 import { Document, Element, NodeType } from "../html/dom";
 import { PageError } from "../html/parser";
+import { ServerDocument } from "../html/server-dom";
+import { Context, ContextProps } from "../runtime/context";
+import { generate } from "escodegen";
 
 export const CLIENT_CODE_REQ = '/.domaze.js';
 
@@ -60,13 +63,16 @@ export function domaze(props: DomazeProps) {
       return serveErrorPage(page.source.errors, res);
     }
 
-    let doc: Document = page.source.doc!;
+    let doc = page.source.doc!;
 
     if (props.ssr) {
-      // doc = (doc as ServerDocument).clone(null, null);
-      // new RuntimePage(
-      //   page => new ServerGlobal(page, doc, comp.props!)
-      // );
+      const js = page.code ? generate(page.code) : '';
+      const root = eval(js);
+      const docElement = doc.documentElement!.clone(null, null);
+      doc = new ServerDocument(doc.loc);
+      doc.childNodes.push(docElement);
+      const props: ContextProps = { doc, root };
+      new Context(props);
     }
 
     if (props.csr && doc && doc.documentElement) {
