@@ -64,10 +64,10 @@ export function domaze(props: DomazeProps) {
     }
 
     let doc = page.source.doc!;
+    const propsJs = props.ssr || props.csr ? generate(page.code) : '';
 
     if (props.ssr) {
-      const js = page.code ? generate(page.code) : '';
-      const root = eval(js);
+      const root = eval(propsJs);
       const docElement = doc.documentElement!.clone(null, null);
       doc = new ServerDocument(doc.loc);
       doc.childNodes.push(docElement);
@@ -81,9 +81,12 @@ export function domaze(props: DomazeProps) {
           n.nodeType === NodeType.ELEMENT &&
           (n as Element).tagName === 'BODY'
         ) {
-          const script = doc.createElement('script');
-          script.setAttribute('src', CLIENT_CODE_REQ);
-          (n as Element).appendChild(script);
+          const script1 = doc.createElement('script');
+          script1.appendChild(doc.createTextNode(propsJs));
+          (n as Element).appendChild(script1);
+          const script2 = doc.createElement('script');
+          script2.setAttribute('src', CLIENT_CODE_REQ);
+          (n as Element).appendChild(script2);
           break;
         }
       }

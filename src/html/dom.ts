@@ -70,7 +70,8 @@ export interface Attribute extends Node {
   valueLoc?: unknown;
 }
 
-export interface Document extends Element {
+export interface Document {
+  childNodes: Node[];
   documentElement: Element | null;
   createTextNode(text: string): Text;
   createElement(tagName: string): Element;

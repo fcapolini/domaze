@@ -55,6 +55,8 @@ files.forEach(file => {
   it(file, async () => {
     browser = new Browser({ settings: { disableJavaScriptFileLoading: true } });
     const page = browser.newPage();
+
+    // SSR
     await page.goto(`http://127.0.0.1:${server.port}/${file}`);
     const actual = getActual(page);
     const expected = getExpected(file, '-out.html');
@@ -62,22 +64,27 @@ files.forEach(file => {
       normalizeText(actual),
       normalizeText(expected)
     );
+
+    // CSR
   });
 
 });
 
 function getActual(page: BrowserPage) {
   let ret = page.mainFrame.document.documentElement.outerHTML;
+  // remove script tags
+  ret = ret.replace(/<script.*?>.*?<\/script>/sg, '');
+  // adapt line breaks
   ret = ret.replace('><head', '>\n<head');
   ret = ret.replace('></html>', '>\n</html>');
-  ret = ret.trim();
-  return ret;
+  // remove data-domaze attributes
+  ret = ret.replace(/ data-domaze=".*?"/g, '');
+  return ret.trim();
 }
 
 function getExpected(file: string, suffix: string) {
   file = file.replace(/-in\.html$/, suffix);
   const pathname = path.join(docroot, file);
   let ret = fs.readFileSync(pathname).toString();
-  ret = ret.trim();
-  return ret;
+  return ret.trim();
 }
