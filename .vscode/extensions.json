@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "vitest.explorer",
-    "editorconfig.editorconfig"
+    "editorconfig.editorconfig",
+    "ms-playwright.playwright"
   ]
 }

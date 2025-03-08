@@ -1,5 +1,6 @@
 {
-  "exclude": ["./test", "./vitest.config.ts"],
+  "include": ["./src"],
+  "exclude": ["./test", "./vitest.config.ts", "./dist", "./e2e-test"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
