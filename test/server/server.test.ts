@@ -79,6 +79,8 @@ function getActual(page: BrowserPage) {
   ret = ret.replace('></html>', '>\n</html>');
   // remove data-domaze attributes
   ret = ret.replace(/ data-domaze=".*?"/g, '');
+  // remove dynamic text markers
+  ret = ret.replace(/<!---.+?-->/g, '');
   return ret.trim();
 }
 

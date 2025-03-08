@@ -68,8 +68,9 @@ export function domaze(props: DomazeProps) {
 
     if (props.ssr) {
       const root = eval(propsJs);
-      const docElement = doc.documentElement!.clone(null, null);
+      const e = doc.documentElement;
       doc = new ServerDocument(doc.loc);
+      const docElement = e!.clone(doc, null);
       doc.childNodes.push(docElement);
       const props: ContextProps = { doc, root };
       new Context(props);
