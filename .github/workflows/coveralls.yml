@@ -24,7 +24,7 @@ jobs:
         run: npm install
 
       - name: Run tests with coverage
-        run: npm run test -- --coverage
+        run: npm run coverage
 
       - name: Upload to Coveralls
         uses: coverallsapp/github-action@v2
