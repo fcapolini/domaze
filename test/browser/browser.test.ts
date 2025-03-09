@@ -3,6 +3,14 @@ import fs from 'fs';
 import path from 'path';
 import { Server } from '../../src/server/server';
 
+declare global {
+  interface Window {
+    __DOMAZE_PROPS: any;
+    __domaze_context: any;
+    domaze: any;
+  }
+}
+
 // test('homepage has correct title', async ({ page }) => {
 //   await page.goto('https://playwright.dev/');
 //   await expect(page).toHaveTitle(/Playwright/);
@@ -38,14 +46,24 @@ for (const dir of dirs) {
 
       test(file, async ({ page }) => {
         await page.goto(`http://localhost:${server.port}/${file}`);
-        for (let i = 1;; i++) {
+        const cycle = await page.evaluate(() => window.domaze.__ctx.cycle);
+        expect(cycle).toEqual(1);
+        for (let i = 1; i < 10; i++) {
           const actual = await getActual(page);
           const expected = await getExpected(filePath, i);
           if (!expected) break;
           expect(actual).toEqual(expected);
+          const test = await page.evaluate(() => window.domaze.test);
+          if (typeof test === 'number') {
+            await page.evaluate(() => window.domaze.test++);
+            continue;
+          }
           const button = await page.$('button.test-button');
-          if (!button) break;
-          await button.click();
+          if (button) {
+            await button.click();
+            continue;
+          }
+          break;
         }
       });
 
@@ -59,6 +77,8 @@ async function getActual(page: Page) {
   ret = ret.replace(/ data-domaze=\"\d+\"/sg, '');
   ret = ret.replace(/<!---.+?-->/g, '');
   ret = ret.replace(/<script.+?\/script>/sg, '');
+  // remove debugging stuff form received html
+  ret = ret.replace(/<\/body>.+?<\/html>/, '</body></html>');
   return ret.trim();
 }
 

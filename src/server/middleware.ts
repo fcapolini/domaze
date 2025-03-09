@@ -8,6 +8,7 @@ import { PageError } from "../html/parser";
 import { ServerDocument } from "../html/server-dom";
 import { Context, ContextProps } from "../runtime/context";
 import { generate } from "escodegen";
+import { PROPS_GLOBAL } from "../runtime/const";
 
 export const CLIENT_CODE_REQ = '/.domaze.js';
 
@@ -83,7 +84,7 @@ export function domaze(props: DomazeProps) {
           (n as Element).tagName === 'BODY'
         ) {
           const script1 = doc.createElement('script');
-          script1.appendChild(doc.createTextNode(propsJs));
+          script1.appendChild(doc.createTextNode(`${PROPS_GLOBAL} = ${propsJs}`));
           (n as Element).appendChild(script1);
           const script2 = doc.createElement('script');
           script2.setAttribute('src', CLIENT_CODE_REQ);

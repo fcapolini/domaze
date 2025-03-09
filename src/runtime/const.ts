@@ -1,3 +1,4 @@
+export const PROPS_GLOBAL = '__DOMAZE_PROPS';
 
 export const RT_PARENT_VAL_KEY = '__parent';
 export const RT_SCOPE_VAL_KEY = '__scope';
