@@ -455,7 +455,6 @@ export class ServerTemplateElement extends ServerElement implements TemplateElem
     })
   }
 
-  //TODO: check cloning, and nested templates cloning
   override clone(doc: ServerDocument | null, parent: ServerElement | null): ServerElement {
     const ret = new ServerTemplateElement(doc, this.loc);
     parent?.appendChild(ret);

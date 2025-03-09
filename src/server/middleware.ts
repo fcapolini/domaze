@@ -21,6 +21,12 @@ export interface DomazeProps {
   // virtualFiles?: Array<VirtualFile>;
 }
 
+//TODO: add virtualFiles
+//TODO: cache compiled pages
+//TODO: sandbox server-side logic execution
+//TODO: pool of server-side executor workers
+//TODO: pool of server-side compiler workers
+//TODO: queue concurrent compilations of same pages
 export function domaze(props: DomazeProps) {
   props.clientCodePath ??= path.join(__dirname, 'client.js');
   const docroot = props.docroot || process.cwd();

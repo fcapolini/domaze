@@ -28,47 +28,62 @@ const dirs = fs.readdirSync(rootDir).filter(dir => {
   return true;
 });
 
-for (const dir of dirs) {
-  const dirPath = path.join(rootDir, dir);
-  const server = new Server({
-    docroot: dirPath,
-    port: 3003,
-    mute: true,
-    clientCodePath: path.join(__dirname, '../../dist/client.js'),
-  });
-  test.beforeAll(async () => server.start());
-  test.afterAll(async () => server.stop());
+for (let mode = 1; mode <= 3; mode++) {
+  const ssr = !!(mode & 0x01);
+  const csr = !!(mode & 0x02);
+  let dirCount = 0;
 
-  test.describe(dir, () => {
-    const files = fs.readdirSync(dirPath).filter(file => file.endsWith('-in.html'));
-    for (const file of files) {
-      const filePath = path.join(dirPath, file);
+  for (const dir of dirs) {
+    const dirPath = path.join(rootDir, dir);
+    const server = new Server({
+      docroot: dirPath,
+      port: 3000 + (mode - 1) + (dirCount++) * 3,
+      mute: true,
+      ssr,
+      csr,
+      clientCodePath: path.join(__dirname, '../../dist/client.js'),
+    });
+    test.beforeAll(async () => await server.start());
+    test.afterAll(async () => await server.stop());
 
-      test(file, async ({ page }) => {
-        await page.goto(`http://localhost:${server.port}/${file}`);
-        const cycle = await page.evaluate(() => window.domaze.__ctx.cycle);
-        expect(cycle).toEqual(1);
-        for (let i = 1; i < 10; i++) {
-          const actual = await getActual(page);
-          const expected = await getExpected(filePath, i);
-          if (!expected) break;
-          expect(actual).toEqual(expected);
-          const test = await page.evaluate(() => window.domaze.test);
-          if (typeof test === 'number') {
-            await page.evaluate(() => window.domaze.test++);
-            continue;
+    test.describe(`${dir} ${ssr ? 'SSR' : ''} ${csr ? 'CSR' : ''}`.trim().replace(/\s+/g, ' '), () => {
+      const files = fs.readdirSync(dirPath).filter(file => file.endsWith('-in.html'));
+      for (const file of files) {
+        const filePath = path.join(dirPath, file);
+
+        test(file, async ({ page }) => {
+          await page.goto(`http://localhost:${server.port}/${file}`);
+          if (csr) {
+            const cycle = await page.evaluate(() => window.domaze.__ctx.cycle);
+            expect(cycle).toEqual(1);
+          } else {
+            const domaze = await page.evaluate(() => !!window.domaze);
+            expect(domaze).toEqual(false);
           }
-          const button = await page.$('button.test-button');
-          if (button) {
-            await button.click();
-            continue;
+          for (let i = 1; i < 10; i++) {
+            const actual = await getActual(page);
+            const expected = await getExpected(filePath, i);
+            if (!expected) break;
+            expect(actual).toEqual(expected);
+            if (!csr) break;
+            const test = await page.evaluate(() => window.domaze.test);
+            if (typeof test === 'number') {
+              await page.evaluate(() => window.domaze.test++);
+              continue;
+            }
+            const button = await page.$('button.test-button');
+            if (button) {
+              await button.click();
+              continue;
+            }
+            break;
           }
-          break;
-        }
-      });
+        });
 
-    }
-  });
+      }
+    });
+
+  }
 
 }
 
