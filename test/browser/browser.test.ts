@@ -44,7 +44,7 @@ for (let mode = 1; mode <= 3; mode++) {
         test(file, async ({ page }) => {
           await page.goto(`http://localhost:${server.port}/${file}`);
           if (csr) {
-            const cycle = await page.evaluate(() => window.domaze.__ctx.cycle);
+            const cycle = await page.evaluate(() => window.domaze?.__ctx.cycle);
             expect(cycle).toEqual(1);
           } else {
             const domaze = await page.evaluate(() => !!window.domaze);

@@ -488,7 +488,7 @@ export class ServerDocument extends ServerElement implements Document {
   }
 
   createTextNode(text: string): ServerText {
-    return new ServerText(this, text, this.loc);
+    return new ServerText(this, text, this.loc, false);
   }
 
   createElement(tagName: string): ServerElement {

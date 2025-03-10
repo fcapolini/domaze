@@ -2,7 +2,7 @@ import estraverse from 'estraverse';
 import * as es from 'estree';
 import { PageError, Source } from "../html/parser";
 import { CompilerScope, CompilerValue } from "./compiler";
-import { CLASS_ATTR_PREFIX, STYLE_ATTR_PREFIX } from './const';
+import { CLASS_ATTR_PREFIX, EVENT_ATTR_PREFIX, STYLE_ATTR_PREFIX } from './const';
 
 export function validate(source: Source, root: CompilerScope): boolean {
   validateScope(source, root);
@@ -17,6 +17,15 @@ function validateScope(source: Source, scope: CompilerScope) {
     hasClassAttr ||= (key.startsWith(CLASS_ATTR_PREFIX));
     hasStyleAttr ||= (key.startsWith(STYLE_ATTR_PREFIX));
     const value = scope.values![key];
+    if (key.startsWith(EVENT_ATTR_PREFIX)) {
+      if (
+        typeof value.val !== 'object' ||
+        value.val?.type !== 'ArrowFunctionExpression'
+      ) {
+        addError(source, value, 'event handler must be an arrow function');
+        return
+      }
+    }
     validateValue(source, value);
   });
 

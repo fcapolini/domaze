@@ -12,6 +12,7 @@ import {
 import {
   RT_ATTR_VAL_PREFIX,
   RT_CLASS_VAL_PREFIX,
+  RT_EVENT_VAL_PREFIX,
   RT_STYLE_VAL_PREFIX,
   RT_TEXT_MARKER1_PREFIX,
   RT_TEXT_MARKER2,
@@ -194,6 +195,17 @@ export function load(source: Source): CompilerScope {
             const key = name.substring(k.STYLE_ATTR_PREFIX.length);
             scope.values || (scope.values = {});
             scope.values[RT_STYLE_VAL_PREFIX + key] = {
+              val: (attr as ServerAttribute).value,
+              keyLoc: (attr as ServerAttribute).loc,
+              valLoc: (attr as ServerAttribute).valueLoc
+            };
+            continue;
+          }
+          // event attribute
+          if (name.startsWith(k.EVENT_ATTR_PREFIX)) {
+            const key = name.substring(k.EVENT_ATTR_PREFIX.length);
+            scope.values || (scope.values = {});
+            scope.values[RT_EVENT_VAL_PREFIX + key] = {
               val: (attr as ServerAttribute).value,
               keyLoc: (attr as ServerAttribute).loc,
               valLoc: (attr as ServerAttribute).valueLoc
