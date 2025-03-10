@@ -11,16 +11,6 @@ declare global {
   }
 }
 
-// test('homepage has correct title', async ({ page }) => {
-//   await page.goto('https://playwright.dev/');
-//   await expect(page).toHaveTitle(/Playwright/);
-// });
-
-// test('homepage has a header', async ({ page }) => {
-//   await page.goto('https://playwright.dev/');
-//   await expect(page.locator('h1')).toHaveText(/Playwright/);
-// });
-
 const rootDir = path.join(__dirname, '.');
 const dirs = fs.readdirSync(rootDir).filter(dir => {
   if (dir.startsWith('.')) return;
@@ -60,7 +50,7 @@ for (let mode = 1; mode <= 3; mode++) {
             const domaze = await page.evaluate(() => !!window.domaze);
             expect(domaze).toEqual(false);
           }
-          for (let i = 1; i < 10; i++) {
+          for (let i = 0; i < 10; i++) {
             const actual = await getActual(page);
             const expected = await getExpected(filePath, i);
             if (!expected) break;
@@ -98,7 +88,7 @@ async function getActual(page: Page) {
 }
 
 async function getExpected(filePath: string, nr: number) {
-  const pname = filePath.replace('-in.html', `-out${nr}.html`);
+  const pname = filePath.replace('-in.html', `-out${nr ? '-' + nr : ''}.html`);
   if (!fs.existsSync(pname)) return '';
   const ret = await fs.promises.readFile(pname, { 'encoding': 'utf8' });
   return ret.trim();
