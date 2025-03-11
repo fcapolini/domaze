@@ -48,6 +48,17 @@ export class BaseFactory implements ScopeFactory {
       i < 0 || self.__parentSelf!.__children.splice(i, 1);
       this.__unlinkValues();
       const e = self.__view;
+      Object.keys(self).forEach(key => {
+        if (!key.startsWith(k.RT_EVENT_VAL_PREFIX)) {
+          return;
+        }
+        try {
+          const evname = key.substring(k.RT_EVENT_VAL_PREFIX.length);
+          const value = (self as any)[key] as Value;
+          const listener = value.exp?.();
+          e.removeEventListener(evname, listener);
+        } catch (ignored) {}
+      });
       e?.parentElement?.removeChild(e);
     };
 
@@ -216,7 +227,7 @@ export class BaseFactory implements ScopeFactory {
       }
     }
     return null;
-}
+  }
 
   protected addValues(
     _self: Scope,
@@ -276,6 +287,15 @@ export class BaseFactory implements ScopeFactory {
         s.__view.style.setProperty(name, v ? `${v}` : null);
         return v;
       };
+      return ret;
+    }
+
+    if (key.startsWith(k.RT_EVENT_VAL_PREFIX)) {
+      try {
+        const name = key.substring(k.RT_EVENT_VAL_PREFIX.length);
+        const listener = ret.exp?.call(scope);
+        scope.__view.addEventListener(name, listener);
+      } catch (ignored) {}
       return ret;
     }
 

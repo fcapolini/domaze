@@ -347,28 +347,25 @@ import { getMarkup, runPage } from '../util';
     );
   });
 
-  // ===========================================================================
-  // replication
-  // ===========================================================================
-
-  // it('should replicate block', async () => {
-  //   const ctx = await runPage(client, '<html><head></head><body>'
-  //     + '<template :foreach=${[1, 2, 3]}>'
-  //     + '<div>${item}</div>'
-  //     + '</template>'
-  //     + '</body></html>');
-  //   assert.equal(
-  //     getMarkup(ctx.props.doc),
-  //     '<html><head></head><body>'
-  //     + '<div>1</div><div>2</div><div>3</div>'
-  //     + '<template><div></div></template>'
-  //     + '</body></html>'
-  //   );
-  //   // ctx.root['msg'] = 'hey';
-  //   // assert.equal(
-  //   //   getMarkup(ctx.props.doc),
-  //   //   '<html><head><style>greeting: hey :-)</style></head><body></body></html>'
-  //   // );
-  // });
-
 }));
+
+describe('events', () => {
+
+  it('should register event listener', async () => {
+    const ctx = await runPage(true, '<html><body'
+      + ' :count=${0} :on_click=${() => count++}'
+      + '></body></html>');
+    assert.equal(
+      getMarkup(ctx.props.doc),
+      '<html><head></head><body></body></html>'
+    );
+    const body = ctx.root['body'];
+    assert.equal(body.count, 0);
+    const doc = ctx.props.doc as unknown as Document;
+    doc.body.click();
+    assert.equal(body.count, 1);
+  });
+
+  //TODO: test event listener removal on scope disposal
+
+});

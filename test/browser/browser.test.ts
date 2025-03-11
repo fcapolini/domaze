@@ -36,7 +36,9 @@ for (let mode = 1; mode <= 3; mode++) {
     test.beforeAll(async () => await server.start());
     test.afterAll(async () => await server.stop());
 
-    test.describe(`${dir} ${ssr ? 'SSR' : ''} ${csr ? 'CSR' : ''}`.trim().replace(/\s+/g, ' '), () => {
+    test.describe(
+      `${dir} ${ssr ? 'SSR' : ''} ${csr ? 'CSR' : ''}`.trim().replace(/\s+/g, ' '),
+      () => {
       const files = fs.readdirSync(dirPath).filter(file => file.endsWith('-in.html'));
       for (const file of files) {
         const filePath = path.join(dirPath, file);
