@@ -369,3 +369,23 @@ describe('events', () => {
   //TODO: test event listener removal on scope disposal
 
 });
+
+describe('handlers', () => {
+
+  it('should implement value handlers', async () => {
+    const ctx = await runPage(true, '<html '
+      + ':v=${0} '
+      + ':other=${10} '
+      + ':log=${[]} '
+      + ':handle_v=${(() => log.push(v + \' \' + other))(v)} '
+      + '/>');
+    assert.equal(ctx.root['v'], 0);
+    assert.equal(ctx.root['other'], 10);
+    assert.deepEqual(ctx.root['log'], ['0 10']);
+    ctx.root['other']++;
+    assert.deepEqual(ctx.root['log'], ['0 10']);
+    ctx.root['v']++;
+    assert.deepEqual(ctx.root['log'], ['0 10', '1 11']);
+  });
+
+});

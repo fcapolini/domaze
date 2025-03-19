@@ -55,8 +55,10 @@ export class Value {
   }
 
   get(): any {
-    if (this.cycle !== this.scope.__ctx.cycle && this.exp) {
-      return this.update();
+    if (this.cycle !== this.scope.__ctx.cycle) {
+      if (!this.cycle || this.src.size) {
+        return this.update();
+      }
     }
     return this.value;
   }
