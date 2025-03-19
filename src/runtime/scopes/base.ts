@@ -312,14 +312,14 @@ export class BaseFactory implements ScopeFactory {
         }
         if (text) {
           ret.cb = (s, v) => {
-            text.textContent = v ? `${v}` : "";
+            text.textContent = v != null ? `${v}` : "";
           }
         };
       } else {
         // atomic dynamic texts use the single text child
         const text = scope.__view.childNodes[0] as dom.Text;
         ret.cb = (s, v) => {
-          text.textContent = v ? `${v}` : "";
+          text.textContent = v != null ? `${v}` : "";
         };
       }
     }

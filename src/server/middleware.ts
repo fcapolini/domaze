@@ -74,7 +74,8 @@ export function domaze(props: DomazeProps) {
     const propsJs = props.ssr || props.csr ? generate(page.code) : '';
 
     if (props.ssr) {
-      const root = eval(propsJs);
+      // https://esbuild.github.io/content-types/#direct-eval
+      const root = (0, eval)(propsJs);
       const e = doc.documentElement;
       doc = new ServerDocument(doc.loc);
       const docElement = e!.clone(doc, null);
@@ -94,6 +95,7 @@ export function domaze(props: DomazeProps) {
           (n as Element).appendChild(script1);
           const script2 = doc.createElement('script');
           script2.setAttribute('src', CLIENT_CODE_REQ);
+          script2.setAttribute('async', '');
           (n as Element).appendChild(script2);
           break;
         }
