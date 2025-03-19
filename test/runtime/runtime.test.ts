@@ -377,7 +377,7 @@ describe('handlers', () => {
       + ':v=${0} '
       + ':other=${10} '
       + ':log=${[]} '
-      + ':handle_v=${(() => log.push(v + \' \' + other))(v)} '
+      + ':handle_v=${(() => log.push(`${v} ${other}`))(v)} '
       + '/>');
     assert.equal(ctx.root['v'], 0);
     assert.equal(ctx.root['other'], 10);
