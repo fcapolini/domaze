@@ -7,7 +7,6 @@ export type ValueCallback = (s: Scope, v: any) => any;
 
 export interface ValueProps {
   e?: ValueExp;
-  // f?: ValueFun;
   r?: ValueDep[];
 }
 
@@ -24,11 +23,7 @@ export class Value {
   constructor(scope: Scope, props: ValueProps) {
     this.scope = scope;
     this.props = props;
-    // if (props.f) {
-    //   this.value = props.f;
-    // } else {
-      this.exp = props.e;
-    // }
+    this.exp = props.e;
     this.src = new Set();
     this.dst = new Set();
     this.cycle = 0;
@@ -58,16 +53,14 @@ export class Value {
     if (this.cycle !== this.scope.__ctx.cycle) {
       if (!this.cycle || this.src.size) {
         return this.update();
+      } else {
+        this.cycle = this.scope.__ctx.cycle;
       }
     }
     return this.value;
   }
 
   set(val: any): boolean {
-    // if (this.props.f) {
-    //   // write protect functions
-    //   return false;
-    // }
     const old = this.value;
     delete this.exp;
     this.src.clear();
